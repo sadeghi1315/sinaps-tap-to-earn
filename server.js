@@ -12,14 +12,10 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-// ===============================
-// SETTINGS
-// ===============================
-
 const ENERGY_REGEN_SECONDS = 3;
 
 // ===============================
-// TEST BACKEND
+// HOME
 // ===============================
 
 app.get("/", (req, res) => {
@@ -31,7 +27,7 @@ app.get("/", (req, res) => {
 });
 
 // ===============================
-// ENERGY CALCULATION
+// ENERGY
 // ===============================
 
 function calculateEnergy(user) {
@@ -46,7 +42,7 @@ function calculateEnergy(user) {
 
   if (elapsedSeconds <= 0) {
     return {
-      energy: user.energy,
+      energy: Number(user.energy),
       lastEnergyUpdate: user.last_energy_update
     };
   }
@@ -58,18 +54,17 @@ function calculateEnergy(user) {
 
   if (regenerated <= 0) {
     return {
-      energy: user.energy,
+      energy: Number(user.energy),
       lastEnergyUpdate: user.last_energy_update
     };
   }
 
   const newEnergy =
     Math.min(
-      user.max_energy,
-      user.energy + regenerated
+      Number(user.max_energy),
+      Number(user.energy) + regenerated
     );
 
-  // فقط زمانی زمان را جلو می‌بریم که انرژی واقعاً شارژ شده
   const usedSeconds =
     regenerated * ENERGY_REGEN_SECONDS;
 
@@ -85,7 +80,7 @@ function calculateEnergy(user) {
 }
 
 // ===============================
-// GET / CREATE USER
+// USER
 // ===============================
 
 app.post("/api/user", async (req, res) => {
@@ -98,11 +93,9 @@ app.post("/api/user", async (req, res) => {
     } = req.body;
 
     if (!telegram_id) {
-
       return res.status(400).json({
         error: "telegram_id required"
       });
-
     }
 
     let {
@@ -121,10 +114,6 @@ app.post("/api/user", async (req, res) => {
       throw error;
     }
 
-    // ===============================
-    // CREATE USER
-    // ===============================
-
     if (!user) {
 
       const result =
@@ -142,21 +131,16 @@ app.post("/api/user", async (req, res) => {
       }
 
       user = result.data;
-
     }
-
-    // ===============================
-    // REGENERATE ENERGY
-    // ===============================
 
     const energyData =
       calculateEnergy(user);
 
     if (
-      energyData.energy !== user.energy
+      energyData.energy !== Number(user.energy)
     ) {
 
-      const updateResult =
+      const result =
         await supabase
           .from("users")
           .update({
@@ -168,12 +152,11 @@ app.post("/api/user", async (req, res) => {
           .select()
           .single();
 
-      if (updateResult.error) {
-        throw updateResult.error;
+      if (result.error) {
+        throw result.error;
       }
 
-      user = updateResult.data;
-
+      user = result.data;
     }
 
     res.json(user);
@@ -185,10 +168,131 @@ app.post("/api/user", async (req, res) => {
     res.status(500).json({
       error: "Server error"
     });
-
   }
-
 });
+
+// ===============================
+// TAP - BATCH
+// ===============================
+
+app.post("/api/tap", async (req, res) => {
+
+  try {
+
+    const {
+      telegram_id,
+      taps
+    } = req.body;
+
+    if (!telegram_id) {
+      return res.status(400).json({
+        error: "telegram_id required"
+      });
+    }
+
+    let tapCount =
+      Number(taps || 1);
+
+    if (!Number.isFinite(tapCount)) {
+      tapCount = 1;
+    }
+
+    tapCount =
+      Math.floor(tapCount);
+
+    // امنیت: حداکثر 50 Tap در هر درخواست
+    tapCount =
+      Math.max(
+        1,
+        Math.min(50, tapCount)
+      );
+
+    const {
+      data: user,
+      error
+    } = await supabase
+      .from("users")
+      .select("*")
+      .eq("telegram_id", telegram_id)
+      .single();
+
+    if (error || !user) {
+
+      return res.status(404).json({
+        error: "User not found"
+      });
+    }
+
+    // محاسبه Energy جدید
+    const energyData =
+      calculateEnergy(user);
+
+    const availableEnergy =
+      Number(energyData.energy);
+
+    // فقط به اندازه Energy موجود Tap قبول می‌کنیم
+    const acceptedTaps =
+      Math.min(
+        tapCount,
+        availableEnergy
+      );
+
+    if (acceptedTaps <= 0) {
+
+      return res.status(400).json({
+        error: "No energy",
+        balance: Number(user.balance),
+        energy: 0,
+        max_energy: Number(user.max_energy),
+        accepted_taps: 0
+      });
+    }
+
+    const newBalance =
+      Number(user.balance) +
+      acceptedTaps;
+
+    const newEnergy =
+      availableEnergy -
+      acceptedTaps;
+
+    const {
+      data: updated,
+      error: updateError
+    } = await supabase
+      .from("users")
+      .update({
+        balance: newBalance,
+        energy: newEnergy,
+        last_energy_update:
+          energyData.lastEnergyUpdate
+      })
+      .eq("telegram_id", telegram_id)
+      .select()
+      .single();
+
+    if (updateError) {
+      throw updateError;
+    }
+
+    res.json({
+      success: true,
+      balance: Number(updated.balance),
+      energy: Number(updated.energy),
+      max_energy: Number(updated.max_energy),
+      accepted_taps: acceptedTaps
+    });
+
+  } catch (error) {
+
+    console.error(error);
+
+    res.status(500).json({
+      error: "Server error"
+    });
+  }
+});
+
 // ===============================
 // DAILY BONUS
 // ===============================
@@ -202,11 +306,9 @@ app.post("/api/daily", async (req, res) => {
     } = req.body;
 
     if (!telegram_id) {
-
       return res.status(400).json({
         error: "telegram_id required"
       });
-
     }
 
     const {
@@ -223,39 +325,34 @@ app.post("/api/daily", async (req, res) => {
       return res.status(404).json({
         error: "User not found"
       });
-
     }
 
-    // تاریخ امروز
-    const today = new Date()
-      .toISOString()
-      .slice(0, 10);
-
-    // بررسی Bonus قبلی
-    if (user.last_daily_bonus) {
-
-      const lastBonus = new Date(
-        user.last_daily_bonus
-      )
+    const today =
+      new Date()
         .toISOString()
         .slice(0, 10);
+
+    if (user.last_daily_bonus) {
+
+      const lastBonus =
+        new Date(user.last_daily_bonus)
+          .toISOString()
+          .slice(0, 10);
 
       if (lastBonus === today) {
 
         return res.status(400).json({
           error: "Daily bonus already claimed",
-          balance: user.balance
+          balance: Number(user.balance)
         });
-
       }
-
     }
 
-    // Bonus
     const bonus = 100;
 
     const newBalance =
-      Number(user.balance) + bonus;
+      Number(user.balance) +
+      bonus;
 
     const {
       data: updated,
@@ -263,11 +360,9 @@ app.post("/api/daily", async (req, res) => {
     } = await supabase
       .from("users")
       .update({
-
         balance: newBalance,
-
-        last_daily_bonus: new Date().toISOString()
-
+        last_daily_bonus:
+          new Date().toISOString()
       })
       .eq("telegram_id", telegram_id)
       .select()
@@ -279,8 +374,8 @@ app.post("/api/daily", async (req, res) => {
 
     res.json({
       success: true,
-      bonus: bonus,
-      balance: updated.balance,
+      bonus,
+      balance: Number(updated.balance),
       last_daily_bonus:
         updated.last_daily_bonus
     });
@@ -292,135 +387,7 @@ app.post("/api/daily", async (req, res) => {
     res.status(500).json({
       error: "Server error"
     });
-
   }
-
-});
-
-// ===============================
-// TAP
-// ===============================
-
-app.post("/api/tap", async (req, res) => {
-
-  try {
-
-    const {
-      telegram_id
-    } = req.body;
-
-    if (!telegram_id) {
-
-      return res.status(400).json({
-        error: "telegram_id required"
-      });
-
-    }
-
-    // ===============================
-    // GET USER
-    // ===============================
-
-    const {
-      data: user,
-      error
-    } = await supabase
-      .from("users")
-      .select("*")
-      .eq("telegram_id", telegram_id)
-      .single();
-
-    if (error || !user) {
-
-      return res.status(404).json({
-        error: "User not found"
-      });
-
-    }
-
-    // ===============================
-    // REGENERATE ENERGY FIRST
-    // ===============================
-
-    const energyData =
-      calculateEnergy(user);
-
-    let currentEnergy =
-      energyData.energy;
-
-    // ===============================
-    // CHECK ENERGY
-    // ===============================
-
-    if (currentEnergy <= 0) {
-
-      return res.status(400).json({
-
-        error: "No energy",
-
-        balance: user.balance,
-
-        energy: 0,
-
-        max_energy: user.max_energy
-
-      });
-
-    }
-
-    // ===============================
-    // TAP
-    // ===============================
-
-    const newBalance =
-      Number(user.balance) + 1;
-
-    const newEnergy =
-      currentEnergy - 1;
-
-    // ===============================
-    // SAVE
-    // ===============================
-
-    const {
-      data: updated,
-      error: updateError
-    } = await supabase
-      .from("users")
-      .update({
-
-        balance: newBalance,
-
-        energy: newEnergy,
-
-        last_energy_update:
-          energyData.lastEnergyUpdate
-
-      })
-      .eq("telegram_id", telegram_id)
-      .select()
-      .single();
-
-    if (updateError) {
-      throw updateError;
-    }
-
-    // ===============================
-    // RESPONSE
-    // ===============================
-
-    res.json(updated);
-
-  } catch (error) {
-
-    console.error(error);
-
-    res.status(500).json({
-      error: "Server error"
-    });
-
-  }
-
 });
 
 // ===============================
@@ -435,5 +402,4 @@ app.listen(PORT, () => {
   console.log(
     `SINAPS Backend running on port ${PORT}`
   );
-
 });
