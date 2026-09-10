@@ -72,17 +72,14 @@ function render() {
 }
 
 // ===============================
-// LOAD USER FROM BACKEND
+// LOAD USER
 // ===============================
 
 async function loadUser() {
 
   if (!telegramId) {
-
     console.log("Telegram user not detected.");
-
     render();
-
     return;
   }
 
@@ -124,7 +121,10 @@ async function loadUser() {
     save();
     render();
 
-    console.log("SINAPS user loaded:", user);
+    console.log(
+      "SINAPS user loaded:",
+      user
+    );
 
   } catch (error) {
 
@@ -138,12 +138,131 @@ async function loadUser() {
 }
 
 // ===============================
-// TAP
+// FAST TAP QUEUE
 // ===============================
 
-let tapBusy = false;
+// تعداد Tap هایی که هنوز به Backend ارسال نشده‌اند
+let pendingTaps = 0;
 
-async function sendTap() {
+// آیا در حال ارسال درخواست هستیم؟
+let sendingTaps = false;
+
+// ===============================
+// SEND TAP QUEUE
+// ===============================
+
+async function processTapQueue() {
+
+  if (sendingTaps) return;
+  if (!telegramId) return;
+  if (pendingTaps <= 0) return;
+
+  sendingTaps = true;
+
+  while (pendingTaps > 0) {
+
+    try {
+
+      const response =
+        await fetch(`${API}/api/tap`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            telegram_id: telegramId
+          })
+        });
+
+      const result =
+        await response.json();
+
+      if (!response.ok) {
+
+        console.error(
+          "Tap API error:",
+          result
+        );
+
+        // اگر Backend گفت انرژی نداریم
+        if (
+          result.error === "No energy"
+        ) {
+
+          state.energy =
+            Number(result.energy ?? 0);
+
+          state.points =
+            Number(result.balance ?? state.points);
+
+          pendingTaps = 0;
+
+          save();
+          render();
+
+          break;
+        }
+
+        // خطای دیگر
+        pendingTaps--;
+
+        continue;
+      }
+
+      // یک Tap با موفقیت ثبت شد
+      pendingTaps--;
+
+      // مقدار واقعی Backend
+      state.points =
+        Number(result.balance);
+
+      state.energy =
+        Number(result.energy);
+
+      state.maxEnergy =
+        Number(
+          result.max_energy ??
+          state.maxEnergy
+        );
+
+      state.lastEnergy =
+        Date.now();
+
+      save();
+      render();
+
+    } catch (error) {
+
+      console.error(
+        "Tap connection error:",
+        error
+      );
+
+      // درخواست را فعلاً نگه می‌داریم
+      // تا بعداً دوباره تلاش شود
+
+      break;
+    }
+  }
+
+  sendingTaps = false;
+
+  // اگر هنوز Tap باقی مانده، دوباره پردازش کن
+  if (pendingTaps > 0) {
+
+    setTimeout(
+      processTapQueue,
+      500
+    );
+
+  }
+}
+
+// ===============================
+// INSTANT TAP
+// ===============================
+
+function instantTap() {
 
   if (!telegramId) {
 
@@ -154,81 +273,21 @@ async function sendTap() {
     return;
   }
 
-  if (tapBusy) return;
-
   if (state.energy <= 0) {
     return;
   }
 
-  tapBusy = true;
+  // تغییر فوری UI
+  state.energy--;
+  state.points++;
 
-  try {
+  pendingTaps++;
 
-    const response =
-      await fetch(`${API}/api/tap`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          telegram_id: telegramId
-        })
-      });
+  save();
+  render();
 
-    const result =
-      await response.json();
-
-    if (!response.ok) {
-
-      console.error(
-        "Tap API error:",
-        result
-      );
-
-      if (result.energy !== undefined) {
-        state.energy =
-          Number(result.energy);
-      }
-
-      if (result.balance !== undefined) {
-        state.points =
-          Number(result.balance);
-      }
-
-      save();
-      render();
-
-      return;
-    }
-
-    // مقدار واقعی از Backend
-    state.points =
-      Number(result.balance);
-
-    state.energy =
-      Number(result.energy);
-
-    state.maxEnergy =
-      Number(result.max_energy ?? state.maxEnergy);
-
-    state.lastEnergy =
-      Date.now();
-
-    save();
-    render();
-
-  } catch (error) {
-
-    console.error(
-      "Tap connection error:",
-      error
-    );
-
-  } finally {
-
-    tapBusy = false;
-
-  }
+  // ارسال در پس‌زمینه
+  processTapQueue();
 }
 
 // ===============================
@@ -239,11 +298,9 @@ if ($("tap")) {
 
   $("tap").addEventListener(
     "pointerdown",
-    async e => {
+    e => {
 
-      if (state.energy <= 0) {
-        return;
-      }
+      instantTap();
 
       // افکت +1
       const f =
@@ -263,12 +320,12 @@ if ($("tap")) {
         $("floaters").appendChild(f);
 
         setTimeout(() => {
+
           f.remove();
+
         }, 750);
 
       }
-
-      await sendTap();
 
     }
   );
@@ -314,7 +371,6 @@ if ($("daily")) {
           result
         );
 
-        // Bonus قبلاً گرفته شده
         if (
           result.error ===
           "Daily bonus already claimed"
@@ -323,18 +379,6 @@ if ($("daily")) {
           alert(
             "Daily bonus already claimed."
           );
-
-          if (
-            result.balance !== undefined
-          ) {
-
-            state.points =
-              Number(result.balance);
-
-            save();
-            render();
-
-          }
 
           return;
         }
@@ -349,15 +393,8 @@ if ($("daily")) {
           return;
         }
 
-        // دریافت موجودی واقعی
-        if (
-          result.balance !== undefined
-        ) {
-
-          state.points =
-            Number(result.balance);
-
-        }
+        state.points =
+          Number(result.balance);
 
         state.daily =
           new Date()
@@ -391,7 +428,7 @@ if ($("daily")) {
 }
 
 // ===============================
-// INVITE / REFERRAL
+// INVITE
 // ===============================
 
 if ($("invite")) {
@@ -526,5 +563,5 @@ render();
 
 loadUser();
 
-// فقط برای نمایش UI
+// فقط برای نمایش
 setInterval(render, 1000);
