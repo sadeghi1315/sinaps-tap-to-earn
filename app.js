@@ -9,10 +9,9 @@ if (tg) {
 // SINAPS BACKEND
 // ===============================
 
-const API = 'https://sinaps-backend.onrender.com';
+const API = "https://sinaps-backend.onrender.com";
 
 const tgUser = tg?.initDataUnsafe?.user || null;
-
 const telegramId = tgUser?.id || null;
 const username = tgUser?.username || null;
 
@@ -20,16 +19,17 @@ const username = tgUser?.username || null;
 // LOCAL STATE
 // ===============================
 
-const KEY = 'sinaps_v1_state';
+const KEY = "sinaps_v1_state";
 
-const state = JSON.parse(localStorage.getItem(KEY) || 'null') || {
-  points: 0,
-  energy: 1000,
-  maxEnergy: 1000,
-  level: 1,
-  lastEnergy: Date.now(),
-  daily: null
-};
+const state =
+  JSON.parse(localStorage.getItem(KEY) || "null") || {
+    points: 0,
+    energy: 1000,
+    maxEnergy: 1000,
+    level: 1,
+    lastEnergy: Date.now(),
+    daily: null
+  };
 
 const $ = id => document.getElementById(id);
 
@@ -38,113 +38,107 @@ function save() {
 }
 
 // ===============================
-// BACKEND USER
-// ===============================
-
-async function loadUser() {
-  if (!telegramId) {
-    console.log('Telegram user not detected');
-    return;
-  }
-
-  try {
-    const response = await fetch(`${API}/api/user`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        telegram_id: telegramId,
-        username: username
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error('Backend user request failed');
-    }
-
-    const user = await response.json();
-
-    state.points = Number(user.balance || 0);
-    state.energy = Number(user.energy ?? 1000);
-    state.maxEnergy = Number(user.max_energy ?? 1000);
-
-    state.lastEnergy = Date.now();
-
-    save();
-    render();
-
-    console.log('SINAPS user loaded:', user);
-
-  } catch (error) {
-    console.error('Load user error:', error);
-  }
-}
-
-// ===============================
-// ENERGY
-// ===============================
-
-function regen() {
-  const now = Date.now();
-
-  const elapsed = Math.floor(
-    (now - state.lastEnergy) / 3000
-  );
-
-  if (elapsed > 0) {
-    state.energy = Math.min(
-      state.maxEnergy,
-      state.energy + elapsed
-    );
-
-    state.lastEnergy = now;
-
-    save();
-  }
-}
-
-// ===============================
 // RENDER
 // ===============================
 
 function render() {
-  regen();
 
-  if ($('points')) {
-    $('points').textContent =
-      state.points.toLocaleString();
+  if ($("points")) {
+    $("points").textContent =
+      Number(state.points).toLocaleString();
   }
 
   state.level =
-    Math.floor(state.points / 1000) + 1;
+    Math.floor(Number(state.points) / 1000) + 1;
 
-  if ($('level')) {
-    $('level').textContent = state.level;
+  if ($("level")) {
+    $("level").textContent = state.level;
   }
 
-  if ($('energyText')) {
-    $('energyText').textContent = state.energy;
+  if ($("energyText")) {
+    $("energyText").textContent = state.energy;
   }
 
-  if ($('energyFill')) {
-    $('energyFill').style.width =
-      (state.energy / state.maxEnergy * 100) + '%';
+  if ($("energyFill")) {
+
+    const percent =
+      state.maxEnergy > 0
+        ? (state.energy / state.maxEnergy) * 100
+        : 0;
+
+    $("energyFill").style.width =
+      Math.max(0, Math.min(100, percent)) + "%";
   }
 }
 
 // ===============================
-// ADD POINTS
+// LOAD USER FROM BACKEND
 // ===============================
 
-function addPoints(n) {
-  state.points += n;
-  save();
-  render();
+async function loadUser() {
+
+  if (!telegramId) {
+
+    console.log("Telegram user not detected.");
+
+    render();
+
+    return;
+  }
+
+  try {
+
+    const response =
+      await fetch(`${API}/api/user`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          telegram_id: telegramId,
+          username: username
+        })
+      });
+
+    if (!response.ok) {
+      throw new Error(
+        `User API error: ${response.status}`
+      );
+    }
+
+    const user =
+      await response.json();
+
+    state.points =
+      Number(user.balance ?? 0);
+
+    state.energy =
+      Number(user.energy ?? 1000);
+
+    state.maxEnergy =
+      Number(user.max_energy ?? 1000);
+
+    state.lastEnergy =
+      Date.now();
+
+    save();
+    render();
+
+    console.log("SINAPS user loaded:", user);
+
+  } catch (error) {
+
+    console.error(
+      "Load user failed:",
+      error
+    );
+
+    render();
+  }
 }
 
 // ===============================
-// TAP BACKEND
+// TAP
 // ===============================
 
 let tapBusy = false;
@@ -152,11 +146,11 @@ let tapBusy = false;
 async function sendTap() {
 
   if (!telegramId) {
-    // Demo mode
-    if (state.energy <= 0) return;
 
-    state.energy--;
-    addPoints(1);
+    alert(
+      "Please open SINAPS inside Telegram."
+    );
+
     return;
   }
 
@@ -170,35 +164,65 @@ async function sendTap() {
 
   try {
 
-    const response = await fetch(`${API}/api/tap`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        telegram_id: telegramId
-      })
-    });
+    const response =
+      await fetch(`${API}/api/tap`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          telegram_id: telegramId
+        })
+      });
 
-    const result = await response.json();
+    const result =
+      await response.json();
 
     if (!response.ok) {
-      console.error('Tap error:', result);
+
+      console.error(
+        "Tap API error:",
+        result
+      );
+
+      if (result.energy !== undefined) {
+        state.energy =
+          Number(result.energy);
+      }
+
+      if (result.balance !== undefined) {
+        state.points =
+          Number(result.balance);
+      }
+
+      save();
+      render();
+
       return;
     }
 
-    // دریافت موجودی واقعی از Backend
-    state.points = Number(result.balance);
-    state.energy = Number(result.energy);
+    // مقدار واقعی از Backend
+    state.points =
+      Number(result.balance);
 
-    state.lastEnergy = Date.now();
+    state.energy =
+      Number(result.energy);
+
+    state.maxEnergy =
+      Number(result.max_energy ?? state.maxEnergy);
+
+    state.lastEnergy =
+      Date.now();
 
     save();
     render();
 
   } catch (error) {
 
-    console.error('Tap request failed:', error);
+    console.error(
+      "Tap connection error:",
+      error
+    );
 
   } finally {
 
@@ -211,33 +235,43 @@ async function sendTap() {
 // TAP BUTTON
 // ===============================
 
-if ($('tap')) {
+if ($("tap")) {
 
-  $('tap').addEventListener('pointerdown', async e => {
+  $("tap").addEventListener(
+    "pointerdown",
+    async e => {
 
-    if (state.energy <= 0) return;
+      if (state.energy <= 0) {
+        return;
+      }
 
-    // نمایش افکت سریع
-    const f = document.createElement('div');
+      // افکت +1
+      const f =
+        document.createElement("div");
 
-    f.className = 'floater';
-    f.textContent = '+1';
+      f.className = "floater";
+      f.textContent = "+1";
 
-    f.style.left =
-      (e.offsetX - 5) + 'px';
+      f.style.left =
+        (e.offsetX - 5) + "px";
 
-    f.style.top =
-      (e.offsetY - 10) + 'px';
+      f.style.top =
+        (e.offsetY - 10) + "px";
 
-    $('floaters').appendChild(f);
+      if ($("floaters")) {
 
-    setTimeout(() => {
-      f.remove();
-    }, 750);
+        $("floaters").appendChild(f);
 
-    await sendTap();
+        setTimeout(() => {
+          f.remove();
+        }, 750);
 
-  });
+      }
+
+      await sendTap();
+
+    }
+  );
 
 }
 
@@ -245,100 +279,147 @@ if ($('tap')) {
 // DAILY BONUS
 // ===============================
 
-if ($('daily')) {
+if ($("daily")) {
 
-  $('daily').onclick = async () => {
+  $("daily").onclick =
+    async () => {
 
-    if (!telegramId) {
-      alert('Please open SINAPS inside Telegram.');
-      return;
-    }
+      if (!telegramId) {
 
-    try {
-
-      const response = await fetch(`${API}/api/daily`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          telegram_id: telegramId
-        })
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-
-        if (
-          result.error ===
-          'Daily bonus already claimed'
-        ) {
-
-          alert('Daily bonus already claimed.');
-
-        } else {
-
-          alert(
-            result.error ||
-            'Daily bonus failed.'
-          );
-
-        }
+        alert(
+          "Please open SINAPS inside Telegram."
+        );
 
         return;
       }
 
-      // موجودی واقعی Backend
-      state.points =
-        Number(result.balance);
+      try {
 
-      save();
-      render();
+        const response =
+          await fetch(`${API}/api/daily`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              telegram_id: telegramId
+            })
+          });
 
-      alert(
-        '+' +
-        result.bonus +
-        ' SINAPS claimed! 🎁'
-      );
+        const result =
+          await response.json();
 
-    } catch (error) {
+        console.log(
+          "Daily response:",
+          result
+        );
 
-      console.error(
-        'Daily bonus error:',
-        error
-      );
+        // Bonus قبلاً گرفته شده
+        if (
+          result.error ===
+          "Daily bonus already claimed"
+        ) {
 
-      alert(
-        'Connection error. Please try again.'
-      );
+          alert(
+            "Daily bonus already claimed."
+          );
 
-    }
+          if (
+            result.balance !== undefined
+          ) {
 
-  };
+            state.points =
+              Number(result.balance);
+
+            save();
+            render();
+
+          }
+
+          return;
+        }
+
+        if (!response.ok) {
+
+          alert(
+            result.error ||
+            "Daily bonus failed."
+          );
+
+          return;
+        }
+
+        // دریافت موجودی واقعی
+        if (
+          result.balance !== undefined
+        ) {
+
+          state.points =
+            Number(result.balance);
+
+        }
+
+        state.daily =
+          new Date()
+            .toISOString()
+            .slice(0, 10);
+
+        save();
+        render();
+
+        alert(
+          "+" +
+          Number(result.bonus || 100) +
+          " SINAPS claimed! 🎁"
+        );
+
+      } catch (error) {
+
+        console.error(
+          "Daily connection error:",
+          error
+        );
+
+        alert(
+          "Connection error. Please try again."
+        );
+
+      }
+
+    };
 
 }
+
 // ===============================
-// REFERRAL
+// INVITE / REFERRAL
 // ===============================
 
-if ($('invite')) {
+if ($("invite")) {
 
-  $('invite').onclick = () => {
+  $("invite").onclick = () => {
 
     const id =
-      telegramId || 'demo';
+      telegramId || "demo";
 
     const link =
       location.origin +
       location.pathname +
-      '?ref=' +
+      "?ref=" +
       id;
 
-    navigator.clipboard?.writeText(link);
+    if (
+      navigator.clipboard &&
+      window.isSecureContext
+    ) {
+
+      navigator.clipboard
+        .writeText(link)
+        .catch(() => {});
+
+    }
 
     alert(
-      'Referral link copied (demo):\n' +
+      "Referral link copied:\n" +
       link
     );
 
@@ -350,12 +431,12 @@ if ($('invite')) {
 // TASKS
 // ===============================
 
-if ($('tasks')) {
+if ($("tasks")) {
 
-  $('tasks').onclick = () => {
+  $("tasks").onclick = () => {
 
     alert(
-      'Tasks module is reserved for v1.1.'
+      "Tasks module is coming soon."
     );
 
   };
@@ -366,12 +447,12 @@ if ($('tasks')) {
 // LEADERBOARD
 // ===============================
 
-if ($('leaderboard')) {
+if ($("leaderboard")) {
 
-  $('leaderboard').onclick = () => {
+  $("leaderboard").onclick = () => {
 
     alert(
-      'Leaderboard backend is reserved for v1.1.'
+      "Leaderboard is coming soon."
     );
 
   };
@@ -382,13 +463,13 @@ if ($('leaderboard')) {
 // WALLET
 // ===============================
 
-if ($('walletBtn')) {
+if ($("walletBtn")) {
 
-  $('walletBtn').onclick = () => {
+  $("walletBtn").onclick = () => {
 
     alert(
-      'TON Connect is planned for the next build.\n\n' +
-      'Never enter a seed phrase into SINAPS.'
+      "TON Connect is coming soon.\n\n" +
+      "Never enter a seed phrase into SINAPS."
     );
 
   };
@@ -399,12 +480,12 @@ if ($('walletBtn')) {
 // RESET
 // ===============================
 
-if ($('reset')) {
+if ($("reset")) {
 
-  $('reset').onclick = () => {
+  $("reset").onclick = () => {
 
     if (
-      confirm('Reset demo data?')
+      confirm("Reset local demo data?")
     ) {
 
       localStorage.removeItem(KEY);
@@ -426,11 +507,13 @@ if (tgUser) {
   const name =
     tgUser.first_name ||
     tgUser.username ||
-    'SINAPS user';
+    "SINAPS user";
 
-  if ($('status')) {
-    $('status').textContent =
-      'Welcome ' + name;
+  if ($("status")) {
+
+    $("status").textContent =
+      "Welcome " + name;
+
   }
 
 }
@@ -441,8 +524,7 @@ if (tgUser) {
 
 render();
 
-// دریافت اطلاعات واقعی کاربر از Backend
 loadUser();
 
-// بروزرسانی نمایش
+// فقط برای نمایش UI
 setInterval(render, 1000);
