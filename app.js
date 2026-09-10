@@ -43,30 +43,35 @@ function save() {
 
 function render() {
 
-  if ($("points")) {
-    $("points").textContent =
+  const points = $("points");
+  const level = $("level");
+  const energyText = $("energyText");
+  const energyFill = $("energyFill");
+
+  if (points) {
+    points.textContent =
       Number(state.points).toLocaleString();
   }
 
   state.level =
     Math.floor(Number(state.points) / 1000) + 1;
 
-  if ($("level")) {
-    $("level").textContent = state.level;
+  if (level) {
+    level.textContent = state.level;
   }
 
-  if ($("energyText")) {
-    $("energyText").textContent = state.energy;
+  if (energyText) {
+    energyText.textContent = state.energy;
   }
 
-  if ($("energyFill")) {
+  if (energyFill) {
 
     const percent =
       state.maxEnergy > 0
         ? (state.energy / state.maxEnergy) * 100
         : 0;
 
-    $("energyFill").style.width =
+    energyFill.style.width =
       Math.max(0, Math.min(100, percent)) + "%";
   }
 }
@@ -142,9 +147,9 @@ async function loadUser() {
 // ===============================
 
 let pendingTaps = 0;
-let sendingTaps = false;
+let syncing = false;
 
-// تغییر فوری روی صفحه
+// تغییر کاملاً فوری
 function instantTap() {
 
   if (!telegramId) {
@@ -155,24 +160,26 @@ function instantTap() {
     return;
   }
 
-  // بدون انتظار برای Backend
-  state.energy -= 1;
   state.points += 1;
+  state.energy -= 1;
 
   pendingTaps += 1;
 
-  save();
   render();
+  save();
 }
 
-// ارسال Tap ها در پس زمینه
+// ===============================
+// SYNC TAP
+// ===============================
+
 async function syncTaps() {
 
-  if (sendingTaps) return;
+  if (syncing) return;
   if (!telegramId) return;
   if (pendingTaps <= 0) return;
 
-  sendingTaps = true;
+  syncing = true;
 
   while (pendingTaps > 0) {
 
@@ -193,7 +200,12 @@ async function syncTaps() {
         await response.json();
 
       if (!response.ok) {
-        console.error("Tap sync error:", result);
+
+        console.error(
+          "Tap sync error:",
+          result
+        );
+
         break;
       }
 
@@ -210,24 +222,37 @@ async function syncTaps() {
     }
   }
 
-  sendingTaps = false;
+  syncing = false;
 
+  // اگر اینترنت قطع شده بود دوباره تلاش کن
+  if (pendingTaps > 0) {
+
+    setTimeout(
+      syncTaps,
+      1000
+    );
+
+  }
 }
 
 // ===============================
 // TAP BUTTON
 // ===============================
 
-if ($("tap")) {
+const tapButton = $("tap");
 
-  $("tap").addEventListener(
+if (tapButton) {
+
+  tapButton.addEventListener(
     "pointerdown",
-    e => {
+    function(e) {
 
-      // 1. تغییر فوری
+      e.preventDefault();
+
+      // فوری
       instantTap();
 
-      // 2. Haptic Telegram
+      // Haptic
       try {
 
         tg?.HapticFeedback?.impactOccurred(
@@ -236,22 +261,27 @@ if ($("tap")) {
 
       } catch (error) {}
 
-      // 3. افکت +1
+      // +1 animation
       const f =
         document.createElement("div");
 
       f.className = "floater";
       f.textContent = "+1";
 
+      const rect =
+        tapButton.getBoundingClientRect();
+
       f.style.left =
-        (e.offsetX - 5) + "px";
+        (e.clientX - rect.left - 5) + "px";
 
       f.style.top =
-        (e.offsetY - 10) + "px";
+        (e.clientY - rect.top - 10) + "px";
 
-      if ($("floaters")) {
+      const floaters = $("floaters");
 
-        $("floaters").appendChild(f);
+      if (floaters) {
+
+        floaters.appendChild(f);
 
         setTimeout(() => {
           f.remove();
@@ -259,14 +289,14 @@ if ($("tap")) {
 
       }
 
-      // 4. ارسال در پس‌زمینه
+      // Backend در پس‌زمینه
       syncTaps();
 
+    },
+    {
+      passive: false
     }
   );
-
-}
-
 }
 
 // ===============================
@@ -302,11 +332,6 @@ if ($("daily")) {
 
         const result =
           await response.json();
-
-        console.log(
-          "Daily response:",
-          result
-        );
 
         if (
           result.error ===
@@ -357,11 +382,8 @@ if ($("daily")) {
         alert(
           "Connection error. Please try again."
         );
-
       }
-
     };
-
 }
 
 // ===============================
@@ -396,9 +418,7 @@ if ($("invite")) {
       "Referral link copied:\n" +
       link
     );
-
   };
-
 }
 
 // ===============================
@@ -412,9 +432,7 @@ if ($("tasks")) {
     alert(
       "Tasks module is coming soon."
     );
-
   };
-
 }
 
 // ===============================
@@ -428,9 +446,7 @@ if ($("leaderboard")) {
     alert(
       "Leaderboard is coming soon."
     );
-
   };
-
 }
 
 // ===============================
@@ -445,9 +461,7 @@ if ($("walletBtn")) {
       "TON Connect is coming soon.\n\n" +
       "Never enter a seed phrase into SINAPS."
     );
-
   };
-
 }
 
 // ===============================
@@ -465,11 +479,8 @@ if ($("reset")) {
       localStorage.removeItem(KEY);
 
       location.reload();
-
     }
-
   };
-
 }
 
 // ===============================
@@ -487,9 +498,7 @@ if (tgUser) {
 
     $("status").textContent =
       "Welcome " + name;
-
   }
-
 }
 
 // ===============================
@@ -500,5 +509,7 @@ render();
 
 loadUser();
 
-// فقط برای نمایش
-setInterval(render, 1000);
+setInterval(
+  render,
+  1000
+);
