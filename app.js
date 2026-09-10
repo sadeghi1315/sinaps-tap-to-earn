@@ -1,5 +1,7 @@
 const tg = window.Telegram?.WebApp;
 
+alert("SINAPS JS RUNNING");;
+
 if (tg) {
   tg.ready();
   tg.expand();
