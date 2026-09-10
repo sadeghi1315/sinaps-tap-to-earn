@@ -138,20 +138,35 @@ async function loadUser() {
 }
 
 // ===============================
-// FAST TAP QUEUE
+// ULTRA FAST TAP
 // ===============================
 
-// تعداد Tap هایی که هنوز به Backend ارسال نشده‌اند
 let pendingTaps = 0;
-
-// آیا در حال ارسال درخواست هستیم؟
 let sendingTaps = false;
 
-// ===============================
-// SEND TAP QUEUE
-// ===============================
+// تغییر فوری روی صفحه
+function instantTap() {
 
-async function processTapQueue() {
+  if (!telegramId) {
+    return;
+  }
+
+  if (state.energy <= 0) {
+    return;
+  }
+
+  // بدون انتظار برای Backend
+  state.energy -= 1;
+  state.points += 1;
+
+  pendingTaps += 1;
+
+  save();
+  render();
+}
+
+// ارسال Tap ها در پس زمینه
+async function syncTaps() {
 
   if (sendingTaps) return;
   if (!telegramId) return;
@@ -178,68 +193,18 @@ async function processTapQueue() {
         await response.json();
 
       if (!response.ok) {
-
-        console.error(
-          "Tap API error:",
-          result
-        );
-
-        // اگر Backend گفت انرژی نداریم
-        if (
-          result.error === "No energy"
-        ) {
-
-          state.energy =
-            Number(result.energy ?? 0);
-
-          state.points =
-            Number(result.balance ?? state.points);
-
-          pendingTaps = 0;
-
-          save();
-          render();
-
-          break;
-        }
-
-        // خطای دیگر
-        pendingTaps--;
-
-        continue;
+        console.error("Tap sync error:", result);
+        break;
       }
 
-      // یک Tap با موفقیت ثبت شد
       pendingTaps--;
-
-      // مقدار واقعی Backend
-      state.points =
-        Number(result.balance);
-
-      state.energy =
-        Number(result.energy);
-
-      state.maxEnergy =
-        Number(
-          result.max_energy ??
-          state.maxEnergy
-        );
-
-      state.lastEnergy =
-        Date.now();
-
-      save();
-      render();
 
     } catch (error) {
 
       console.error(
-        "Tap connection error:",
+        "Tap network error:",
         error
       );
-
-      // درخواست را فعلاً نگه می‌داریم
-      // تا بعداً دوباره تلاش شود
 
       break;
     }
@@ -247,47 +212,6 @@ async function processTapQueue() {
 
   sendingTaps = false;
 
-  // اگر هنوز Tap باقی مانده، دوباره پردازش کن
-  if (pendingTaps > 0) {
-
-    setTimeout(
-      processTapQueue,
-      500
-    );
-
-  }
-}
-
-// ===============================
-// INSTANT TAP
-// ===============================
-
-function instantTap() {
-
-  if (!telegramId) {
-
-    alert(
-      "Please open SINAPS inside Telegram."
-    );
-
-    return;
-  }
-
-  if (state.energy <= 0) {
-    return;
-  }
-
-  // تغییر فوری UI
-  state.energy--;
-  state.points++;
-
-  pendingTaps++;
-
-  save();
-  render();
-
-  // ارسال در پس‌زمینه
-  processTapQueue();
 }
 
 // ===============================
@@ -300,9 +224,19 @@ if ($("tap")) {
     "pointerdown",
     e => {
 
+      // 1. تغییر فوری
       instantTap();
 
-      // افکت +1
+      // 2. Haptic Telegram
+      try {
+
+        tg?.HapticFeedback?.impactOccurred(
+          "light"
+        );
+
+      } catch (error) {}
+
+      // 3. افکت +1
       const f =
         document.createElement("div");
 
@@ -320,15 +254,18 @@ if ($("tap")) {
         $("floaters").appendChild(f);
 
         setTimeout(() => {
-
           f.remove();
-
         }, 750);
 
       }
 
+      // 4. ارسال در پس‌زمینه
+      syncTaps();
+
     }
   );
+
+}
 
 }
 
