@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <title>SINAPS — Tap to Earn</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="app">
+    <header>
+      <div class="brand">
+        <div class="logo">S</div>
+        <div><b>SINAPS</b><small>Tap to Earn</small></div>
+      </div>
+      <button id="walletBtn" class="wallet">Connect Wallet</button>
+    </header>
+
+    <section class="card balance">
+      <div class="muted">YOUR BALANCE</div>
+      <div id="points" class="points">0</div>
+      <div class="unit">SNP POINTS</div>
+      <div class="level">LEVEL <span id="level">1</span> · <span id="energyText">1000</span> ENERGY</div>
+    </section>
+
+    <section class="tap-wrap">
+      <button id="tap" class="tap">SNP</button>
+      <div id="floaters"></div>
+    </section>
+
+    <div class="energybar"><div id="energyFill"></div></div>
+
+    <section class="grid">
+      <button class="menu-card" id="daily"><b>🎁 Daily</b><span>Claim daily bonus</span></button>
+      <button class="menu-card" id="invite"><b>👥 Friends</b><span>Invite & earn</span></button>
+      <button class="menu-card" id="tasks"><b>⚡ Tasks</b><span>Coming in v1.1</span></button>
+      <button class="menu-card" id="leaderboard"><b>🏆 Ranking</b><span>Local demo</span></button>
+    </section>
+
+    <footer>
+      <span id="status">SINAPS v1 • Demo</span>
+      <button id="reset">Reset demo</button>
+    </footer>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>
