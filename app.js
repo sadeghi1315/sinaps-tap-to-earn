@@ -247,28 +247,77 @@ if ($('tap')) {
 
 if ($('daily')) {
 
-  $('daily').onclick = () => {
+  $('daily').onclick = async () => {
 
-    const today =
-      new Date().toISOString().slice(0, 10);
-
-    if (state.daily === today) {
-
-      alert('Daily bonus already claimed.');
-
+    if (!telegramId) {
+      alert('Please open SINAPS inside Telegram.');
       return;
     }
 
-    state.daily = today;
+    try {
 
-    addPoints(100);
+      const response = await fetch(`${API}/api/daily`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          telegram_id: telegramId
+        })
+      });
 
-    alert('+100 points claimed!');
+      const result = await response.json();
+
+      if (!response.ok) {
+
+        if (
+          result.error ===
+          'Daily bonus already claimed'
+        ) {
+
+          alert('Daily bonus already claimed.');
+
+        } else {
+
+          alert(
+            result.error ||
+            'Daily bonus failed.'
+          );
+
+        }
+
+        return;
+      }
+
+      // موجودی واقعی Backend
+      state.points =
+        Number(result.balance);
+
+      save();
+      render();
+
+      alert(
+        '+' +
+        result.bonus +
+        ' SINAPS claimed! 🎁'
+      );
+
+    } catch (error) {
+
+      console.error(
+        'Daily bonus error:',
+        error
+      );
+
+      alert(
+        'Connection error. Please try again.'
+      );
+
+    }
 
   };
 
 }
-
 // ===============================
 // REFERRAL
 // ===============================
