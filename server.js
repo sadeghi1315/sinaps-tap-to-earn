@@ -189,6 +189,113 @@ app.post("/api/user", async (req, res) => {
   }
 
 });
+// ===============================
+// DAILY BONUS
+// ===============================
+
+app.post("/api/daily", async (req, res) => {
+
+  try {
+
+    const {
+      telegram_id
+    } = req.body;
+
+    if (!telegram_id) {
+
+      return res.status(400).json({
+        error: "telegram_id required"
+      });
+
+    }
+
+    const {
+      data: user,
+      error
+    } = await supabase
+      .from("users")
+      .select("*")
+      .eq("telegram_id", telegram_id)
+      .single();
+
+    if (error || !user) {
+
+      return res.status(404).json({
+        error: "User not found"
+      });
+
+    }
+
+    // تاریخ امروز
+    const today = new Date()
+      .toISOString()
+      .slice(0, 10);
+
+    // بررسی Bonus قبلی
+    if (user.last_daily_bonus) {
+
+      const lastBonus = new Date(
+        user.last_daily_bonus
+      )
+        .toISOString()
+        .slice(0, 10);
+
+      if (lastBonus === today) {
+
+        return res.status(400).json({
+          error: "Daily bonus already claimed",
+          balance: user.balance
+        });
+
+      }
+
+    }
+
+    // Bonus
+    const bonus = 100;
+
+    const newBalance =
+      Number(user.balance) + bonus;
+
+    const {
+      data: updated,
+      error: updateError
+    } = await supabase
+      .from("users")
+      .update({
+
+        balance: newBalance,
+
+        last_daily_bonus: new Date().toISOString()
+
+      })
+      .eq("telegram_id", telegram_id)
+      .select()
+      .single();
+
+    if (updateError) {
+      throw updateError;
+    }
+
+    res.json({
+      success: true,
+      bonus: bonus,
+      balance: updated.balance,
+      last_daily_bonus:
+        updated.last_daily_bonus
+    });
+
+  } catch (error) {
+
+    console.error(error);
+
+    res.status(500).json({
+      error: "Server error"
+    });
+
+  }
+
+});
 
 // ===============================
 // TAP
