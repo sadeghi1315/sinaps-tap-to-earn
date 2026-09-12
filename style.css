@@ -1,912 +1,389 @@
-/* =========================================================
-   SINAPS — Premium 4K / 3D Telegram Mini App
-   Compatible with current SINAPS index.html + app.js
-   ========================================================= */
-
-:root {
-  --bg-1: #030611;
-  --bg-2: #071329;
-  --bg-3: #0b1230;
-
-  --cyan: #19e8ff;
-  --cyan-soft: rgba(25, 232, 255, 0.25);
-
-  --violet: #8b5cff;
-  --violet-soft: rgba(139, 92, 255, 0.25);
-
-  --white: #ffffff;
-  --text: #eaf7ff;
-  --muted: #7185a5;
-
-  --glass: rgba(10, 22, 48, 0.68);
-  --glass-light: rgba(255, 255, 255, 0.07);
-  --border: rgba(125, 220, 255, 0.15);
-
-  --radius: 24px;
-}
-
-/* =========================
-   RESET
-   ========================= */
-
 * {
   box-sizing: border-box;
-  -webkit-tap-highlight-color: transparent;
 }
 
-html {
-  width: 100%;
-  min-height: 100%;
-  background: var(--bg-1);
-}
-
+html,
 body {
   margin: 0;
-  min-height: 100vh;
-  min-height: 100dvh;
-
+  padding: 0;
+  width: 100%;
+  min-height: 100%;
+  background:
+    radial-gradient(circle at 50% 10%, #123b59 0%, #071321 38%, #030812 100%);
+  color: #eefaff;
   font-family:
     Inter,
+    system-ui,
     -apple-system,
     BlinkMacSystemFont,
     "Segoe UI",
-    Roboto,
-    Arial,
     sans-serif;
-
-  color: var(--text);
-
-  background:
-    radial-gradient(
-      circle at 50% -10%,
-      rgba(25, 232, 255, 0.18),
-      transparent 35%
-    ),
-    radial-gradient(
-      circle at 100% 30%,
-      rgba(139, 92, 255, 0.16),
-      transparent 32%
-    ),
-    radial-gradient(
-      circle at 0% 80%,
-      rgba(0, 170, 255, 0.10),
-      transparent 30%
-    ),
-    linear-gradient(
-      145deg,
-      var(--bg-1),
-      var(--bg-2) 55%,
-      var(--bg-3)
-    );
-
-  overflow-x: hidden;
   overscroll-behavior: none;
 }
 
-/* futuristic grid */
-
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-
-  background-image:
-    linear-gradient(
-      rgba(80, 160, 255, 0.025) 1px,
-      transparent 1px
-    ),
-    linear-gradient(
-      90deg,
-      rgba(80, 160, 255, 0.025) 1px,
-      transparent 1px
-    );
-
-  background-size: 36px 36px;
-
-  mask-image:
-    linear-gradient(
-      to bottom,
-      black,
-      transparent 90%
-    );
-
-  pointer-events: none;
+body {
+  min-height: 100vh;
 }
 
-/* =========================
-   MAIN APP
-   ========================= */
+button {
+  font: inherit;
+  color: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:focus {
+  outline: none;
+}
 
 .app {
   width: 100%;
   max-width: 520px;
-
   min-height: 100vh;
-  min-height: 100dvh;
-
-  margin: 0 auto;
-
-  padding:
-    max(18px, env(safe-area-inset-top))
-    18px
-    max(24px, env(safe-area-inset-bottom))
-    18px;
-
-  position: relative;
-  z-index: 1;
+  margin: auto;
+  padding: 18px 16px 105px;
 }
+
 
 /* =========================
    HEADER
-   ========================= */
+========================= */
 
 header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-
-  gap: 14px;
-
   margin-bottom: 18px;
 }
 
 .brand {
   display: flex;
   align-items: center;
-  gap: 12px;
-}
-
-.logo {
-  width: 48px;
-  height: 48px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  border-radius: 15px;
-
-  font-size: 23px;
-  font-weight: 900;
-
-  color: #ffffff;
-
-  background:
-    linear-gradient(
-      145deg,
-      #22efff,
-      #247cff 48%,
-      #754cff
-    );
-
-  box-shadow:
-    0 0 18px rgba(25, 232, 255, 0.45),
-    0 0 45px rgba(96, 79, 255, 0.25),
-    inset 0 1px 2px rgba(255,255,255,0.5);
-
-  border: 1px solid rgba(255,255,255,0.22);
-
-  transform: translateZ(0);
+  gap: 10px;
 }
 
 .brand b {
   display: block;
-
   font-size: 18px;
-  line-height: 1.05;
   letter-spacing: 2px;
-
-  color: #ffffff;
 }
 
 .brand small {
   display: block;
-
-  margin-top: 4px;
-
+  margin-top: 2px;
+  color: #62dfff;
   font-size: 10px;
-  letter-spacing: 1.5px;
-
-  color: var(--muted);
 }
 
-/* =========================
-   WALLET BUTTON
-   ========================= */
+.logo {
+  width: 44px;
+  height: 44px;
+  border: 2px solid #27d5ff;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: #8beeff;
+  font-size: 24px;
+  font-weight: 900;
+  background:
+    radial-gradient(circle, #164e70, #071a2b);
+  box-shadow:
+    0 0 15px rgba(24, 207, 255, .35),
+    inset 0 0 15px rgba(24, 207, 255, .15);
+}
 
 .wallet {
-  border: 1px solid rgba(25, 232, 255, 0.25);
-
-  color: #dffcff;
-
-  background:
-    linear-gradient(
-      135deg,
-      rgba(25, 232, 255, 0.13),
-      rgba(139, 92, 255, 0.12)
-    );
-
-  padding: 11px 15px;
-
-  border-radius: 14px;
-
-  font-size: 12px;
-  font-weight: 700;
-
-  white-space: nowrap;
-
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-
-  box-shadow:
-    inset 0 1px rgba(255,255,255,0.08),
-    0 8px 30px rgba(0,0,0,0.25);
-
-  transition:
-    transform 0.15s ease,
-    box-shadow 0.15s ease;
+  border: 1px solid #235875;
+  background: rgba(12, 36, 54, .9);
+  border-radius: 12px;
+  padding: 9px 12px;
+  font-size: 11px;
 }
 
-.wallet:active {
-  transform: scale(0.94);
-
-  box-shadow:
-    0 0 18px rgba(25, 232, 255, 0.25);
-}
 
 /* =========================
-   BALANCE CARD
-   ========================= */
+   PAGES
+========================= */
 
-.card.balance {
-  position: relative;
+.page {
+  display: none;
+  width: 100%;
+  animation: pageIn .22s ease;
+}
 
-  overflow: hidden;
+.page.active {
+  display: block;
+}
 
-  text-align: center;
+@keyframes pageIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
 
-  padding: 25px 18px 22px;
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 
-  border-radius: var(--radius);
 
-  border: 1px solid var(--border);
+/* =========================
+   BALANCE
+========================= */
 
+.card {
   background:
     linear-gradient(
       145deg,
-      rgba(18, 38, 76, 0.76),
-      rgba(6, 15, 34, 0.78)
+      rgba(18, 48, 70, .96),
+      rgba(6, 18, 31, .98)
     );
 
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid #1e536d;
+  border-radius: 24px;
+  padding: 24px;
+
+  text-align: center;
 
   box-shadow:
-    0 20px 70px rgba(0,0,0,0.42),
-    inset 0 1px 1px rgba(255,255,255,0.08);
-
-  margin-bottom: 26px;
-}
-
-.card.balance::before {
-  content: "";
-
-  position: absolute;
-
-  width: 180px;
-  height: 180px;
-
-  left: 50%;
-  top: -110px;
-
-  transform: translateX(-50%);
-
-  background:
-    radial-gradient(
-      circle,
-      rgba(25,232,255,0.28),
-      transparent 68%
-    );
-
-  pointer-events: none;
-}
-
-.card.balance::after {
-  content: "";
-
-  position: absolute;
-  inset: 0;
-
-  background:
-    linear-gradient(
-      110deg,
-      transparent 20%,
-      rgba(255,255,255,0.04) 50%,
-      transparent 80%
-    );
-
-  pointer-events: none;
+    0 20px 50px rgba(0, 0, 0, .45),
+    inset 0 1px 0 rgba(255,255,255,.04);
 }
 
 .muted {
-  position: relative;
-
+  color: #6e9fb5;
   font-size: 10px;
-  font-weight: 800;
-
-  letter-spacing: 2.5px;
-
-  color: #7f95b8;
-
-  margin-bottom: 8px;
+  letter-spacing: 2px;
 }
 
 .points {
-  position: relative;
+  margin-top: 5px;
 
-  font-size: clamp(42px, 12vw, 64px);
-
-  line-height: 1;
-
+  font-size: 48px;
+  line-height: 1.1;
   font-weight: 900;
-
-  letter-spacing: -2px;
-
-  color: #ffffff;
-
-  text-shadow:
-    0 0 12px rgba(25,232,255,0.35),
-    0 0 40px rgba(25,232,255,0.18);
-}
-
-.unit {
-  position: relative;
-
-  margin-top: 8px;
-
-  font-size: 10px;
-  font-weight: 800;
-
-  letter-spacing: 2px;
-
-  color: var(--cyan);
-}
-
-.level {
-  position: relative;
-
-  margin-top: 15px;
-
-  font-size: 11px;
-
-  font-weight: 700;
-
-  color: #8ba1c4;
-}
-
-.level span {
-  color: #dffcff;
-}
-
-/* =========================
-   TAP AREA
-   ========================= */
-
-.tap-wrap {
-  position: relative;
-
-  width: min(76vw, 310px);
-  height: min(76vw, 310px);
-
-  margin: 12px auto 18px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* outer energy ring */
-
-.tap-wrap::before {
-  content: "";
-
-  position: absolute;
-
-  width: 100%;
-  height: 100%;
-
-  border-radius: 50%;
-
-  background:
-    conic-gradient(
-      from 0deg,
-      rgba(25,232,255,0.0),
-      rgba(25,232,255,0.55),
-      rgba(139,92,255,0.55),
-      rgba(25,232,255,0.0)
-    );
-
-  animation:
-    rotateRing 7s linear infinite;
-
-  filter: blur(1px);
-
-  opacity: 0.75;
-}
-
-.tap-wrap::after {
-  content: "";
-
-  position: absolute;
-
-  width: 88%;
-  height: 88%;
-
-  border-radius: 50%;
-
-  background:
-    radial-gradient(
-      circle,
-      rgba(25,232,255,0.12),
-      transparent 65%
-    );
-
-  box-shadow:
-    0 0 45px rgba(25,232,255,0.16);
-
-  pointer-events: none;
-}
-
-@keyframes rotateRing {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-/* =========================
-   MAIN SNP BUTTON
-   ========================= */
-
-.tap {
-  position: relative;
-
-  width: 69%;
-  height: 69%;
-
-  border-radius: 50%;
-
-  border: 0;
-
-  cursor: pointer;
-
-  touch-action: manipulation;
-
-  user-select: none;
-  -webkit-user-select: none;
-
-  color: #ffffff;
-
-  font-size: clamp(38px, 10vw, 54px);
-
-  font-weight: 950;
-
-  letter-spacing: -2px;
-
-  background:
-    radial-gradient(
-      circle at 35% 25%,
-      #8fffff 0%,
-      #22e8ff 22%,
-      #177dff 58%,
-      #542dce 100%
-    );
-
-  box-shadow:
-    0 0 0 8px rgba(25,232,255,0.05),
-    0 0 0 16px rgba(139,92,255,0.035),
-    0 15px 35px rgba(0,0,0,0.55),
-    0 0 55px rgba(25,232,255,0.35),
-    0 0 100px rgba(103,70,255,0.18),
-    inset 0 3px 4px rgba(255,255,255,0.5),
-    inset 0 -12px 20px rgba(28,17,100,0.45);
-
-  transition:
-    transform 0.08s ease,
-    filter 0.15s ease;
-}
-
-.tap::before {
-  content: "";
-
-  position: absolute;
-
-  inset: 9%;
-
-  border-radius: 50%;
-
-  border: 1px solid rgba(255,255,255,0.3);
-
-  box-shadow:
-    inset 0 0 20px rgba(255,255,255,0.13);
-
-  pointer-events: none;
-}
-
-.tap::after {
-  content: "";
-
-  position: absolute;
-
-  width: 42%;
-  height: 20%;
-
-  left: 20%;
-  top: 12%;
-
-  border-radius: 50%;
-
-  background: rgba(255,255,255,0.20);
-
-  filter: blur(7px);
-
-  transform: rotate(-25deg);
-
-  pointer-events: none;
-}
-
-.tap:active {
-  transform: scale(0.91);
-
-  filter:
-    brightness(1.16)
-    saturate(1.2);
-
-  box-shadow:
-    0 0 0 8px rgba(25,232,255,0.10),
-    0 0 35px rgba(25,232,255,0.55),
-    0 0 90px rgba(139,92,255,0.3),
-    inset 0 8px 22px rgba(10,25,100,0.5);
-}
-
-/* =========================
-   FLOATING +1
-   ========================= */
-
-#floaters {
-  position: absolute;
-
-  inset: 0;
-
-  pointer-events: none;
-
-  overflow: visible;
-}
-
-.floater {
-  position: absolute;
-
-  z-index: 20;
-
-  transform:
-    translate(-50%, -50%)
-    scale(1);
-
-  color: #ffffff;
-
-  font-size: 20px;
-  font-weight: 900;
-
-  text-shadow:
-    0 0 8px rgba(25,232,255,0.8),
-    0 0 20px rgba(139,92,255,0.6);
-
-  animation:
-    floatUp 0.7s cubic-bezier(.2,.8,.3,1)
-    forwards;
-
-  pointer-events: none;
-}
-
-@keyframes floatUp {
-  0% {
-    opacity: 0;
-    transform:
-      translate(-50%, -30%)
-      scale(0.7);
-  }
-
-  15% {
-    opacity: 1;
-  }
-
-  100% {
-    opacity: 0;
-    transform:
-      translate(-50%, -160%)
-      scale(1.15);
-  }
-}
-
-/* =========================
-   ENERGY BAR
-   ========================= */
-
-.energybar {
-  width: 100%;
-  height: 13px;
-
-  padding: 2px;
-
-  margin: 4px 0 24px;
-
-  border-radius: 999px;
-
-  background:
-    rgba(255,255,255,0.055);
-
-  border: 1px solid rgba(255,255,255,0.08);
-
-  box-shadow:
-    inset 0 2px 5px rgba(0,0,0,0.45),
-    0 0 20px rgba(25,232,255,0.04);
-
-  overflow: hidden;
-}
-
-#energyFill {
-  width: 100%;
-  height: 100%;
-
-  border-radius: inherit;
 
   background:
     linear-gradient(
       90deg,
-      #168cff,
-      #19e8ff,
-      #8d75ff
+      #ffffff,
+      #54dcff
     );
 
-  box-shadow:
-    0 0 12px rgba(25,232,255,0.65),
-    0 0 28px rgba(25,232,255,0.25);
+  -webkit-background-clip: text;
+  background-clip: text;
 
-  transition:
-    width 0.15s ease;
+  color: transparent;
 }
+
+.unit {
+  margin-top: 5px;
+  color: #65d8f7;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.level {
+  margin-top: 15px;
+  color: #7fa8b9;
+  font-size: 11px;
+}
+
 
 /* =========================
-   MENU GRID
-   ========================= */
+   TAP
+========================= */
 
-.grid {
-  display: grid;
-
-  grid-template-columns:
-    repeat(2, minmax(0, 1fr));
-
-  gap: 12px;
-
-  margin-bottom: 20px;
-}
-
-.menu-card {
+.tap-wrap {
   position: relative;
 
-  min-height: 88px;
+  height: 285px;
 
-  padding: 16px;
-
-  text-align: left;
-
-  border-radius: 20px;
-
-  border: 1px solid var(--border);
-
-  background:
-    linear-gradient(
-      145deg,
-      rgba(17,34,67,0.76),
-      rgba(7,16,35,0.74)
-    );
-
-  color: var(--text);
-
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-
-  box-shadow:
-    0 12px 35px rgba(0,0,0,0.25),
-    inset 0 1px rgba(255,255,255,0.06);
-
-  overflow: hidden;
-
-  transition:
-    transform 0.14s ease,
-    border-color 0.14s ease,
-    background 0.14s ease;
+  display: grid;
+  place-items: center;
 }
 
-.menu-card::before {
-  content: "";
-
-  position: absolute;
-
-  width: 80px;
-  height: 80px;
-
-  right: -25px;
-  bottom: -35px;
+.tap {
+  width: 205px;
+  height: 205px;
 
   border-radius: 50%;
+  border: 4px solid #2ed8ff;
 
   background:
     radial-gradient(
-      circle,
-      rgba(25,232,255,0.12),
-      transparent 70%
+      circle at 35% 30%,
+      #27789d 0%,
+      #164e6d 28%,
+      #09283e 62%,
+      #04111e 100%
     );
 
-  pointer-events: none;
+  box-shadow:
+    0 0 35px rgba(20, 200, 255, .32),
+    0 0 80px rgba(20, 200, 255, .10),
+    inset 0 0 35px rgba(20, 200, 255, .25);
+
+  font-size: 55px;
+  font-weight: 900;
+  letter-spacing: 3px;
+
+  touch-action: manipulation;
+
+  transition:
+    transform .07s ease,
+    box-shadow .07s ease;
 }
 
-.menu-card b {
-  display: block;
+.tap:active {
+  transform: scale(.93);
 
-  font-size: 14px;
-
-  color: #f2fbff;
-
-  margin-bottom: 7px;
+  box-shadow:
+    0 0 65px rgba(20, 200, 255, .65),
+    inset 0 0 45px rgba(20, 200, 255, .35);
 }
 
-.menu-card span {
-  display: block;
 
-  font-size: 10px;
+/* =========================
+   ENERGY
+========================= */
 
-  line-height: 1.4;
+.energybar {
+  height: 8px;
 
-  color: #7086a8;
+  margin:
+    0 8px 12px;
+
+  overflow: hidden;
+
+  background: #102536;
+
+  border-radius: 99px;
 }
 
-.menu-card:active {
-  transform: scale(0.96);
+.energybar div {
+  height: 100%;
+  width: 100%;
 
-  border-color:
-    rgba(25,232,255,0.38);
+  background:
+    linear-gradient(
+      90deg,
+      #20bdf0,
+      #66eaff
+    );
+
+  border-radius: 99px;
+
+  transition: width .2s ease;
+}
+
+.boost-status {
+  display: flex;
+  justify-content: center;
+  gap: 7px;
+
+  margin-bottom: 15px;
+
+  color: #769aaa;
+  font-size: 12px;
+}
+
+.boost-status strong {
+  color: #59dcff;
+}
+
+
+/* =========================
+   PAGE TITLE
+========================= */
+
+.page-title {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+
+  margin:
+    8px 2px 20px;
+}
+
+.page-title > span {
+  width: 46px;
+  height: 46px;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 15px;
 
   background:
     linear-gradient(
       145deg,
-      rgba(21,49,88,0.82),
-      rgba(9,20,43,0.82)
+      #164e6c,
+      #091d2d
     );
+
+  border: 1px solid #23627e;
+
+  font-size: 23px;
 }
 
-/* =========================
-   FOOTER
-   ========================= */
+.page-title h2 {
+  margin: 0;
 
-footer {
+  font-size: 22px;
+}
+
+.page-title p {
+  margin: 3px 0 0;
+
+  color: #7295a5;
+  font-size: 11px;
+}
+
+
+/* =========================
+   BOOST
+========================= */
+
+.boost-card {
   display: flex;
-
   align-items: center;
-  justify-content: space-between;
+  gap: 13px;
 
-  gap: 10px;
+  margin-bottom: 12px;
+  padding: 15px;
 
-  padding: 2px 4px 10px;
+  border: 1px solid #1a465d;
+  border-radius: 18px;
 
-  color: #4f6383;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(14, 39, 57, .96),
+      rgba(7, 20, 32, .98)
+    );
 
-  font-size: 9px;
-
-  letter-spacing: 0.5px;
+  box-shadow:
+    0 10px 25px rgba(0,0,0,.25);
 }
 
-#reset {
-  border: 0;
+.boost-icon {
+  width: 48px;
+  height: 48px;
 
-  background: transparent;
+  flex-shrink: 0;
 
-  color: #536985;
+  display: grid;
+  place-items: center;
 
-  font-size: 9px;
+  border-radius: 14px;
 
-  padding: 5px;
+  background: #0d3045;
 
-  opacity: 0.7;
+  border: 1px solid #23657e;
+
+  font-size: 22px;
 }
 
-#reset:active {
-  opacity: 1;
-}
-
-/* =========================
-   HIGH DPI / 4K DISPLAY
-   ========================= */
-
-@media
-  (-webkit-min-device-pixel-ratio: 2),
-  (min-resolution: 192dpi) {
-
-  .logo,
-  .tap,
-  .card.balance,
-  .menu-card,
-  .wallet {
-    transform: translateZ(0);
-  }
-}
-
-/* =========================
-   SMALL PHONES
-   ========================= */
-
-@media (max-width: 360px) {
-
-  .app {
-    padding-left: 13px;
-    padding-right: 13px;
-  }
-
-  .logo {
-    width: 43px;
-    height: 43px;
-  }
-
-  .brand b {
-    font-size: 16px;
-  }
-
-  .wallet {
-    padding: 9px 11px;
-    font-size: 10px;
-  }
-
-  .card.balance {
-    padding: 21px 14px 19px;
-  }
-
-  .tap-wrap {
-    width: 72vw;
-    height: 72vw;
-  }
-
-  .menu-card {
-    min-height: 80px;
-    padding: 13px;
-  }
-}
-
-/* =========================
-   LARGE PHONES / TABLETS
-   ========================= */
-
-@media (min-width: 600px) {
-
-  .app {
-    padding-top: 30px;
-  }
-
-  .tap-wrap {
-    width: 330px;
-    height: 330px;
-  }
-}
-
-/* =========================
-   REDUCE MOTION
-   ========================= */
-
-@media (prefers-reduced-motion: reduce) {
-
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-}
+.boost-info {
+ 
