@@ -1,22 +1,14 @@
-// ==========================================
-// SINAPS MINI APP
-// ==========================================
-
-const API =
-  "https://sinaps-backend.onrender.com";
+const API = "https://sinaps-backend.onrender.com";
 
 const tg = window.Telegram?.WebApp;
 
 if (tg) {
   tg.ready();
-  tg.expand();
-  tg.setHeaderColor("#050816");
-  tg.setBackgroundColor("#050816");
 }
 
-// ==========================================
+// ===============================
 // TELEGRAM USER
-// ==========================================
+// ===============================
 
 const telegramUser =
   tg?.initDataUnsafe?.user || null;
@@ -29,12 +21,15 @@ const telegramUsername =
   telegramUser?.first_name ||
   "SINAPS User";
 
-// ==========================================
-// STATE
-// ==========================================
+// ===============================
+// DOM
+// ===============================
 
-const STORAGE_KEY =
-  "sinaps_v3_state";
+const $ = (id) => document.getElementById(id);
+
+// ===============================
+// STATE
+// ===============================
 
 let state = {
   points: 0,
@@ -46,316 +41,206 @@ let state = {
   walletAddress: null
 };
 
+// ===============================
+// LOAD LOCAL STATE
+// ===============================
+
 try {
   const saved =
-    JSON.parse(
-      localStorage.getItem(STORAGE_KEY)
-    );
+    localStorage.getItem("sinaps_v1_state");
 
   if (saved) {
     state = {
       ...state,
-      ...saved
+      ...JSON.parse(saved)
     };
   }
-} catch (e) {
-  console.log(
+} catch (error) {
+  console.error(
     "Local state error:",
-    e
+    error
   );
 }
 
-// ==========================================
-// ELEMENTS
-// ==========================================
-
-const pointsEl =
-  document.getElementById("points");
-
-const energyCurrentEl =
-  document.getElementById("energyCurrent");
-
-const energyMaxEl =
-  document.getElementById("energyMax");
-
-const energyTextEl =
-  document.getElementById("energyText");
-
-const energyFillEl =
-  document.getElementById("energyFill");
-
-const levelEl =
-  document.getElementById("level");
-
-const tapPowerEl =
-  document.getElementById("tapPower");
-
-const usernameEl =
-  document.getElementById("username");
-
-const userAvatarEl =
-  document.getElementById("userAvatar");
-
-const walletTopEl =
-  document.getElementById("walletTop");
-
-const walletTitleEl =
-  document.getElementById("walletTitle");
-
-const walletAddressEl =
-  document.getElementById("walletAddress");
-
-const disconnectWalletEl =
-  document.getElementById(
-    "disconnectWallet"
-  );
-
-const floatersEl =
-  document.getElementById("floaters");
-
-const sLogoEl =
-  document.getElementById("sLogo");
-
-const tapAreaEl =
-  document.getElementById("tapArea");
-
-const statusEl =
-  document.getElementById("status");
-
-// ==========================================
-// SAVE LOCAL STATE
-// ==========================================
+// ===============================
+// SAVE STATE
+// ===============================
 
 function saveState() {
-  localStorage.setItem(
-    STORAGE_KEY,
-    JSON.stringify(state)
+  try {
+    localStorage.setItem(
+      "sinaps_v1_state",
+      JSON.stringify(state)
+    );
+  } catch (error) {
+    console.error(
+      "Save state error:",
+      error
+    );
+  }
+}
+
+// ===============================
+// FORMAT NUMBERS
+// ===============================
+
+function formatNumber(number) {
+  return Number(number || 0).toLocaleString(
+    "en-US"
   );
 }
 
-// ==========================================
-// USER UI
-// ==========================================
+// ===============================
+// UPDATE UI
+// ===============================
 
-function renderUser() {
-  if (usernameEl) {
-    usernameEl.textContent =
-      telegramUsername;
+function renderBalance() {
+  const balance = $("balance");
+
+  if (balance) {
+    balance.textContent =
+      formatNumber(state.points);
   }
 
-  if (userAvatarEl) {
-    userAvatarEl.textContent =
-      telegramUsername
-        .charAt(0)
-        .toUpperCase();
+  const energy = $("energy");
+
+  if (energy) {
+    energy.textContent =
+      `${Math.floor(state.energy)} / ${state.maxEnergy}`;
+  }
+
+  const energyFill = $("energyFill");
+
+  if (energyFill) {
+    const percent =
+      (state.energy / state.maxEnergy) * 100;
+
+    energyFill.style.width =
+      `${Math.max(0, Math.min(100, percent))}%`;
+  }
+
+  const power = $("tapPower");
+
+  if (power) {
+    power.textContent =
+      `+${state.tapPower}`;
   }
 }
 
-// ==========================================
-// FORMAT WALLET
-// ==========================================
+// ===============================
+// WALLET UI
+// ===============================
 
-function shortWallet(address) {
-  if (!address) {
-    return "Connect";
-  }
+function shortAddress(address) {
+  if (!address) return "";
 
-  if (address.length <= 14) {
+  if (address.length <= 16) {
     return address;
   }
 
   return (
-    address.slice(0, 6) +
+    address.substring(0, 7) +
     "..." +
-    address.slice(-6)
+    address.substring(
+      address.length - 6
+    )
   );
 }
 
-// ==========================================
-// WALLET UI
-// ==========================================
-
 function renderWallet() {
-  const address =
-    state.walletAddress;
+  const walletText =
+    $("walletAddress");
 
-  if (walletTopEl) {
-    walletTopEl.textContent =
-      address
-        ? shortWallet(address)
-        : "Connect";
-  }
+  const walletTop =
+    $("walletTop");
 
-  if (walletTitleEl) {
-    walletTitleEl.textContent =
-      address
-        ? "Wallet Connected"
-        : "Wallet not connected";
-  }
+  if (state.walletAddress) {
 
-  if (walletAddressEl) {
-    walletAddressEl.textContent =
-      address
-        ? address
-        : "Connect your TON wallet to continue.";
-  }
+    if (walletText) {
+      walletText.textContent =
+        shortAddress(
+          state.walletAddress
+        );
+    }
 
-  if (disconnectWalletEl) {
-    disconnectWalletEl.style.display =
-      address
-        ? "block"
-        : "none";
+    if (walletTop) {
+      walletTop.textContent =
+        shortAddress(
+          state.walletAddress
+        );
+    }
+
+  } else {
+
+    if (walletText) {
+      walletText.textContent =
+        "Not Connected";
+    }
+
+    if (walletTop) {
+      walletTop.textContent =
+        "Connect Wallet";
+    }
   }
 }
 
-// ==========================================
-// RENDER
-// ==========================================
-
-function render() {
-  if (pointsEl) {
-    pointsEl.textContent =
-      Math.floor(state.points)
-        .toLocaleString();
-  }
-
-  if (energyCurrentEl) {
-    energyCurrentEl.textContent =
-      Math.floor(state.energy);
-  }
-
-  if (energyMaxEl) {
-    energyMaxEl.textContent =
-      state.maxEnergy;
-  }
-
-  if (energyTextEl) {
-    energyTextEl.textContent =
-      Math.floor(state.energy);
-  }
-
-  if (levelEl) {
-    const level =
-      Math.floor(
-        state.points / 1000
-      ) + 1;
-
-    levelEl.textContent =
-      level;
-  }
-
-  if (tapPowerEl) {
-    tapPowerEl.textContent =
-      "x" + state.tapPower;
-  }
-
-  if (energyFillEl) {
-    const percent =
-      Math.max(
-        0,
-        Math.min(
-          100,
-          (state.energy /
-            state.maxEnergy) *
-            100
-        )
-      );
-
-    energyFillEl.style.width =
-      percent + "%";
-  }
-
-  renderWallet();
-}
-
-// ==========================================
-// ENERGY REGENERATION
-// ==========================================
-
-function regenerateEnergy() {
-  const now = Date.now();
-
-  if (
-    !state.lastEnergyTime
-  ) {
-    state.lastEnergyTime =
-      now;
-
-    return;
-  }
-
-  const elapsed =
-    now -
-    state.lastEnergyTime;
-
-  // 1 energy every 3 seconds
-  const recovered =
-    Math.floor(
-      elapsed / 3000
-    );
-
-  if (recovered <= 0) {
-    return;
-  }
-
-  state.energy =
-    Math.min(
-      state.maxEnergy,
-      state.energy +
-        recovered
-    );
-
-  state.lastEnergyTime =
-    now;
-
-  saveState();
-  render();
-}
-
-setInterval(
-  regenerateEnergy,
-  1000
-);
-
-// ==========================================
+// ===============================
 // LOAD USER FROM BACKEND
-// ==========================================
+// ===============================
 
 async function loadUser() {
+
   if (!telegramId) {
-    render();
+    console.warn(
+      "Telegram user ID not available"
+    );
+
+    renderBalance();
+    renderWallet();
+
     return;
   }
 
   try {
+
     const response =
       await fetch(
         `${API}/api/user`,
         {
           method: "POST",
+
           headers: {
             "Content-Type":
               "application/json"
           },
+
           body: JSON.stringify({
             telegram_id:
               telegramId,
+
             username:
               telegramUsername
           })
         }
       );
 
-    if (!response.ok) {
-      throw new Error(
-        "User API failed"
-      );
-    }
-
     const user =
       await response.json();
 
-    // Backend is source of truth
+    console.log(
+      "USER FROM BACKEND:",
+      user
+    );
+
+    if (!response.ok) {
+      console.error(
+        "User load failed:",
+        user
+      );
+
+      return;
+    }
+
     state.points =
       Number(user.balance) || 0;
 
@@ -366,118 +251,157 @@ async function loadUser() {
       Number(user.max_energy) ||
       1000;
 
-    state.walletAddress =
-      user.wallet_address ||
-      state.walletAddress ||
-      null;
-
     state.lastEnergyTime =
       Date.now();
 
-    saveState();
-    render();
-
-  } catch (error) {
-    console.error(
-      "LOAD USER:",
-      error
-    );
-
-    if (statusEl) {
-      statusEl.textContent =
-        "SINAPS";
+    if (user.wallet_address) {
+      state.walletAddress =
+        user.wallet_address;
     }
 
-    render();
+    saveState();
+
+    renderBalance();
+    renderWallet();
+
+  } catch (error) {
+
+    console.error(
+      "LOAD USER ERROR:",
+      error
+    );
   }
 }
 
-// ==========================================
+// ===============================
 // SAVE WALLET TO BACKEND
-// ==========================================
+// ===============================
 
 async function saveWalletToBackend(
   walletAddress
 ) {
-  if (
-    !telegramId ||
-    !walletAddress
-  ) {
+
+  if (!telegramId) {
+
+    console.error(
+      "Cannot save wallet: Telegram ID missing"
+    );
+
+    return false;
+  }
+
+  if (!walletAddress) {
+
+    console.error(
+      "Cannot save wallet: address missing"
+    );
+
     return false;
   }
 
   try {
+
+    console.log(
+      "Saving wallet:",
+      walletAddress
+    );
+
+    console.log(
+      "Telegram ID:",
+      telegramId
+    );
+
     const response =
       await fetch(
         `${API}/api/wallet/connect`,
         {
           method: "POST",
+
           headers: {
             "Content-Type":
               "application/json"
           },
+
           body: JSON.stringify({
             telegram_id:
               telegramId,
+
             wallet_address:
               walletAddress
           })
         }
       );
 
-    const data =
+    const result =
       await response.json();
 
+    console.log(
+      "WALLET SAVE RESPONSE:",
+      result
+    );
+
     if (!response.ok) {
-      throw new Error(
-        data.error ||
-          "Wallet save failed"
+
+      console.error(
+        "Wallet save failed:",
+        result
       );
+
+      alert(
+        result.error ||
+        "Wallet could not be saved"
+      );
+
+      return false;
     }
 
     state.walletAddress =
-      data.wallet_address;
+      result.wallet_address ||
+      walletAddress;
 
     saveState();
     renderWallet();
 
+    console.log(
+      "Wallet successfully saved to Supabase"
+    );
+
     return true;
 
   } catch (error) {
+
     console.error(
-      "SAVE WALLET:",
+      "SAVE WALLET ERROR:",
       error
     );
-
-    if (tg) {
-      tg.showAlert(
-        "Wallet connection could not be saved."
-      );
-    }
 
     return false;
   }
 }
 
-// ==========================================
+// ===============================
 // LOAD SAVED WALLET
-// ==========================================
+// ===============================
 
 async function loadSavedWallet() {
+
   if (!telegramId) {
     return;
   }
 
   try {
+
     const response =
       await fetch(
         `${API}/api/wallet/get`,
         {
           method: "POST",
+
           headers: {
             "Content-Type":
               "application/json"
           },
+
           body: JSON.stringify({
             telegram_id:
               telegramId
@@ -485,414 +409,152 @@ async function loadSavedWallet() {
         }
       );
 
-    if (!response.ok) {
-      return;
-    }
-
-    const data =
+    const result =
       await response.json();
 
-    if (data.wallet_address) {
+    console.log(
+      "SAVED WALLET:",
+      result
+    );
+
+    if (
+      response.ok &&
+      result.wallet_address
+    ) {
+
       state.walletAddress =
-        data.wallet_address;
+        result.wallet_address;
 
       saveState();
       renderWallet();
     }
 
   } catch (error) {
+
     console.error(
-      "LOAD WALLET:",
+      "LOAD WALLET ERROR:",
       error
     );
   }
 }
 
-// ==========================================
-// TAP
-// ==========================================
+// ===============================
+// DISCONNECT WALLET
+// ===============================
 
-async function sendTapToBackend(
-  taps,
-  power
-) {
+async function disconnectWalletBackend() {
+
   if (!telegramId) {
     return;
   }
 
   try {
+
     const response =
       await fetch(
-        `${API}/api/tap`,
+        `${API}/api/wallet/disconnect`,
         {
           method: "POST",
+
           headers: {
             "Content-Type":
               "application/json"
           },
+
           body: JSON.stringify({
             telegram_id:
-              telegramId,
-            taps: taps,
-            power: power
+              telegramId
           })
         }
       );
 
-    if (!response.ok) {
-      return;
-    }
-
-    const user =
+    const result =
       await response.json();
 
-    // Sync with server
-    state.points =
-      Number(user.balance);
-
-    state.energy =
-      Number(user.energy);
-
-    state.maxEnergy =
-      Number(user.max_energy) ||
-      state.maxEnergy;
-
-    state.lastEnergyTime =
-      Date.now();
-
-    saveState();
-    render();
+    console.log(
+      "DISCONNECT RESPONSE:",
+      result
+    );
 
   } catch (error) {
+
     console.error(
-      "TAP SYNC:",
+      "DISCONNECT ERROR:",
       error
     );
   }
 }
 
-function createFloater(
-  x,
-  y,
-  amount
-) {
-  if (!floatersEl) {
-    return;
-  }
-
-  const floater =
-    document.createElement("div");
-
-  floater.className =
-    "floater";
-
-  floater.textContent =
-    "+" + amount;
-
-  floater.style.left =
-    x + "px";
-
-  floater.style.top =
-    y + "px";
-
-  floatersEl.appendChild(
-    floater
-  );
-
-  setTimeout(() => {
-    floater.remove();
-  }, 900);
-}
-
-function rotateLogo(
-  x,
-  y
-) {
-  if (!sLogoEl || !tapAreaEl) {
-    return;
-  }
-
-  const rect =
-    tapAreaEl.getBoundingClientRect();
-
-  const centerX =
-    rect.width / 2;
-
-  const centerY =
-    rect.height / 2;
-
-  const dx =
-    x - centerX;
-
-  const dy =
-    y - centerY;
-
-  const angle =
-    Math.atan2(dy, dx) *
-    (180 / Math.PI);
-
-  const rotateY =
-    Math.max(
-      -25,
-      Math.min(
-        25,
-        dx / 8
-      )
-    );
-
-  const rotateX =
-    Math.max(
-      -20,
-      Math.min(
-        20,
-        -dy / 8
-      )
-    );
-
-  sLogoEl.style.transform =
-    `perspective(700px)
-     rotateY(${rotateY}deg)
-     rotateX(${rotateX}deg)
-     rotateZ(${angle / 30}deg)
-     scale(1.04)`;
-
-  clearTimeout(
-    window.sinapsLogoTimer
-  );
-
-  window.sinapsLogoTimer =
-    setTimeout(() => {
-      sLogoEl.style.transform =
-        "";
-    }, 350);
-}
-
-function tapAt(
-  clientX,
-  clientY
-) {
-  regenerateEnergy();
-
-  if (state.energy <= 0) {
-    if (tg) {
-      tg.HapticFeedback?.impactOccurred(
-        "light"
-      );
-    }
-
-    return;
-  }
-
-  const rect =
-    tapAreaEl.getBoundingClientRect();
-
-  const x =
-    clientX - rect.left;
-
-  const y =
-    clientY - rect.top;
-
-  const power =
-    state.doubleBoost
-      ? 2
-      : state.tapPower;
-
-  state.energy -= 1;
-
-  state.points += power;
-
-  state.lastEnergyTime =
-    Date.now();
-
-  createFloater(
-    x,
-    y,
-    power
-  );
-
-  rotateLogo(
-    x,
-    y
-  );
-
-  tg?.HapticFeedback?.impactOccurred(
-    "light"
-  );
-
-  saveState();
-  render();
-
-  sendTapToBackend(
-    1,
-    power
-  );
-}
-
-// ==========================================
-// TAP EVENTS
-// ==========================================
-
-if (tapAreaEl) {
-  tapAreaEl.addEventListener(
-    "pointerdown",
-    (event) => {
-      event.preventDefault();
-
-      tapAt(
-        event.clientX,
-        event.clientY
-      );
-    },
-    {
-      passive: false
-    }
-  );
-}
-
-// ==========================================
-// DOUBLE BOOST
-// ==========================================
-
-const doubleBoostBtn =
-  document.getElementById(
-    "doubleBoost"
-  );
-
-if (doubleBoostBtn) {
-  doubleBoostBtn.addEventListener(
-    "click",
-    () => {
-      state.doubleBoost =
-        !state.doubleBoost;
-
-      state.tapPower =
-        state.doubleBoost
-          ? 2
-          : 1;
-
-      doubleBoostBtn.textContent =
-        state.doubleBoost
-          ? "ACTIVE"
-          : "ACTIVATE";
-
-      saveState();
-      render();
-    }
-  );
-}
-
-// ==========================================
-// PAGE NAVIGATION
-// ==========================================
-
-const navItems =
-  document.querySelectorAll(
-    ".nav-item"
-  );
-
-const pages =
-  document.querySelectorAll(
-    ".page"
-  );
-
-function openPage(
-  pageId
-) {
-  pages.forEach(
-    (page) => {
-      page.classList.toggle(
-        "active",
-        page.id === pageId
-      );
-    }
-  );
-
-  navItems.forEach(
-    (item) => {
-      item.classList.toggle(
-        "active",
-        item.dataset.page ===
-          pageId
-      );
-    }
-  );
-
-  window.scrollTo(
-    0,
-    0
-  );
-}
-
-navItems.forEach(
-  (item) => {
-    item.addEventListener(
-      "click",
-      () => {
-        openPage(
-          item.dataset.page
-        );
-      }
-    );
-  }
-);
-
-// ==========================================
-// TOP WALLET BUTTON
-// ==========================================
-
-if (walletTopEl) {
-  walletTopEl.addEventListener(
-    "click",
-    () => {
-      openPage(
-        "walletPage"
-      );
-    }
-  );
-}
-
-// ==========================================
+// ===============================
 // TON CONNECT
-// ==========================================
+// ===============================
 
 let tonConnectUI = null;
 
 function initTonConnect() {
+
   if (
-    typeof TON_CONNECT_UI ===
-    "undefined"
+    !window.TON_CONNECT_UI
   ) {
+
     console.error(
-      "TON Connect UI not loaded"
+      "TON Connect UI library not loaded"
     );
 
     return;
   }
 
   try {
-    tonConnectUI =
-      new TON_CONNECT_UI.TonConnectUI(
-        {
-          manifestUrl:
-            "https://sadeghi1315.github.io/sinaps-tap-to-earn/tonconnect-manifest.json",
 
-          buttonRootId:
-            "ton-connect-button"
-        }
-      );
+    tonConnectUI =
+      new TON_CONNECT_UI.TonConnectUI({
+
+        manifestUrl:
+          "https://sadeghi1315.github.io/sinaps-tap-to-earn/tonconnect-manifest.json",
+
+        buttonRootId:
+          "ton-connect-button"
+      });
+
+    console.log(
+      "TON Connect initialized"
+    );
+
+    // ===============================
+    // WALLET STATUS
+    // ===============================
 
     tonConnectUI.onStatusChange(
       async (wallet) => {
-        if (
-          wallet &&
-          wallet.account
-        ) {
+
+        try {
+
+          if (!wallet) {
+
+            console.log(
+              "Wallet disconnected"
+            );
+
+            state.walletAddress =
+              null;
+
+            saveState();
+            renderWallet();
+
+            return;
+          }
+
           const address =
             wallet.account.address;
 
           console.log(
-            "Wallet connected:",
+            "TON WALLET CONNECTED:",
             address
+          );
+
+          console.log(
+            "TELEGRAM ID:",
+            telegramId
           );
 
           state.walletAddress =
@@ -901,59 +563,55 @@ function initTonConnect() {
           saveState();
           renderWallet();
 
+          // SAVE TO SUPABASE
           await saveWalletToBackend(
             address
           );
 
-        } else {
-          console.log(
-            "Wallet disconnected"
-          );
+        } catch (error) {
 
-          renderWallet();
+          console.error(
+            "WALLET STATUS ERROR:",
+            error
+          );
         }
       }
     );
 
   } catch (error) {
+
     console.error(
-      "TON CONNECT INIT:",
+      "TON CONNECT INIT ERROR:",
       error
     );
   }
 }
 
-// ==========================================
-// DISCONNECT WALLET
-// ==========================================
+// ===============================
+// DISCONNECT BUTTON
+// ===============================
 
-if (disconnectWalletEl) {
-  disconnectWalletEl.addEventListener(
+function setupDisconnectButton() {
+
+  const button =
+    $("disconnectWallet");
+
+  if (!button) {
+    return;
+  }
+
+  button.addEventListener(
     "click",
     async () => {
-      if (!tonConnectUI) {
-        return;
-      }
 
       try {
-        await tonConnectUI.disconnect();
 
-        if (telegramId) {
-          await fetch(
-            `${API}/api/wallet/disconnect`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type":
-                  "application/json"
-              },
-              body: JSON.stringify({
-                telegram_id:
-                  telegramId
-              })
-            }
-          );
+        if (tonConnectUI) {
+
+          await tonConnectUI.disconnect();
         }
+
+        await disconnectWalletBackend();
 
         state.walletAddress =
           null;
@@ -961,15 +619,10 @@ if (disconnectWalletEl) {
         saveState();
         renderWallet();
 
-        if (tg) {
-          tg.showAlert(
-            "Wallet disconnected."
-          );
-        }
-
       } catch (error) {
+
         console.error(
-          "DISCONNECT:",
+          "DISCONNECT BUTTON ERROR:",
           error
         );
       }
@@ -977,56 +630,336 @@ if (disconnectWalletEl) {
   );
 }
 
-// ==========================================
-// WITHDRAW
-// ==========================================
+// ===============================
+// TAP
+// ===============================
 
-const withdrawBtn =
-  document.getElementById(
-    "withdrawBtn"
-  );
+async function sendTapToBackend(
+  taps
+) {
 
-if (withdrawBtn) {
-  withdrawBtn.addEventListener(
+  if (!telegramId) {
+    return;
+  }
+
+  try {
+
+    const response =
+      await fetch(
+        `${API}/api/tap`,
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
+
+          body: JSON.stringify({
+            telegram_id:
+              telegramId,
+
+            taps: taps,
+
+            power:
+              state.tapPower
+          })
+        }
+      );
+
+    const result =
+      await response.json();
+
+    console.log(
+      "TAP RESPONSE:",
+      result
+    );
+
+    if (!response.ok) {
+      return;
+    }
+
+    state.points =
+      Number(result.balance) || 0;
+
+    state.energy =
+      Number(result.energy) || 0;
+
+    state.maxEnergy =
+      Number(result.max_energy) ||
+      state.maxEnergy;
+
+    state.lastEnergyTime =
+      Date.now();
+
+    saveState();
+
+    renderBalance();
+
+  } catch (error) {
+
+    console.error(
+      "TAP ERROR:",
+      error
+    );
+  }
+}
+
+// ===============================
+// TAP BUTTON
+// ===============================
+
+function setupTap() {
+
+  const tapArea =
+    $("tapArea") ||
+    $("tapButton") ||
+    $("coin");
+
+  if (!tapArea) {
+    console.warn(
+      "Tap element not found"
+    );
+
+    return;
+  }
+
+  tapArea.addEventListener(
     "click",
-    () => {
-      const amount =
-        document.getElementById(
-          "withdrawAmount"
-        )?.value;
+    async (event) => {
 
-      if (!state.walletAddress) {
-        tg?.showAlert(
-          "Please connect your wallet first."
-        );
-
+      if (state.energy <= 0) {
         return;
       }
 
-      if (
-        !amount ||
-        Number(amount) <= 0
-      ) {
-        tg?.showAlert(
-          "Enter a valid SNP amount."
+      const power =
+        state.doubleBoost
+          ? state.tapPower * 2
+          : state.tapPower;
+
+      state.energy =
+        Math.max(
+          0,
+          state.energy - 1
         );
 
-        return;
-      }
+      state.points += power;
 
-      tg?.showAlert(
-        "SNP withdrawal will be enabled after the secure Jetton withdrawal system is connected."
+      saveState();
+      renderBalance();
+
+      // Visual +number
+      const plus =
+        document.createElement(
+          "div"
+        );
+
+      plus.className =
+        "tap-plus";
+
+      plus.textContent =
+        `+${power}`;
+
+      plus.style.position =
+        "fixed";
+
+      plus.style.left =
+        `${event.clientX}px`;
+
+      plus.style.top =
+        `${event.clientY}px`;
+
+      plus.style.pointerEvents =
+        "none";
+
+      plus.style.zIndex =
+        "9999";
+
+      document.body.appendChild(
+        plus
+      );
+
+      setTimeout(() => {
+
+        plus.remove();
+
+      }, 700);
+
+      // Backend
+      sendTapToBackend(1);
+    }
+  );
+}
+
+// ===============================
+// ENERGY REGENERATION
+// ===============================
+
+function startEnergyRegen() {
+
+  setInterval(() => {
+
+    if (
+      state.energy <
+      state.maxEnergy
+    ) {
+
+      state.energy =
+        Math.min(
+          state.maxEnergy,
+          state.energy + 1
+        );
+
+      state.lastEnergyTime =
+        Date.now();
+
+      saveState();
+      renderBalance();
+    }
+
+  }, 3000);
+}
+
+// ===============================
+// USERNAME
+// ===============================
+
+function renderUsername() {
+
+  const username =
+    $("username");
+
+  if (username) {
+
+    username.textContent =
+      telegramUsername;
+  }
+}
+
+// ===============================
+// NAVIGATION
+// ===============================
+
+function setupNavigation() {
+
+  const buttons =
+    document.querySelectorAll(
+      "[data-page]"
+    );
+
+  buttons.forEach(
+    (button) => {
+
+      button.addEventListener(
+        "click",
+        () => {
+
+          const pageName =
+            button.dataset.page;
+
+          document
+            .querySelectorAll(
+              ".page"
+            )
+            .forEach(
+              (page) => {
+
+                page.classList.remove(
+                  "active"
+                );
+              }
+            );
+
+          const page =
+            $(pageName);
+
+          if (page) {
+
+            page.classList.add(
+              "active"
+            );
+          }
+
+          document
+            .querySelectorAll(
+              "[data-page]"
+            )
+            .forEach(
+              (item) => {
+
+                item.classList.remove(
+                  "active"
+                );
+              }
+            );
+
+          button.classList.add(
+            "active"
+          );
+        }
       );
     }
   );
 }
 
-// ==========================================
+// ===============================
 // START
-// ==========================================
+// ===============================
 
-renderUser();
-render();
-initTonConnect();
-loadUser();
-loadSavedWallet();
+async function startApp() {
+
+  console.log(
+    "SINAPS APP STARTING..."
+  );
+
+  console.log(
+    "Telegram ID:",
+    telegramId
+  );
+
+  console.log(
+    "Username:",
+    telegramUsername
+  );
+
+  renderUsername();
+  renderBalance();
+  renderWallet();
+
+  await loadUser();
+
+  await loadSavedWallet();
+
+  initTonConnect();
+
+  setupDisconnectButton();
+
+  setupTap();
+
+  setupNavigation();
+
+  startEnergyRegen();
+
+  console.log(
+    "SINAPS APP READY 🚀"
+  );
+}
+
+// ===============================
+// RUN
+// ===============================
+
+if (
+  document.readyState ===
+  "loading"
+) {
+
+  document.addEventListener(
+    "DOMContentLoaded",
+    startApp
+  );
+
+} else {
+
+  startApp();
+}
