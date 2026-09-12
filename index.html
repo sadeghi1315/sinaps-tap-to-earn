@@ -1,48 +1,465 @@
 <!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+
+  <meta
+    name="viewport"
+    content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"
+  >
+
   <title>SINAPS — Tap to Earn</title>
+
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
-  <main class="app">
-    <header>
-      <div class="brand">
-        <div class="logo">S</div>
-        <div><b>SINAPS</b><small>Tap to Earn</small></div>
+
+<main class="app">
+
+  <!-- HEADER -->
+
+  <header>
+
+    <div class="brand">
+
+      <div class="logo">
+        S
       </div>
-      <button id="walletBtn" class="wallet">Connect Wallet</button>
-    </header>
+
+      <div>
+        <b>SINAPS</b>
+        <small>Tap to Earn</small>
+      </div>
+
+    </div>
+
+    <button
+      id="walletBtn"
+      class="wallet"
+    >
+      Connect Wallet
+    </button>
+
+  </header>
+
+
+  <!-- HOME -->
+
+  <section
+    id="homePage"
+    class="page active"
+  >
+
+    <!-- BALANCE -->
 
     <section class="card balance">
-      <div class="muted">YOUR BALANCE</div>
-      <div id="points" class="points">0</div>
-      <div class="unit">SNP POINTS</div>
-      <div class="level">LEVEL <span id="level">1</span> · <span id="energyText">1000</span> ENERGY</div>
+
+      <div class="muted">
+        YOUR BALANCE
+      </div>
+
+      <div
+        id="points"
+        class="points"
+      >
+        0
+      </div>
+
+      <div class="unit">
+        SNP
+      </div>
+
+      <div class="level">
+        LEVEL
+        <span id="level">1</span>
+        ·
+        <span id="energyText">1000</span>
+        ENERGY
+      </div>
+
     </section>
+
+
+    <!-- MAIN LOGO -->
 
     <section class="tap-wrap">
-      <button id="tap" class="tap">SNP</button>
+
+      <button
+        id="tap"
+        class="tap"
+      >
+        S
+      </button>
+
       <div id="floaters"></div>
+
     </section>
 
-    <div class="energybar"><div id="energyFill"></div></div>
 
-    <section class="grid">
-      <button class="menu-card" id="daily"><b>🎁 Daily</b><span>Claim daily bonus</span></button>
-      <button class="menu-card" id="invite"><b>👥 Friends</b><span>Invite & earn</span></button>
-      <button class="menu-card" id="tasks"><b>⚡ Tasks</b><span>Coming in v1.1</span></button>
-      <button class="menu-card" id="leaderboard"><b>🏆 Ranking</b><span>Local demo</span></button>
-    </section>
+    <!-- ENERGY -->
 
-    <footer>
-      <span id="status">SINAPS v1 • Demo</span>
-      <button id="reset">Reset demo</button>
-    </footer>
-  </main>
-  <script src="app.js"></script>
+    <div class="energybar">
+
+      <div id="energyFill"></div>
+
+    </div>
+
+
+    <!-- BOOST INDICATOR -->
+
+    <div class="boost-status">
+
+      <span>Tap Power</span>
+
+      <strong id="tapPower">
+        x1
+      </strong>
+
+    </div>
+
+  </section>
+
+
+  <!-- BOOST PAGE -->
+
+  <section
+    id="boostPage"
+    class="page"
+  >
+
+    <div class="page-title">
+      <span>⚡</span>
+
+      <div>
+        <h2>Boost</h2>
+        <p>Increase your earning power</p>
+      </div>
+    </div>
+
+
+    <div class="boost-card">
+
+      <div class="boost-icon">
+        ⚡
+      </div>
+
+      <div class="boost-info">
+
+        <b>Double Tap</b>
+
+        <span>
+          Earn 2 SNP for every tap
+        </span>
+
+      </div>
+
+      <button
+        id="doubleBoost"
+        class="boost-btn"
+      >
+        ACTIVATE
+      </button>
+
+    </div>
+
+
+    <div class="boost-card">
+
+      <div class="boost-icon">
+        🔋
+      </div>
+
+      <div class="boost-info">
+
+        <b>Energy Boost</b>
+
+        <span>
+          Increase maximum energy
+        </span>
+
+      </div>
+
+      <button
+        id="energyBoost"
+        class="boost-btn"
+      >
+        SOON
+      </button>
+
+    </div>
+
+
+    <div class="boost-card">
+
+      <div class="boost-icon">
+        🚀
+      </div>
+
+      <div class="boost-info">
+
+        <b>Turbo</b>
+
+        <span>
+          Super fast earning mode
+        </span>
+
+      </div>
+
+      <button
+        class="boost-btn"
+        disabled
+      >
+        SOON
+      </button>
+
+    </div>
+
+  </section>
+
+
+  <!-- DAILY PAGE -->
+
+  <section
+    id="dailyPage"
+    class="page"
+  >
+
+    <div class="page-title">
+
+      <span>🎁</span>
+
+      <div>
+        <h2>Daily Bonus</h2>
+        <p>Come back every day</p>
+      </div>
+
+    </div>
+
+
+    <div class="daily-card">
+
+      <div class="daily-gift">
+        🎁
+      </div>
+
+      <h2>
+        Daily Reward
+      </h2>
+
+      <p>
+        Claim your daily SNP reward.
+      </p>
+
+      <div class="daily-reward">
+        +100 SNP
+      </div>
+
+      <button
+        id="daily"
+        class="claim-btn"
+      >
+        CLAIM REWARD
+      </button>
+
+    </div>
+
+  </section>
+
+
+  <!-- FRIENDS PAGE -->
+
+  <section
+    id="friendsPage"
+    class="page"
+  >
+
+    <div class="page-title">
+
+      <span>👥</span>
+
+      <div>
+        <h2>Friends</h2>
+        <p>Invite friends & earn</p>
+      </div>
+
+    </div>
+
+
+    <div class="referral-card">
+
+      <div class="referral-icon">
+        👥
+      </div>
+
+      <h2>
+        Invite Friends
+      </h2>
+
+      <p>
+        Earn rewards when your friends join SINAPS.
+      </p>
+
+      <div class="referral-link">
+
+        <span id="referralLink">
+          Your referral link
+        </span>
+
+      </div>
+
+      <button
+        id="invite"
+        class="claim-btn"
+      >
+        COPY INVITE LINK
+      </button>
+
+    </div>
+
+  </section>
+
+
+  <!-- TASKS PAGE -->
+
+  <section
+    id="tasksPage"
+    class="page"
+  >
+
+    <div class="page-title">
+
+      <span>⚡</span>
+
+      <div>
+        <h2>Tasks</h2>
+        <p>Complete tasks and earn SNP</p>
+      </div>
+
+    </div>
+
+
+    <div class="task-card">
+
+      <div class="task-icon">
+        📢
+      </div>
+
+      <div class="task-info">
+
+        <b>Join SINAPS Channel</b>
+
+        <span>
+          +100 SNP
+        </span>
+
+      </div>
+
+      <button
+        class="task-btn"
+        disabled
+      >
+        SOON
+      </button>
+
+    </div>
+
+
+    <div class="task-card">
+
+      <div class="task-icon">
+        👥
+      </div>
+
+      <div class="task-info">
+
+        <b>Invite a Friend</b>
+
+        <span>
+          +250 SNP
+        </span>
+
+      </div>
+
+      <button
+        class="task-btn"
+        disabled
+      >
+        SOON
+      </button>
+
+    </div>
+
+  </section>
+
+
+  <!-- BOTTOM NAVIGATION -->
+
+  <nav class="bottom-nav">
+
+    <button
+      class="nav-item active"
+      data-page="homePage"
+    >
+      <span>⌂</span>
+      <small>Home</small>
+    </button>
+
+    <button
+      class="nav-item"
+      data-page="boostPage"
+    >
+      <span>⚡</span>
+      <small>Boost</small>
+    </button>
+
+    <button
+      class="nav-item"
+      data-page="dailyPage"
+    >
+      <span>🎁</span>
+      <small>Daily</small>
+    </button>
+
+    <button
+      class="nav-item"
+      data-page="friendsPage"
+    >
+      <span>👥</span>
+      <small>Friends</small>
+    </button>
+
+    <button
+      class="nav-item"
+      data-page="tasksPage"
+    >
+      <span>☰</span>
+      <small>Tasks</small>
+    </button>
+
+  </nav>
+
+
+  <!-- FOOTER -->
+
+  <footer>
+
+    <span id="status">
+      SINAPS v2
+    </span>
+
+    <button id="reset">
+      Reset
+    </button>
+
+  </footer>
+
+</main>
+
+<script src="app.js"></script>
+
 </body>
 </html>
