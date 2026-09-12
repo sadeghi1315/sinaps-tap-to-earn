@@ -3,49 +3,63 @@ const tg = window.Telegram?.WebApp;
 if (tg) {
   tg.ready();
   tg.expand();
+
+  try {
+    tg.setHeaderColor("#030914");
+    tg.setBackgroundColor("#030914");
+  } catch (e) {}
 }
 
-const API = "https://sinaps-backend.onrender.com";
+
+const API =
+  "https://sinaps-backend.onrender.com";
+
 
 const tgUser =
   tg?.initDataUnsafe?.user || null;
 
+
 const telegramId =
   tgUser?.id || null;
 
+
 const username =
-  tgUser?.username || null;
+  tgUser?.username ||
+  tgUser?.first_name ||
+  "SINAPS User";
 
-const KEY = "sinaps_v2_state";
+
+const KEY =
+  "sinaps_v3_state";
 
 
-/* =========================
-   STATE
-========================= */
+const defaultState = {
 
-const state =
+  points: 0,
+
+  energy: 1000,
+
+  maxEnergy: 1000,
+
+  tapPower: 1,
+
+  doubleBoost: false,
+
+  lastEnergyTime: Date.now()
+
+};
+
+
+let state =
   JSON.parse(
     localStorage.getItem(KEY) || "null"
-  ) || {
-    points: 0,
-    energy: 1000,
-    maxEnergy: 1000,
-    tapPower: 1,
-    doubleBoost: false
-  };
+  ) || defaultState;
 
 
-/* =========================
-   DOM
-========================= */
+function $(id) {
+  return document.getElementById(id);
+}
 
-const $ = id =>
-  document.getElementById(id);
-
-
-/* =========================
-   SAVE
-========================= */
 
 function save() {
 
@@ -58,16 +72,68 @@ function save() {
 
 
 /* =========================
-   RENDER
+   ENERGY
 ========================= */
 
+function regenerateEnergy() {
+
+  const now =
+    Date.now();
+
+  const last =
+    Number(
+      state.lastEnergyTime ||
+      now
+    );
+
+
+  const elapsed =
+    Math.floor(
+      (now - last) / 3000
+    );
+
+
+  if (
+    elapsed <= 0
+  ) {
+    return;
+  }
+
+
+  if (
+    state.energy <
+    state.maxEnergy
+  ) {
+
+    state.energy =
+      Math.min(
+        state.maxEnergy,
+        state.energy + elapsed
+      );
+
+  }
+
+
+  state.lastEnergyTime =
+    last + elapsed * 3000;
+
+
+  save();
+
+}
+
+
 function render() {
+
+  regenerateEnergy();
+
 
   if ($("points")) {
 
     $("points").textContent =
-      Number(state.points)
-        .toLocaleString();
+      Number(
+        state.points
+      ).toLocaleString();
 
   }
 
@@ -85,7 +151,29 @@ function render() {
   if ($("energyText")) {
 
     $("energyText").textContent =
-      state.energy;
+      Math.floor(
+        state.energy
+      );
+
+  }
+
+
+  if ($("energyCurrent")) {
+
+    $("energyCurrent").textContent =
+      Math.floor(
+        state.energy
+      );
+
+  }
+
+
+  if ($("energyMax")) {
+
+    $("energyMax").textContent =
+      Math.floor(
+        state.maxEnergy
+      );
 
   }
 
@@ -100,10 +188,14 @@ function render() {
           ) * 100
         : 0;
 
+
     $("energyFill").style.width =
       Math.max(
         0,
-        Math.min(100, percent)
+        Math.min(
+          100,
+          percent
+        )
       ) + "%";
 
   }
@@ -112,48 +204,73 @@ function render() {
   if ($("tapPower")) {
 
     $("tapPower").textContent =
-      "x" + state.tapPower;
+      "x" +
+      state.tapPower;
 
   }
 
 
   if ($("doubleBoost")) {
 
-    if (state.doubleBoost) {
+    if (
+      state.doubleBoost
+    ) {
 
       $("doubleBoost").textContent =
         "ACTIVE";
 
-      $("doubleBoost").classList.add(
-        "active"
-      );
+      $("doubleBoost")
+        .classList.add("active");
 
     } else {
 
       $("doubleBoost").textContent =
         "ACTIVATE";
 
-      $("doubleBoost").classList.remove(
-        "active"
-      );
+      $("doubleBoost")
+        .classList.remove("active");
 
     }
+
+  }
+
+
+  if ($("username")) {
+
+    $("username").textContent =
+      tgUser?.username
+        ? "@" + tgUser.username
+        : username;
+
+  }
+
+
+  if ($("userAvatar")) {
+
+    $("userAvatar").textContent =
+      (
+        tgUser?.first_name ||
+        username ||
+        "S"
+      )
+      .charAt(0)
+      .toUpperCase();
 
   }
 
 }
 
 
-/* =========================
-   FAST TAP
-========================= */
-
 let pendingTaps = 0;
 
 let syncing = false;
 
 
-function instantTap() {
+/* =========================
+   TAP
+========================= */
+
+function tapAt(x, y) {
 
   if (!telegramId) {
 
@@ -166,7 +283,12 @@ function instantTap() {
   }
 
 
-  if (state.energy <= 0) {
+  regenerateEnergy();
+
+
+  if (
+    state.energy <= 0
+  ) {
 
     return;
 
@@ -179,9 +301,17 @@ function instantTap() {
       : 1;
 
 
-  state.points += power;
+  state.points +=
+    power;
 
-  state.energy -= 1;
+
+  state.energy -=
+    1;
+
+
+  state.lastEnergyTime =
+    Date.now();
+
 
   pendingTaps += 1;
 
@@ -191,22 +321,142 @@ function instantTap() {
   save();
 
 
+  /* FLOAT NUMBER */
+
+  const floater =
+    document.createElement("div");
+
+
+  floater.className =
+    "floater";
+
+
+  floater.textContent =
+    "+" + power;
+
+
+  floater.style.left =
+    x + "px";
+
+
+  floater.style.top =
+    y + "px";
+
+
+  if ($("floaters")) {
+
+    $("floaters")
+      .appendChild(floater);
+
+
+    setTimeout(
+      () => floater.remove(),
+      850
+    );
+
+  }
+
+
+  /* S ROTATION */
+
+  const s =
+    $("sLogo");
+
+
+  if (s) {
+
+    const area =
+      $("tapArea")
+        .getBoundingClientRect();
+
+
+    const centerX =
+      area.width / 2;
+
+
+    const centerY =
+      area.height / 2;
+
+
+    const dx =
+      x - centerX;
+
+
+    const dy =
+      y - centerY;
+
+
+    const angle =
+      Math.atan2(
+        dy,
+        dx
+      ) *
+      180 /
+      Math.PI;
+
+
+    s.style.transform =
+      `rotateY(${angle}deg) rotateX(${(-dy / 12)}deg)`;
+
+  }
+
+
   try {
 
     tg?.HapticFeedback
       ?.impactOccurred("light");
 
-  } catch (error) {}
+  } catch (e) {}
 
 
   syncTaps();
 
+}
+
+
+const tapArea =
+  $("tapArea");
+
+
+if (tapArea) {
+
+  tapArea.addEventListener(
+    "pointerdown",
+    function(e) {
+
+      e.preventDefault();
+
+
+      const rect =
+        tapArea.getBoundingClientRect();
+
+
+      const x =
+        e.clientX -
+        rect.left;
+
+
+      const y =
+        e.clientY -
+        rect.top;
+
+
+      tapAt(
+        x,
+        y
+      );
+
+    },
+    {
+      passive: false
+    }
+  );
 
 }
 
 
 /* =========================
-   BACKEND TAP SYNC
+   SYNC TAP
 ========================= */
 
 async function syncTaps() {
@@ -215,12 +465,14 @@ async function syncTaps() {
     return;
   }
 
-  if (!telegramId) {
-    return;
-  }
 
-  if (pendingTaps <= 0) {
+  if (
+    !telegramId ||
+    pendingTaps <= 0
+  ) {
+
     return;
+
   }
 
 
@@ -246,6 +498,7 @@ async function syncTaps() {
       await fetch(
         `${API}/api/tap`,
         {
+
           method: "POST",
 
           headers: {
@@ -253,18 +506,20 @@ async function syncTaps() {
               "application/json"
           },
 
-          body: JSON.stringify({
+          body:
+            JSON.stringify({
 
-            telegram_id:
-              telegramId,
+              telegram_id:
+                telegramId,
 
-            taps:
-              amount,
+              taps:
+                amount,
 
-            power:
-              power
+              power:
+                power
 
-          })
+            })
+
         }
       );
 
@@ -273,7 +528,9 @@ async function syncTaps() {
       await response.json();
 
 
-    if (!response.ok) {
+    if (
+      !response.ok
+    ) {
 
       console.error(
         "Tap sync error:",
@@ -294,14 +551,16 @@ async function syncTaps() {
 
     const accepted =
       Number(
-        result.accepted_taps || amount
+        result.accepted_taps ||
+        amount
       );
 
 
     pendingTaps =
       Math.max(
         0,
-        pendingTaps - accepted
+        pendingTaps -
+        accepted
       );
 
 
@@ -310,7 +569,9 @@ async function syncTaps() {
     ) {
 
       state.points =
-        Number(result.balance);
+        Number(
+          result.balance
+        );
 
     }
 
@@ -320,7 +581,9 @@ async function syncTaps() {
     ) {
 
       state.energy =
-        Number(result.energy);
+        Number(
+          result.energy
+        );
 
     }
 
@@ -330,9 +593,15 @@ async function syncTaps() {
     ) {
 
       state.maxEnergy =
-        Number(result.max_energy);
+        Number(
+          result.max_energy
+        );
 
     }
+
+
+    state.lastEnergyTime =
+      Date.now();
 
 
     save();
@@ -347,10 +616,9 @@ async function syncTaps() {
       error
     );
 
-
     setTimeout(
       syncTaps,
-      1000
+      1500
     );
 
   }
@@ -359,7 +627,9 @@ async function syncTaps() {
   syncing = false;
 
 
-  if (pendingTaps > 0) {
+  if (
+    pendingTaps > 0
+  ) {
 
     setTimeout(
       syncTaps,
@@ -367,84 +637,6 @@ async function syncTaps() {
     );
 
   }
-
-}
-
-
-/* =========================
-   TAP BUTTON
-========================= */
-
-const tap =
-  $("tap");
-
-
-if (tap) {
-
-  tap.addEventListener(
-    "pointerdown",
-    function(e) {
-
-      e.preventDefault();
-
-
-      instantTap();
-
-
-      const floater =
-        document.createElement("div");
-
-
-      floater.className =
-        "floater";
-
-
-      const power =
-        state.doubleBoost
-          ? 2
-          : 1;
-
-
-      floater.textContent =
-        "+" + power;
-
-
-      const rect =
-        tap.getBoundingClientRect();
-
-
-      floater.style.left =
-        (
-          e.clientX -
-          rect.left
-        ) + "px";
-
-
-      floater.style.top =
-        (
-          e.clientY -
-          rect.top
-        ) + "px";
-
-
-      if ($("floaters")) {
-
-        $("floaters")
-          .appendChild(floater);
-
-
-        setTimeout(
-          () => floater.remove(),
-          750
-        );
-
-      }
-
-    },
-    {
-      passive: false
-    }
-  );
 
 }
 
@@ -470,6 +662,7 @@ async function loadUser() {
       await fetch(
         `${API}/api/user`,
         {
+
           method: "POST",
 
           headers: {
@@ -477,20 +670,24 @@ async function loadUser() {
               "application/json"
           },
 
-          body: JSON.stringify({
+          body:
+            JSON.stringify({
 
-            telegram_id:
-              telegramId,
+              telegram_id:
+                telegramId,
 
-            username:
-              username
+              username:
+                username
 
-          })
+            })
+
         }
       );
 
 
-    if (!response.ok) {
+    if (
+      !response.ok
+    ) {
 
       throw new Error(
         "User API error"
@@ -504,12 +701,14 @@ async function loadUser() {
 
 
     state.points =
-      Number(user.balance || 0);
+      Number(
+        user.balance || 0
+      );
 
 
     state.energy =
       Number(
-        user.energy || 0
+        user.energy ?? 1000
       );
 
 
@@ -517,6 +716,10 @@ async function loadUser() {
       Number(
         user.max_energy || 1000
       );
+
+
+    state.lastEnergyTime =
+      Date.now();
 
 
     save();
@@ -539,19 +742,17 @@ async function loadUser() {
 
 
 /* =========================
-   DOUBLE BOOST
+   BOOST
 ========================= */
 
 if ($("doubleBoost")) {
 
   $("doubleBoost").onclick =
-    () => {
+    function() {
 
-      if (state.doubleBoost) {
-
-        alert(
-          "Double Tap is already active ⚡"
-        );
+      if (
+        state.doubleBoost
+      ) {
 
         return;
 
@@ -560,6 +761,7 @@ if ($("doubleBoost")) {
 
       state.doubleBoost =
         true;
+
 
       state.tapPower =
         2;
@@ -571,26 +773,21 @@ if ($("doubleBoost")) {
 
 
       alert(
-        "⚡ DOUBLE TAP ACTIVATED!\n\n" +
-        "Every tap now gives +2 SNP."
+        "⚡ DOUBLE TAP ACTIVATED!\n\nEvery tap now gives +2 SNP."
       );
 
     };
 
 }
 
-
-/* =========================
-   ENERGY BOOST
-========================= */
 
 if ($("energyBoost")) {
 
   $("energyBoost").onclick =
-    () => {
+    function() {
 
       alert(
-        "Energy Boost is coming soon 🚀"
+        "Energy Boost is coming soon."
       );
 
     };
@@ -599,13 +796,13 @@ if ($("energyBoost")) {
 
 
 /* =========================
-   DAILY BONUS
+   DAILY
 ========================= */
 
 if ($("daily")) {
 
   $("daily").onclick =
-    async () => {
+    async function() {
 
       if (!telegramId) {
 
@@ -624,6 +821,7 @@ if ($("daily")) {
           await fetch(
             `${API}/api/daily`,
             {
+
               method: "POST",
 
               headers: {
@@ -631,12 +829,14 @@ if ($("daily")) {
                   "application/json"
               },
 
-              body: JSON.stringify({
+              body:
+                JSON.stringify({
 
-                telegram_id:
-                  telegramId
+                  telegram_id:
+                    telegramId
 
-              })
+                })
+
             }
           );
 
@@ -645,7 +845,9 @@ if ($("daily")) {
           await response.json();
 
 
-        if (!response.ok) {
+        if (
+          !response.ok
+        ) {
 
           alert(
             result.error ||
@@ -658,7 +860,9 @@ if ($("daily")) {
 
 
         state.points =
-          Number(result.balance);
+          Number(
+            result.balance
+          );
 
 
         save();
@@ -668,7 +872,9 @@ if ($("daily")) {
 
         alert(
           "+" +
-          Number(result.bonus) +
+          Number(
+            result.bonus
+          ) +
           " SNP claimed! 🎁"
         );
 
@@ -695,23 +901,23 @@ if ($("daily")) {
 if ($("invite")) {
 
   $("invite").onclick =
-    async () => {
+    async function() {
 
       const id =
-        telegramId || "demo";
+        telegramId ||
+        "demo";
 
 
       const link =
-        location.origin +
-        location.pathname +
-        "?ref=" +
+        "https://t.me/SNPCOINBot?startapp=ref_" +
         id;
 
 
       if ($("referralLink")) {
 
         $("referralLink")
-          .textContent = link;
+          .textContent =
+          link;
 
       }
 
@@ -726,8 +932,7 @@ if ($("invite")) {
           "Referral link copied! 👥"
         );
 
-
-      } catch (error) {
+      } catch (e) {
 
         alert(link);
 
@@ -742,16 +947,84 @@ if ($("invite")) {
    NAVIGATION
 ========================= */
 
+const pages =
+  document.querySelectorAll(
+    ".page"
+  );
+
+
 const navItems =
   document.querySelectorAll(
     ".nav-item"
   );
 
 
-const pages =
-  document.querySelectorAll(
-    ".page"
+function showPage(id) {
+
+  pages.forEach(
+    page => {
+
+      page.classList.remove(
+        "active"
+      );
+
+      page.style.display =
+        "none";
+
+    }
   );
+
+
+  navItems.forEach(
+    item => {
+
+      item.classList.remove(
+        "active"
+      );
+
+    }
+  );
+
+
+  const page =
+    document.getElementById(id);
+
+
+  if (page) {
+
+    page.classList.add(
+      "active"
+    );
+
+    page.style.display =
+      "block";
+
+  }
+
+
+  navItems.forEach(
+    item => {
+
+      if (
+        item.dataset.page === id
+      ) {
+
+        item.classList.add(
+          "active"
+        );
+
+      }
+
+    }
+  );
+
+
+  window.scrollTo(
+    0,
+    0
+  );
+
+}
 
 
 navItems.forEach(
@@ -759,57 +1032,10 @@ navItems.forEach(
 
     item.addEventListener(
       "click",
-      () => {
+      function() {
 
-        const pageId =
-          item.dataset.page;
-
-
-        pages.forEach(
-          page => {
-
-            page.classList.remove(
-              "active"
-            );
-
-          }
-        );
-
-
-        navItems.forEach(
-          nav => {
-
-            nav.classList.remove(
-              "active"
-            );
-
-          }
-        );
-
-
-        const page =
-          document.getElementById(
-            pageId
-          );
-
-
-        if (page) {
-
-          page.classList.add(
-            "active"
-          );
-
-        }
-
-
-        item.classList.add(
-          "active"
-        );
-
-
-        window.scrollTo(
-          0,
-          0
+        showPage(
+          item.dataset.page
         );
 
       }
@@ -820,66 +1046,218 @@ navItems.forEach(
 
 
 /* =========================
-   TASKS
+   TON CONNECT
 ========================= */
 
-document
-  .querySelectorAll(".task-btn")
-  .forEach(
-    button => {
+let tonConnectUI = null;
 
-      button.onclick =
-        () => {
 
-          alert(
-            "This task is coming soon ⚡"
-          );
+function shortAddress(address) {
 
-        };
+  if (!address) {
+    return "";
+  }
 
-    }
+  if (address.length < 16) {
+    return address;
+  }
+
+  return (
+    address.slice(0, 6) +
+    "..." +
+    address.slice(-6)
   );
 
+}
 
-/* =========================
-   WALLET
-========================= */
 
-if ($("walletBtn")) {
+async function setupWallet() {
 
-  $("walletBtn").onclick =
-    () => {
+  if (
+    !window.TON_CONNECT_UI
+  ) {
 
-      alert(
-        "TON Connect is coming soon.\n\n" +
-        "Never enter your seed phrase into SINAPS."
+    console.error(
+      "TON Connect UI not loaded"
+    );
+
+    return;
+
+  }
+
+
+  try {
+
+    tonConnectUI =
+      new TON_CONNECT_UI.TonConnectUI({
+
+        manifestUrl:
+          "https://sadeghi1315.github.io/sinaps-tap-to-earn/tonconnect-manifest.json"
+
+      });
+
+
+    tonConnectUI.onStatusChange(
+      function(wallet) {
+
+        updateWalletUI(
+          wallet
+        );
+
+      }
+    );
+
+
+    const restored =
+      await tonConnectUI
+        .connectionRestored;
+
+
+    updateWalletUI(
+      tonConnectUI.wallet
+    );
+
+
+  } catch (error) {
+
+    console.error(
+      "TON Connect error:",
+      error
+    );
+
+  }
+
+}
+
+
+function updateWalletUI(wallet) {
+
+  const top =
+    $("walletTop");
+
+  const title =
+    $("walletTitle");
+
+  const address =
+    $("walletAddress");
+
+  const disconnect =
+    $("disconnectWallet");
+
+
+  if (
+    wallet &&
+    wallet.account
+  ) {
+
+    const addr =
+      wallet.account.address;
+
+
+    if (top) {
+
+      top.textContent =
+        shortAddress(addr);
+
+    }
+
+
+    if (title) {
+
+      title.textContent =
+        "Wallet Connected";
+
+    }
+
+
+    if (address) {
+
+      address.textContent =
+        shortAddress(addr);
+
+    }
+
+
+    if (disconnect) {
+
+      disconnect.style.display =
+        "block";
+
+    }
+
+  } else {
+
+    if (top) {
+
+      top.textContent =
+        "Connect";
+
+    }
+
+
+    if (title) {
+
+      title.textContent =
+        "Wallet not connected";
+
+    }
+
+
+    if (address) {
+
+      address.textContent =
+        "Connect your TON wallet to continue.";
+
+    }
+
+
+    if (disconnect) {
+
+      disconnect.style.display =
+        "none";
+
+    }
+
+  }
+
+}
+
+
+if ($("walletTop")) {
+
+  $("walletTop").onclick =
+    async function() {
+
+      showPage(
+        "walletPage"
       );
+
+
+      if (
+        tonConnectUI
+      ) {
+
+        tonConnectUI
+          .openModal();
+
+      }
 
     };
 
 }
 
 
-/* =========================
-   RESET
-========================= */
+if ($("disconnectWallet")) {
 
-if ($("reset")) {
-
-  $("reset").onclick =
-    () => {
+  $("disconnectWallet").onclick =
+    async function() {
 
       if (
-        confirm(
-          "Reset local demo data?"
-        )
+        tonConnectUI
       ) {
 
-        localStorage.removeItem(
-          KEY
-        );
-
-        location.reload();
+        await tonConnectUI
+          .disconnect();
 
       }
 
@@ -889,23 +1267,33 @@ if ($("reset")) {
 
 
 /* =========================
-   USER WELCOME
+   WITHDRAW
 ========================= */
 
-if (tgUser) {
+if ($("withdrawBtn")) {
 
-  const name =
-    tgUser.first_name ||
-    tgUser.username ||
-    "SINAPS user";
+  $("withdrawBtn").onclick =
+    function() {
+
+      if (
+        !tonConnectUI ||
+        !tonConnectUI.connected
+      ) {
+
+        alert(
+          "Please connect your TON wallet first."
+        );
+
+        return;
+
+      }
 
 
-  if ($("status")) {
+      alert(
+        "SNP withdrawal will be enabled after the Jetton withdrawal system is connected."
+      );
 
-    $("status").textContent =
-      "Welcome " + name;
-
-  }
+    };
 
 }
 
@@ -917,6 +1305,8 @@ if (tgUser) {
 render();
 
 loadUser();
+
+setupWallet();
 
 
 setInterval(
