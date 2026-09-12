@@ -1,1064 +1,166 @@
+// ==========================================
+// SINAPS MINI APP
+// ==========================================
+
+const API =
+  "https://sinaps-backend.onrender.com";
+
 const tg = window.Telegram?.WebApp;
 
 if (tg) {
   tg.ready();
   tg.expand();
-
-  try {
-    tg.setHeaderColor("#030914");
-    tg.setBackgroundColor("#030914");
-  } catch (e) {}
+  tg.setHeaderColor("#050816");
+  tg.setBackgroundColor("#050816");
 }
 
+// ==========================================
+// TELEGRAM USER
+// ==========================================
 
-const API =
-  "https://sinaps-backend.onrender.com";
-
-
-const tgUser =
+const telegramUser =
   tg?.initDataUnsafe?.user || null;
 
-
 const telegramId =
-  tgUser?.id || null;
+  telegramUser?.id || null;
 
-
-const username =
-  tgUser?.username ||
-  tgUser?.first_name ||
+const telegramUsername =
+  telegramUser?.username ||
+  telegramUser?.first_name ||
   "SINAPS User";
 
+// ==========================================
+// STATE
+// ==========================================
 
-const KEY =
+const STORAGE_KEY =
   "sinaps_v3_state";
 
-
-const defaultState = {
-
+let state = {
   points: 0,
-
   energy: 1000,
-
   maxEnergy: 1000,
-
   tapPower: 1,
-
   doubleBoost: false,
-
-  lastEnergyTime: Date.now()
-
+  lastEnergyTime: Date.now(),
+  walletAddress: null
 };
 
+try {
+  const saved =
+    JSON.parse(
+      localStorage.getItem(STORAGE_KEY)
+    );
 
-let state =
-  JSON.parse(
-    localStorage.getItem(KEY) || "null"
-  ) || defaultState;
-
-
-function $(id) {
-  return document.getElementById(id);
+  if (saved) {
+    state = {
+      ...state,
+      ...saved
+    };
+  }
+} catch (e) {
+  console.log(
+    "Local state error:",
+    e
+  );
 }
 
+// ==========================================
+// ELEMENTS
+// ==========================================
 
-function save() {
+const pointsEl =
+  document.getElementById("points");
 
+const energyCurrentEl =
+  document.getElementById("energyCurrent");
+
+const energyMaxEl =
+  document.getElementById("energyMax");
+
+const energyTextEl =
+  document.getElementById("energyText");
+
+const energyFillEl =
+  document.getElementById("energyFill");
+
+const levelEl =
+  document.getElementById("level");
+
+const tapPowerEl =
+  document.getElementById("tapPower");
+
+const usernameEl =
+  document.getElementById("username");
+
+const userAvatarEl =
+  document.getElementById("userAvatar");
+
+const walletTopEl =
+  document.getElementById("walletTop");
+
+const walletTitleEl =
+  document.getElementById("walletTitle");
+
+const walletAddressEl =
+  document.getElementById("walletAddress");
+
+const disconnectWalletEl =
+  document.getElementById(
+    "disconnectWallet"
+  );
+
+const floatersEl =
+  document.getElementById("floaters");
+
+const sLogoEl =
+  document.getElementById("sLogo");
+
+const tapAreaEl =
+  document.getElementById("tapArea");
+
+const statusEl =
+  document.getElementById("status");
+
+// ==========================================
+// SAVE LOCAL STATE
+// ==========================================
+
+function saveState() {
   localStorage.setItem(
-    KEY,
+    STORAGE_KEY,
     JSON.stringify(state)
   );
-
 }
 
+// ==========================================
+// USER UI
+// ==========================================
 
-/* =========================
-   ENERGY
-========================= */
-
-function regenerateEnergy() {
-
-  const now =
-    Date.now();
-
-  const last =
-    Number(
-      state.lastEnergyTime ||
-      now
-    );
-
-
-  const elapsed =
-    Math.floor(
-      (now - last) / 3000
-    );
-
-
-  if (
-    elapsed <= 0
-  ) {
-    return;
+function renderUser() {
+  if (usernameEl) {
+    usernameEl.textContent =
+      telegramUsername;
   }
 
-
-  if (
-    state.energy <
-    state.maxEnergy
-  ) {
-
-    state.energy =
-      Math.min(
-        state.maxEnergy,
-        state.energy + elapsed
-      );
-
+  if (userAvatarEl) {
+    userAvatarEl.textContent =
+      telegramUsername
+        .charAt(0)
+        .toUpperCase();
   }
-
-
-  state.lastEnergyTime =
-    last + elapsed * 3000;
-
-
-  save();
-
 }
 
-
-function render() {
-
-  regenerateEnergy();
-
-
-  if ($("points")) {
-
-    $("points").textContent =
-      Number(
-        state.points
-      ).toLocaleString();
-
-  }
-
-
-  if ($("level")) {
-
-    $("level").textContent =
-      Math.floor(
-        Number(state.points) / 1000
-      ) + 1;
-
-  }
-
-
-  if ($("energyText")) {
-
-    $("energyText").textContent =
-      Math.floor(
-        state.energy
-      );
-
-  }
-
-
-  if ($("energyCurrent")) {
-
-    $("energyCurrent").textContent =
-      Math.floor(
-        state.energy
-      );
-
-  }
-
-
-  if ($("energyMax")) {
-
-    $("energyMax").textContent =
-      Math.floor(
-        state.maxEnergy
-      );
-
-  }
-
-
-  if ($("energyFill")) {
-
-    const percent =
-      state.maxEnergy > 0
-        ? (
-            state.energy /
-            state.maxEnergy
-          ) * 100
-        : 0;
-
-
-    $("energyFill").style.width =
-      Math.max(
-        0,
-        Math.min(
-          100,
-          percent
-        )
-      ) + "%";
-
-  }
-
-
-  if ($("tapPower")) {
-
-    $("tapPower").textContent =
-      "x" +
-      state.tapPower;
-
-  }
-
-
-  if ($("doubleBoost")) {
-
-    if (
-      state.doubleBoost
-    ) {
-
-      $("doubleBoost").textContent =
-        "ACTIVE";
-
-      $("doubleBoost")
-        .classList.add("active");
-
-    } else {
-
-      $("doubleBoost").textContent =
-        "ACTIVATE";
-
-      $("doubleBoost")
-        .classList.remove("active");
-
-    }
-
-  }
-
-
-  if ($("username")) {
-
-    $("username").textContent =
-      tgUser?.username
-        ? "@" + tgUser.username
-        : username;
-
-  }
-
-
-  if ($("userAvatar")) {
-
-    $("userAvatar").textContent =
-      (
-        tgUser?.first_name ||
-        username ||
-        "S"
-      )
-      .charAt(0)
-      .toUpperCase();
-
-  }
-
-}
-
-
-let pendingTaps = 0;
-
-let syncing = false;
-
-
-/* =========================
-   TAP
-========================= */
-
-function tapAt(x, y) {
-
-  if (!telegramId) {
-
-    alert(
-      "Please open SINAPS inside Telegram."
-    );
-
-    return;
-
-  }
-
-
-  regenerateEnergy();
-
-
-  if (
-    state.energy <= 0
-  ) {
-
-    return;
-
-  }
-
-
-  const power =
-    state.doubleBoost
-      ? 2
-      : 1;
-
-
-  state.points +=
-    power;
-
-
-  state.energy -=
-    1;
-
-
-  state.lastEnergyTime =
-    Date.now();
-
-
-  pendingTaps += 1;
-
-
-  render();
-
-  save();
-
-
-  /* FLOAT NUMBER */
-
-  const floater =
-    document.createElement("div");
-
-
-  floater.className =
-    "floater";
-
-
-  floater.textContent =
-    "+" + power;
-
-
-  floater.style.left =
-    x + "px";
-
-
-  floater.style.top =
-    y + "px";
-
-
-  if ($("floaters")) {
-
-    $("floaters")
-      .appendChild(floater);
-
-
-    setTimeout(
-      () => floater.remove(),
-      850
-    );
-
-  }
-
-
-  /* S ROTATION */
-
-  const s =
-    $("sLogo");
-
-
-  if (s) {
-
-    const area =
-      $("tapArea")
-        .getBoundingClientRect();
-
-
-    const centerX =
-      area.width / 2;
-
-
-    const centerY =
-      area.height / 2;
-
-
-    const dx =
-      x - centerX;
-
-
-    const dy =
-      y - centerY;
-
-
-    const angle =
-      Math.atan2(
-        dy,
-        dx
-      ) *
-      180 /
-      Math.PI;
-
-
-    s.style.transform =
-      `rotateY(${angle}deg) rotateX(${(-dy / 12)}deg)`;
-
-  }
-
-
-  try {
-
-    tg?.HapticFeedback
-      ?.impactOccurred("light");
-
-  } catch (e) {}
-
-
-  syncTaps();
-
-}
-
-
-const tapArea =
-  $("tapArea");
-
-
-if (tapArea) {
-
-  tapArea.addEventListener(
-    "pointerdown",
-    function(e) {
-
-      e.preventDefault();
-
-
-      const rect =
-        tapArea.getBoundingClientRect();
-
-
-      const x =
-        e.clientX -
-        rect.left;
-
-
-      const y =
-        e.clientY -
-        rect.top;
-
-
-      tapAt(
-        x,
-        y
-      );
-
-    },
-    {
-      passive: false
-    }
-  );
-
-}
-
-
-/* =========================
-   SYNC TAP
-========================= */
-
-async function syncTaps() {
-
-  if (syncing) {
-    return;
-  }
-
-
-  if (
-    !telegramId ||
-    pendingTaps <= 0
-  ) {
-
-    return;
-
-  }
-
-
-  syncing = true;
-
-
-  const amount =
-    Math.min(
-      pendingTaps,
-      50
-    );
-
-
-  const power =
-    state.doubleBoost
-      ? 2
-      : 1;
-
-
-  try {
-
-    const response =
-      await fetch(
-        `${API}/api/tap`,
-        {
-
-          method: "POST",
-
-          headers: {
-            "Content-Type":
-              "application/json"
-          },
-
-          body:
-            JSON.stringify({
-
-              telegram_id:
-                telegramId,
-
-              taps:
-                amount,
-
-              power:
-                power
-
-            })
-
-        }
-      );
-
-
-    const result =
-      await response.json();
-
-
-    if (
-      !response.ok
-    ) {
-
-      console.error(
-        "Tap sync error:",
-        result
-      );
-
-      syncing = false;
-
-      setTimeout(
-        syncTaps,
-        1000
-      );
-
-      return;
-
-    }
-
-
-    const accepted =
-      Number(
-        result.accepted_taps ||
-        amount
-      );
-
-
-    pendingTaps =
-      Math.max(
-        0,
-        pendingTaps -
-        accepted
-      );
-
-
-    if (
-      result.balance !== undefined
-    ) {
-
-      state.points =
-        Number(
-          result.balance
-        );
-
-    }
-
-
-    if (
-      result.energy !== undefined
-    ) {
-
-      state.energy =
-        Number(
-          result.energy
-        );
-
-    }
-
-
-    if (
-      result.max_energy !== undefined
-    ) {
-
-      state.maxEnergy =
-        Number(
-          result.max_energy
-        );
-
-    }
-
-
-    state.lastEnergyTime =
-      Date.now();
-
-
-    save();
-
-    render();
-
-
-  } catch (error) {
-
-    console.error(
-      "Tap network error:",
-      error
-    );
-
-    setTimeout(
-      syncTaps,
-      1500
-    );
-
-  }
-
-
-  syncing = false;
-
-
-  if (
-    pendingTaps > 0
-  ) {
-
-    setTimeout(
-      syncTaps,
-      100
-    );
-
-  }
-
-}
-
-
-/* =========================
-   LOAD USER
-========================= */
-
-async function loadUser() {
-
-  if (!telegramId) {
-
-    render();
-
-    return;
-
-  }
-
-
-  try {
-
-    const response =
-      await fetch(
-        `${API}/api/user`,
-        {
-
-          method: "POST",
-
-          headers: {
-            "Content-Type":
-              "application/json"
-          },
-
-          body:
-            JSON.stringify({
-
-              telegram_id:
-                telegramId,
-
-              username:
-                username
-
-            })
-
-        }
-      );
-
-
-    if (
-      !response.ok
-    ) {
-
-      throw new Error(
-        "User API error"
-      );
-
-    }
-
-
-    const user =
-      await response.json();
-
-
-    state.points =
-      Number(
-        user.balance || 0
-      );
-
-
-    state.energy =
-      Number(
-        user.energy ?? 1000
-      );
-
-
-    state.maxEnergy =
-      Number(
-        user.max_energy || 1000
-      );
-
-
-    state.lastEnergyTime =
-      Date.now();
-
-
-    save();
-
-    render();
-
-
-  } catch (error) {
-
-    console.error(
-      "Load user failed:",
-      error
-    );
-
-    render();
-
-  }
-
-}
-
-
-/* =========================
-   BOOST
-========================= */
-
-if ($("doubleBoost")) {
-
-  $("doubleBoost").onclick =
-    function() {
-
-      if (
-        state.doubleBoost
-      ) {
-
-        return;
-
-      }
-
-
-      state.doubleBoost =
-        true;
-
-
-      state.tapPower =
-        2;
-
-
-      save();
-
-      render();
-
-
-      alert(
-        "⚡ DOUBLE TAP ACTIVATED!\n\nEvery tap now gives +2 SNP."
-      );
-
-    };
-
-}
-
-
-if ($("energyBoost")) {
-
-  $("energyBoost").onclick =
-    function() {
-
-      alert(
-        "Energy Boost is coming soon."
-      );
-
-    };
-
-}
-
-
-/* =========================
-   DAILY
-========================= */
-
-if ($("daily")) {
-
-  $("daily").onclick =
-    async function() {
-
-      if (!telegramId) {
-
-        alert(
-          "Please open SINAPS inside Telegram."
-        );
-
-        return;
-
-      }
-
-
-      try {
-
-        const response =
-          await fetch(
-            `${API}/api/daily`,
-            {
-
-              method: "POST",
-
-              headers: {
-                "Content-Type":
-                  "application/json"
-              },
-
-              body:
-                JSON.stringify({
-
-                  telegram_id:
-                    telegramId
-
-                })
-
-            }
-          );
-
-
-        const result =
-          await response.json();
-
-
-        if (
-          !response.ok
-        ) {
-
-          alert(
-            result.error ||
-            "Daily bonus failed."
-          );
-
-          return;
-
-        }
-
-
-        state.points =
-          Number(
-            result.balance
-          );
-
-
-        save();
-
-        render();
-
-
-        alert(
-          "+" +
-          Number(
-            result.bonus
-          ) +
-          " SNP claimed! 🎁"
-        );
-
-
-      } catch (error) {
-
-        console.error(error);
-
-        alert(
-          "Connection error."
-        );
-
-      }
-
-    };
-
-}
-
-
-/* =========================
-   REFERRAL
-========================= */
-
-if ($("invite")) {
-
-  $("invite").onclick =
-    async function() {
-
-      const id =
-        telegramId ||
-        "demo";
-
-
-      const link =
-        "https://t.me/SNPCOINBot?startapp=ref_" +
-        id;
-
-
-      if ($("referralLink")) {
-
-        $("referralLink")
-          .textContent =
-          link;
-
-      }
-
-
-      try {
-
-        await navigator.clipboard
-          .writeText(link);
-
-
-        alert(
-          "Referral link copied! 👥"
-        );
-
-      } catch (e) {
-
-        alert(link);
-
-      }
-
-    };
-
-}
-
-
-/* =========================
-   NAVIGATION
-========================= */
-
-const pages =
-  document.querySelectorAll(
-    ".page"
-  );
-
-
-const navItems =
-  document.querySelectorAll(
-    ".nav-item"
-  );
-
-
-function showPage(id) {
-
-  pages.forEach(
-    page => {
-
-      page.classList.remove(
-        "active"
-      );
-
-      page.style.display =
-        "none";
-
-    }
-  );
-
-
-  navItems.forEach(
-    item => {
-
-      item.classList.remove(
-        "active"
-      );
-
-    }
-  );
-
-
-  const page =
-    document.getElementById(id);
-
-
-  if (page) {
-
-    page.classList.add(
-      "active"
-    );
-
-    page.style.display =
-      "block";
-
-  }
-
-
-  navItems.forEach(
-    item => {
-
-      if (
-        item.dataset.page === id
-      ) {
-
-        item.classList.add(
-          "active"
-        );
-
-      }
-
-    }
-  );
-
-
-  window.scrollTo(
-    0,
-    0
-  );
-
-}
-
-
-navItems.forEach(
-  item => {
-
-    item.addEventListener(
-      "click",
-      function() {
-
-        showPage(
-          item.dataset.page
-        );
-
-      }
-    );
-
-  }
-);
-
-
-/* =========================
-   TON CONNECT
-========================= */
-
-let tonConnectUI = null;
-
-
-function shortAddress(address) {
-
+// ==========================================
+// FORMAT WALLET
+// ==========================================
+
+function shortWallet(address) {
   if (!address) {
-    return "";
+    return "Connect";
   }
 
-  if (address.length < 16) {
+  if (address.length <= 14) {
     return address;
   }
 
@@ -1067,249 +169,864 @@ function shortAddress(address) {
     "..." +
     address.slice(-6)
   );
-
 }
 
+// ==========================================
+// WALLET UI
+// ==========================================
 
-async function setupWallet() {
+function renderWallet() {
+  const address =
+    state.walletAddress;
+
+  if (walletTopEl) {
+    walletTopEl.textContent =
+      address
+        ? shortWallet(address)
+        : "Connect";
+  }
+
+  if (walletTitleEl) {
+    walletTitleEl.textContent =
+      address
+        ? "Wallet Connected"
+        : "Wallet not connected";
+  }
+
+  if (walletAddressEl) {
+    walletAddressEl.textContent =
+      address
+        ? address
+        : "Connect your TON wallet to continue.";
+  }
+
+  if (disconnectWalletEl) {
+    disconnectWalletEl.style.display =
+      address
+        ? "block"
+        : "none";
+  }
+}
+
+// ==========================================
+// RENDER
+// ==========================================
+
+function render() {
+  if (pointsEl) {
+    pointsEl.textContent =
+      Math.floor(state.points)
+        .toLocaleString();
+  }
+
+  if (energyCurrentEl) {
+    energyCurrentEl.textContent =
+      Math.floor(state.energy);
+  }
+
+  if (energyMaxEl) {
+    energyMaxEl.textContent =
+      state.maxEnergy;
+  }
+
+  if (energyTextEl) {
+    energyTextEl.textContent =
+      Math.floor(state.energy);
+  }
+
+  if (levelEl) {
+    const level =
+      Math.floor(
+        state.points / 1000
+      ) + 1;
+
+    levelEl.textContent =
+      level;
+  }
+
+  if (tapPowerEl) {
+    tapPowerEl.textContent =
+      "x" + state.tapPower;
+  }
+
+  if (energyFillEl) {
+    const percent =
+      Math.max(
+        0,
+        Math.min(
+          100,
+          (state.energy /
+            state.maxEnergy) *
+            100
+        )
+      );
+
+    energyFillEl.style.width =
+      percent + "%";
+  }
+
+  renderWallet();
+}
+
+// ==========================================
+// ENERGY REGENERATION
+// ==========================================
+
+function regenerateEnergy() {
+  const now = Date.now();
 
   if (
-    !window.TON_CONNECT_UI
+    !state.lastEnergyTime
   ) {
+    state.lastEnergyTime =
+      now;
 
+    return;
+  }
+
+  const elapsed =
+    now -
+    state.lastEnergyTime;
+
+  // 1 energy every 3 seconds
+  const recovered =
+    Math.floor(
+      elapsed / 3000
+    );
+
+  if (recovered <= 0) {
+    return;
+  }
+
+  state.energy =
+    Math.min(
+      state.maxEnergy,
+      state.energy +
+        recovered
+    );
+
+  state.lastEnergyTime =
+    now;
+
+  saveState();
+  render();
+}
+
+setInterval(
+  regenerateEnergy,
+  1000
+);
+
+// ==========================================
+// LOAD USER FROM BACKEND
+// ==========================================
+
+async function loadUser() {
+  if (!telegramId) {
+    render();
+    return;
+  }
+
+  try {
+    const response =
+      await fetch(
+        `${API}/api/user`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
+          body: JSON.stringify({
+            telegram_id:
+              telegramId,
+            username:
+              telegramUsername
+          })
+        }
+      );
+
+    if (!response.ok) {
+      throw new Error(
+        "User API failed"
+      );
+    }
+
+    const user =
+      await response.json();
+
+    // Backend is source of truth
+    state.points =
+      Number(user.balance) || 0;
+
+    state.energy =
+      Number(user.energy) || 0;
+
+    state.maxEnergy =
+      Number(user.max_energy) ||
+      1000;
+
+    state.walletAddress =
+      user.wallet_address ||
+      state.walletAddress ||
+      null;
+
+    state.lastEnergyTime =
+      Date.now();
+
+    saveState();
+    render();
+
+  } catch (error) {
+    console.error(
+      "LOAD USER:",
+      error
+    );
+
+    if (statusEl) {
+      statusEl.textContent =
+        "SINAPS";
+    }
+
+    render();
+  }
+}
+
+// ==========================================
+// SAVE WALLET TO BACKEND
+// ==========================================
+
+async function saveWalletToBackend(
+  walletAddress
+) {
+  if (
+    !telegramId ||
+    !walletAddress
+  ) {
+    return false;
+  }
+
+  try {
+    const response =
+      await fetch(
+        `${API}/api/wallet/connect`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
+          body: JSON.stringify({
+            telegram_id:
+              telegramId,
+            wallet_address:
+              walletAddress
+          })
+        }
+      );
+
+    const data =
+      await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.error ||
+          "Wallet save failed"
+      );
+    }
+
+    state.walletAddress =
+      data.wallet_address;
+
+    saveState();
+    renderWallet();
+
+    return true;
+
+  } catch (error) {
+    console.error(
+      "SAVE WALLET:",
+      error
+    );
+
+    if (tg) {
+      tg.showAlert(
+        "Wallet connection could not be saved."
+      );
+    }
+
+    return false;
+  }
+}
+
+// ==========================================
+// LOAD SAVED WALLET
+// ==========================================
+
+async function loadSavedWallet() {
+  if (!telegramId) {
+    return;
+  }
+
+  try {
+    const response =
+      await fetch(
+        `${API}/api/wallet/get`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
+          body: JSON.stringify({
+            telegram_id:
+              telegramId
+          })
+        }
+      );
+
+    if (!response.ok) {
+      return;
+    }
+
+    const data =
+      await response.json();
+
+    if (data.wallet_address) {
+      state.walletAddress =
+        data.wallet_address;
+
+      saveState();
+      renderWallet();
+    }
+
+  } catch (error) {
+    console.error(
+      "LOAD WALLET:",
+      error
+    );
+  }
+}
+
+// ==========================================
+// TAP
+// ==========================================
+
+async function sendTapToBackend(
+  taps,
+  power
+) {
+  if (!telegramId) {
+    return;
+  }
+
+  try {
+    const response =
+      await fetch(
+        `${API}/api/tap`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
+          body: JSON.stringify({
+            telegram_id:
+              telegramId,
+            taps: taps,
+            power: power
+          })
+        }
+      );
+
+    if (!response.ok) {
+      return;
+    }
+
+    const user =
+      await response.json();
+
+    // Sync with server
+    state.points =
+      Number(user.balance);
+
+    state.energy =
+      Number(user.energy);
+
+    state.maxEnergy =
+      Number(user.max_energy) ||
+      state.maxEnergy;
+
+    state.lastEnergyTime =
+      Date.now();
+
+    saveState();
+    render();
+
+  } catch (error) {
+    console.error(
+      "TAP SYNC:",
+      error
+    );
+  }
+}
+
+function createFloater(
+  x,
+  y,
+  amount
+) {
+  if (!floatersEl) {
+    return;
+  }
+
+  const floater =
+    document.createElement("div");
+
+  floater.className =
+    "floater";
+
+  floater.textContent =
+    "+" + amount;
+
+  floater.style.left =
+    x + "px";
+
+  floater.style.top =
+    y + "px";
+
+  floatersEl.appendChild(
+    floater
+  );
+
+  setTimeout(() => {
+    floater.remove();
+  }, 900);
+}
+
+function rotateLogo(
+  x,
+  y
+) {
+  if (!sLogoEl || !tapAreaEl) {
+    return;
+  }
+
+  const rect =
+    tapAreaEl.getBoundingClientRect();
+
+  const centerX =
+    rect.width / 2;
+
+  const centerY =
+    rect.height / 2;
+
+  const dx =
+    x - centerX;
+
+  const dy =
+    y - centerY;
+
+  const angle =
+    Math.atan2(dy, dx) *
+    (180 / Math.PI);
+
+  const rotateY =
+    Math.max(
+      -25,
+      Math.min(
+        25,
+        dx / 8
+      )
+    );
+
+  const rotateX =
+    Math.max(
+      -20,
+      Math.min(
+        20,
+        -dy / 8
+      )
+    );
+
+  sLogoEl.style.transform =
+    `perspective(700px)
+     rotateY(${rotateY}deg)
+     rotateX(${rotateX}deg)
+     rotateZ(${angle / 30}deg)
+     scale(1.04)`;
+
+  clearTimeout(
+    window.sinapsLogoTimer
+  );
+
+  window.sinapsLogoTimer =
+    setTimeout(() => {
+      sLogoEl.style.transform =
+        "";
+    }, 350);
+}
+
+function tapAt(
+  clientX,
+  clientY
+) {
+  regenerateEnergy();
+
+  if (state.energy <= 0) {
+    if (tg) {
+      tg.HapticFeedback?.impactOccurred(
+        "light"
+      );
+    }
+
+    return;
+  }
+
+  const rect =
+    tapAreaEl.getBoundingClientRect();
+
+  const x =
+    clientX - rect.left;
+
+  const y =
+    clientY - rect.top;
+
+  const power =
+    state.doubleBoost
+      ? 2
+      : state.tapPower;
+
+  state.energy -= 1;
+
+  state.points += power;
+
+  state.lastEnergyTime =
+    Date.now();
+
+  createFloater(
+    x,
+    y,
+    power
+  );
+
+  rotateLogo(
+    x,
+    y
+  );
+
+  tg?.HapticFeedback?.impactOccurred(
+    "light"
+  );
+
+  saveState();
+  render();
+
+  sendTapToBackend(
+    1,
+    power
+  );
+}
+
+// ==========================================
+// TAP EVENTS
+// ==========================================
+
+if (tapAreaEl) {
+  tapAreaEl.addEventListener(
+    "pointerdown",
+    (event) => {
+      event.preventDefault();
+
+      tapAt(
+        event.clientX,
+        event.clientY
+      );
+    },
+    {
+      passive: false
+    }
+  );
+}
+
+// ==========================================
+// DOUBLE BOOST
+// ==========================================
+
+const doubleBoostBtn =
+  document.getElementById(
+    "doubleBoost"
+  );
+
+if (doubleBoostBtn) {
+  doubleBoostBtn.addEventListener(
+    "click",
+    () => {
+      state.doubleBoost =
+        !state.doubleBoost;
+
+      state.tapPower =
+        state.doubleBoost
+          ? 2
+          : 1;
+
+      doubleBoostBtn.textContent =
+        state.doubleBoost
+          ? "ACTIVE"
+          : "ACTIVATE";
+
+      saveState();
+      render();
+    }
+  );
+}
+
+// ==========================================
+// PAGE NAVIGATION
+// ==========================================
+
+const navItems =
+  document.querySelectorAll(
+    ".nav-item"
+  );
+
+const pages =
+  document.querySelectorAll(
+    ".page"
+  );
+
+function openPage(
+  pageId
+) {
+  pages.forEach(
+    (page) => {
+      page.classList.toggle(
+        "active",
+        page.id === pageId
+      );
+    }
+  );
+
+  navItems.forEach(
+    (item) => {
+      item.classList.toggle(
+        "active",
+        item.dataset.page ===
+          pageId
+      );
+    }
+  );
+
+  window.scrollTo(
+    0,
+    0
+  );
+}
+
+navItems.forEach(
+  (item) => {
+    item.addEventListener(
+      "click",
+      () => {
+        openPage(
+          item.dataset.page
+        );
+      }
+    );
+  }
+);
+
+// ==========================================
+// TOP WALLET BUTTON
+// ==========================================
+
+if (walletTopEl) {
+  walletTopEl.addEventListener(
+    "click",
+    () => {
+      openPage(
+        "walletPage"
+      );
+    }
+  );
+}
+
+// ==========================================
+// TON CONNECT
+// ==========================================
+
+let tonConnectUI = null;
+
+function initTonConnect() {
+  if (
+    typeof TON_CONNECT_UI ===
+    "undefined"
+  ) {
     console.error(
       "TON Connect UI not loaded"
     );
 
     return;
-
   }
-
 
   try {
-
     tonConnectUI =
-      new TON_CONNECT_UI.TonConnectUI({
+      new TON_CONNECT_UI.TonConnectUI(
+        {
+          manifestUrl:
+            "https://sadeghi1315.github.io/sinaps-tap-to-earn/tonconnect-manifest.json",
 
-        manifestUrl:
-          "https://sadeghi1315.github.io/sinaps-tap-to-earn/tonconnect-manifest.json"
-
-      });
-
-
-    tonConnectUI.onStatusChange(
-      function(wallet) {
-
-        updateWalletUI(
-          wallet
-        );
-
-      }
-    );
-
-
-    const restored =
-      await tonConnectUI
-        .connectionRestored;
-
-
-    updateWalletUI(
-      tonConnectUI.wallet
-    );
-
-
-  } catch (error) {
-
-    console.error(
-      "TON Connect error:",
-      error
-    );
-
-  }
-
-}
-
-
-function updateWalletUI(wallet) {
-
-  const top =
-    $("walletTop");
-
-  const title =
-    $("walletTitle");
-
-  const address =
-    $("walletAddress");
-
-  const disconnect =
-    $("disconnectWallet");
-
-
-  if (
-    wallet &&
-    wallet.account
-  ) {
-
-    const addr =
-      wallet.account.address;
-
-
-    if (top) {
-
-      top.textContent =
-        shortAddress(addr);
-
-    }
-
-
-    if (title) {
-
-      title.textContent =
-        "Wallet Connected";
-
-    }
-
-
-    if (address) {
-
-      address.textContent =
-        shortAddress(addr);
-
-    }
-
-
-    if (disconnect) {
-
-      disconnect.style.display =
-        "block";
-
-    }
-
-  } else {
-
-    if (top) {
-
-      top.textContent =
-        "Connect";
-
-    }
-
-
-    if (title) {
-
-      title.textContent =
-        "Wallet not connected";
-
-    }
-
-
-    if (address) {
-
-      address.textContent =
-        "Connect your TON wallet to continue.";
-
-    }
-
-
-    if (disconnect) {
-
-      disconnect.style.display =
-        "none";
-
-    }
-
-  }
-
-}
-
-
-if ($("walletTop")) {
-
-  $("walletTop").onclick =
-    async function() {
-
-      showPage(
-        "walletPage"
+          buttonRootId:
+            "ton-connect-button"
+        }
       );
 
+    tonConnectUI.onStatusChange(
+      async (wallet) => {
+        if (
+          wallet &&
+          wallet.account
+        ) {
+          const address =
+            wallet.account.address;
 
-      if (
-        tonConnectUI
-      ) {
+          console.log(
+            "Wallet connected:",
+            address
+          );
 
-        tonConnectUI
-          .openModal();
+          state.walletAddress =
+            address;
 
+          saveState();
+          renderWallet();
+
+          await saveWalletToBackend(
+            address
+          );
+
+        } else {
+          console.log(
+            "Wallet disconnected"
+          );
+
+          renderWallet();
+        }
       }
+    );
 
-    };
-
+  } catch (error) {
+    console.error(
+      "TON CONNECT INIT:",
+      error
+    );
+  }
 }
 
+// ==========================================
+// DISCONNECT WALLET
+// ==========================================
 
-if ($("disconnectWallet")) {
-
-  $("disconnectWallet").onclick =
-    async function() {
-
-      if (
-        tonConnectUI
-      ) {
-
-        await tonConnectUI
-          .disconnect();
-
+if (disconnectWalletEl) {
+  disconnectWalletEl.addEventListener(
+    "click",
+    async () => {
+      if (!tonConnectUI) {
+        return;
       }
 
-    };
+      try {
+        await tonConnectUI.disconnect();
 
+        if (telegramId) {
+          await fetch(
+            `${API}/api/wallet/disconnect`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type":
+                  "application/json"
+              },
+              body: JSON.stringify({
+                telegram_id:
+                  telegramId
+              })
+            }
+          );
+        }
+
+        state.walletAddress =
+          null;
+
+        saveState();
+        renderWallet();
+
+        if (tg) {
+          tg.showAlert(
+            "Wallet disconnected."
+          );
+        }
+
+      } catch (error) {
+        console.error(
+          "DISCONNECT:",
+          error
+        );
+      }
+    }
+  );
 }
 
+// ==========================================
+// WITHDRAW
+// ==========================================
 
-/* =========================
-   WITHDRAW
-========================= */
+const withdrawBtn =
+  document.getElementById(
+    "withdrawBtn"
+  );
 
-if ($("withdrawBtn")) {
+if (withdrawBtn) {
+  withdrawBtn.addEventListener(
+    "click",
+    () => {
+      const amount =
+        document.getElementById(
+          "withdrawAmount"
+        )?.value;
 
-  $("withdrawBtn").onclick =
-    function() {
-
-      if (
-        !tonConnectUI ||
-        !tonConnectUI.connected
-      ) {
-
-        alert(
-          "Please connect your TON wallet first."
+      if (!state.walletAddress) {
+        tg?.showAlert(
+          "Please connect your wallet first."
         );
 
         return;
-
       }
 
+      if (
+        !amount ||
+        Number(amount) <= 0
+      ) {
+        tg?.showAlert(
+          "Enter a valid SNP amount."
+        );
 
-      alert(
-        "SNP withdrawal will be enabled after the Jetton withdrawal system is connected."
+        return;
+      }
+
+      tg?.showAlert(
+        "SNP withdrawal will be enabled after the secure Jetton withdrawal system is connected."
       );
-
-    };
-
+    }
+  );
 }
 
+// ==========================================
+// START
+// ==========================================
 
-/* =========================
-   START
-========================= */
-
+renderUser();
 render();
-
+initTonConnect();
 loadUser();
-
-setupWallet();
-
-
-setInterval(
-  render,
-  1000
-);
+loadSavedWallet();
