@@ -2,6 +2,7 @@
 <html lang="en">
 
 <head>
+
   <meta charset="UTF-8">
 
   <meta
@@ -14,35 +15,104 @@
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
   <link rel="stylesheet" href="style.css">
+
+  <!--
+    IMPORTANT:
+    Page visibility is controlled here so it works
+    even if style.css has a problem.
+  -->
+
+  <style>
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      min-height: 100%;
+    }
+
+    .page {
+      display: none !important;
+    }
+
+    .page.active {
+      display: block !important;
+    }
+
+    .bottom-nav {
+      position: fixed !important;
+      left: 50% !important;
+      bottom: 10px !important;
+
+      transform: translateX(-50%) !important;
+
+      z-index: 99999 !important;
+
+      width: calc(100% - 20px) !important;
+      max-width: 500px !important;
+    }
+
+    .app {
+      min-height: 100vh;
+      padding-bottom: 100px !important;
+    }
+
+  </style>
+
 </head>
+
 
 <body>
 
+
 <main class="app">
 
-  <!-- HEADER -->
+
+  <!-- =========================
+       HEADER
+  ========================== -->
+
   <header>
 
     <div class="brand">
 
-      <div class="logo">S</div>
+      <div class="logo">
+        S
+      </div>
 
       <div>
+
         <b>SINAPS</b>
-        <small>Tap to Earn</small>
+
+        <small>
+          Tap to Earn
+        </small>
+
       </div>
 
     </div>
 
-    <button id="walletBtn" class="wallet">
+
+    <button
+      id="walletBtn"
+      class="wallet"
+    >
       Connect Wallet
     </button>
 
   </header>
 
 
-  <!-- HOME -->
-  <section id="homePage" class="page active">
+
+  <!-- =========================
+       HOME PAGE
+  ========================== -->
+
+  <section
+    id="homePage"
+    class="page active"
+  >
 
     <section class="card balance">
 
@@ -50,62 +120,114 @@
         YOUR BALANCE
       </div>
 
-      <div id="points" class="points">
+
+      <div
+        id="points"
+        class="points"
+      >
         0
       </div>
+
 
       <div class="unit">
         SNP
       </div>
 
+
       <div class="level">
+
         LEVEL
-        <span id="level">1</span>
+
+        <span id="level">
+          1
+        </span>
+
         ·
-        <span id="energyText">1000</span>
+
+        <span id="energyText">
+          1000
+        </span>
+
         ENERGY
+
       </div>
 
     </section>
 
 
+
     <section class="tap-wrap">
 
-      <button id="tap" class="tap">
+      <button
+        id="tap"
+        class="tap"
+      >
         S
       </button>
+
 
       <div id="floaters"></div>
 
     </section>
 
 
+
     <div class="energybar">
-      <div id="energyFill"></div>
+
+      <div
+        id="energyFill"
+        style="width:100%"
+      ></div>
+
     </div>
 
 
+
     <div class="boost-status">
-      <span>Tap Power</span>
-      <strong id="tapPower">x1</strong>
+
+      <span>
+        Tap Power
+      </span>
+
+      <strong id="tapPower">
+        x1
+      </strong>
+
     </div>
 
   </section>
 
 
-  <!-- BOOST -->
-  <section id="boostPage" class="page">
+
+  <!-- =========================
+       BOOST PAGE
+  ========================== -->
+
+  <section
+    id="boostPage"
+    class="page"
+  >
 
     <div class="page-title">
 
-      <span>⚡</span>
+      <span>
+        ⚡
+      </span>
 
       <div>
-        <h2>Boost</h2>
-        <p>Increase your earning power</p>
+
+        <h2>
+          Boost
+        </h2>
+
+        <p>
+          Increase your earning power
+        </p>
+
       </div>
 
     </div>
+
 
 
     <div class="boost-card">
@@ -114,15 +236,19 @@
         ⚡
       </div>
 
+
       <div class="boost-info">
 
-        <b>Double Tap</b>
+        <b>
+          Double Tap
+        </b>
 
         <span>
           Earn 2 SNP for every tap
         </span>
 
       </div>
+
 
       <button
         id="doubleBoost"
@@ -134,21 +260,26 @@
     </div>
 
 
+
     <div class="boost-card">
 
       <div class="boost-icon">
         🔋
       </div>
 
+
       <div class="boost-info">
 
-        <b>Energy Boost</b>
+        <b>
+          Energy Boost
+        </b>
 
         <span>
           Increase maximum energy
         </span>
 
       </div>
+
 
       <button
         id="energyBoost"
@@ -160,21 +291,26 @@
     </div>
 
 
+
     <div class="boost-card">
 
       <div class="boost-icon">
         🚀
       </div>
 
+
       <div class="boost-info">
 
-        <b>Turbo</b>
+        <b>
+          Turbo
+        </b>
 
         <span>
           Super fast earning mode
         </span>
 
       </div>
+
 
       <button
         class="boost-btn"
@@ -188,19 +324,36 @@
   </section>
 
 
-  <!-- DAILY -->
-  <section id="dailyPage" class="page">
+
+  <!-- =========================
+       DAILY PAGE
+  ========================== -->
+
+  <section
+    id="dailyPage"
+    class="page"
+  >
 
     <div class="page-title">
 
-      <span>🎁</span>
+      <span>
+        🎁
+      </span>
 
       <div>
-        <h2>Daily Bonus</h2>
-        <p>Come back every day</p>
+
+        <h2>
+          Daily Bonus
+        </h2>
+
+        <p>
+          Come back every day
+        </p>
+
       </div>
 
     </div>
+
 
 
     <div class="daily-card">
@@ -209,17 +362,21 @@
         🎁
       </div>
 
+
       <h2>
         Daily Reward
       </h2>
+
 
       <p>
         Claim your daily SNP reward.
       </p>
 
+
       <div class="daily-reward">
         +100 SNP
       </div>
+
 
       <button
         id="daily"
@@ -233,19 +390,36 @@
   </section>
 
 
-  <!-- FRIENDS -->
-  <section id="friendsPage" class="page">
+
+  <!-- =========================
+       FRIENDS PAGE
+  ========================== -->
+
+  <section
+    id="friendsPage"
+    class="page"
+  >
 
     <div class="page-title">
 
-      <span>👥</span>
+      <span>
+        👥
+      </span>
 
       <div>
-        <h2>Friends</h2>
-        <p>Invite friends & earn</p>
+
+        <h2>
+          Friends
+        </h2>
+
+        <p>
+          Invite friends & earn
+        </p>
+
       </div>
 
     </div>
+
 
 
     <div class="referral-card">
@@ -254,19 +428,25 @@
         👥
       </div>
 
+
       <h2>
         Invite Friends
       </h2>
+
 
       <p>
         Earn rewards when your friends join SINAPS.
       </p>
 
+
       <div class="referral-link">
+
         <span id="referralLink">
           Your referral link
         </span>
+
       </div>
+
 
       <button
         id="invite"
@@ -280,19 +460,36 @@
   </section>
 
 
-  <!-- TASKS -->
-  <section id="tasksPage" class="page">
+
+  <!-- =========================
+       TASKS PAGE
+  ========================== -->
+
+  <section
+    id="tasksPage"
+    class="page"
+  >
 
     <div class="page-title">
 
-      <span>⚡</span>
+      <span>
+        ⚡
+      </span>
 
       <div>
-        <h2>Tasks</h2>
-        <p>Complete tasks and earn SNP</p>
+
+        <h2>
+          Tasks
+        </h2>
+
+        <p>
+          Complete tasks and earn SNP
+        </p>
+
       </div>
 
     </div>
+
 
 
     <div class="task-card">
@@ -301,15 +498,19 @@
         📢
       </div>
 
+
       <div class="task-info">
 
-        <b>Join SINAPS Channel</b>
+        <b>
+          Join SINAPS Channel
+        </b>
 
         <span>
           +100 SNP
         </span>
 
       </div>
+
 
       <button
         class="task-btn"
@@ -321,21 +522,26 @@
     </div>
 
 
+
     <div class="task-card">
 
       <div class="task-icon">
         👥
       </div>
 
+
       <div class="task-info">
 
-        <b>Invite a Friend</b>
+        <b>
+          Invite a Friend
+        </b>
 
         <span>
           +250 SNP
         </span>
 
       </div>
+
 
       <button
         class="task-btn"
@@ -349,55 +555,113 @@
   </section>
 
 
-  <!-- BOTTOM NAV -->
-  <nav class="bottom-nav">
+
+  <!-- =========================
+       BOTTOM NAVIGATION
+  ========================== -->
+
+  <nav
+    class="bottom-nav"
+    id="bottomNav"
+  >
+
 
     <button
+      type="button"
       class="nav-item active"
       data-page="homePage"
     >
-      <span>⌂</span>
-      <small>Home</small>
+
+      <span>
+        ⌂
+      </span>
+
+      <small>
+        Home
+      </small>
+
     </button>
 
 
+
     <button
+      type="button"
       class="nav-item"
       data-page="boostPage"
     >
-      <span>⚡</span>
-      <small>Boost</small>
+
+      <span>
+        ⚡
+      </span>
+
+      <small>
+        Boost
+      </small>
+
     </button>
 
 
+
     <button
+      type="button"
       class="nav-item"
       data-page="dailyPage"
     >
-      <span>🎁</span>
-      <small>Daily</small>
+
+      <span>
+        🎁
+      </span>
+
+      <small>
+        Daily
+      </small>
+
     </button>
 
 
+
     <button
+      type="button"
       class="nav-item"
       data-page="friendsPage"
     >
-      <span>👥</span>
-      <small>Friends</small>
+
+      <span>
+        👥
+      </span>
+
+      <small>
+        Friends
+      </small>
+
     </button>
+
 
 
     <button
+      type="button"
       class="nav-item"
       data-page="tasksPage"
     >
-      <span>☰</span>
-      <small>Tasks</small>
+
+      <span>
+        ☰
+      </span>
+
+      <small>
+        Tasks
+      </small>
+
     </button>
+
 
   </nav>
 
+
+
+  <!-- =========================
+       FOOTER
+  ========================== -->
 
   <footer>
 
@@ -411,10 +675,107 @@
 
   </footer>
 
+
 </main>
 
 
+
+<!-- =========================
+     NAVIGATION SCRIPT
+========================== -->
+
+<script>
+
+(function () {
+
+  const pages =
+    document.querySelectorAll(".page");
+
+  const navItems =
+    document.querySelectorAll(".nav-item");
+
+
+  function showPage(pageId) {
+
+    pages.forEach(function (page) {
+
+      page.classList.remove("active");
+
+      page.style.display = "none";
+
+    });
+
+
+    navItems.forEach(function (item) {
+
+      item.classList.remove("active");
+
+    });
+
+
+    const selectedPage =
+      document.getElementById(pageId);
+
+
+    if (selectedPage) {
+
+      selectedPage.classList.add("active");
+
+      selectedPage.style.display = "block";
+
+    }
+
+
+    navItems.forEach(function (item) {
+
+      if (
+        item.dataset.page === pageId
+      ) {
+
+        item.classList.add("active");
+
+      }
+
+    });
+
+
+    window.scrollTo({
+      top: 0,
+      behavior: "instant"
+    });
+
+  }
+
+
+  navItems.forEach(function (item) {
+
+    item.addEventListener(
+      "click",
+      function () {
+
+        const pageId =
+          item.dataset.page;
+
+        showPage(pageId);
+
+      }
+    );
+
+  });
+
+
+  // Always start on Home
+  showPage("homePage");
+
+
+})();
+
+</script>
+
+
+
 <script src="app.js"></script>
+
 
 </body>
 </html>
