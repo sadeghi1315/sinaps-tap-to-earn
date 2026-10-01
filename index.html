@@ -14,7 +14,6 @@
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-  <!-- TON CONNECT -->
   <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
 
   <link rel="stylesheet" href="style.css">
@@ -59,6 +58,8 @@
     <button
       id="walletTop"
       class="wallet-mini"
+      type="button"
+      data-page="walletPage"
     >
       Connect
     </button>
@@ -74,7 +75,6 @@
     class="page active"
   >
 
-
     <div class="balance-card">
 
       <div class="balance-label">
@@ -82,8 +82,10 @@
       </div>
 
 
+      <!-- مهم: ID با app.js هماهنگ شده -->
+
       <div
-        id="points"
+        id="balance"
         class="points"
       >
         0
@@ -98,12 +100,15 @@
       <div class="level-line">
 
         LEVEL
-        <b id="level">1</b>
+
+        <b id="level">
+          1
+        </b>
 
         <span>•</span>
 
-        <b id="energyText">
-          1000
+        <b id="energy">
+          1000 / 1000
         </b>
 
         ENERGY
@@ -114,7 +119,7 @@
 
 
 
-    <!-- CENTER S -->
+    <!-- CENTER LOGO -->
 
     <div
       id="tapArea"
@@ -157,10 +162,13 @@
           <span id="energyCurrent">
             1000
           </span>
+
           /
+
           <span id="energyMax">
             1000
           </span>
+
         </b>
 
       </div>
@@ -175,6 +183,8 @@
     </div>
 
 
+
+    <!-- TAP POWER -->
 
     <div class="tap-power">
 
@@ -243,6 +253,7 @@
       <button
         id="doubleBoost"
         class="action-btn"
+        type="button"
       >
         ACTIVATE
       </button>
@@ -273,6 +284,7 @@
       <button
         id="energyBoost"
         class="action-btn"
+        type="button"
       >
         SOON
       </button>
@@ -302,6 +314,7 @@
 
       <button
         class="action-btn"
+        type="button"
         disabled
       >
         SOON
@@ -333,391 +346,4 @@
         </h2>
 
         <p>
-          Come back every day
-        </p>
-
-      </div>
-
-    </div>
-
-
-    <div class="daily-card">
-
-      <div class="big-icon">
-        🎁
-      </div>
-
-
-      <h2>
-        Daily Reward
-      </h2>
-
-
-      <p>
-        Claim your daily SNP reward.
-      </p>
-
-
-      <div class="reward-number">
-        +100 SNP
-      </div>
-
-
-      <button
-        id="daily"
-        class="primary-btn"
-      >
-        CLAIM REWARD
-      </button>
-
-    </div>
-
-  </section>
-
-
-
-  <!-- FRIENDS -->
-
-  <section
-    id="friendsPage"
-    class="page"
-  >
-
-    <div class="page-title">
-
-      <div class="page-icon">
-        👥
-      </div>
-
-      <div>
-
-        <h2>
-          Friends
-        </h2>
-
-        <p>
-          Invite friends & earn
-        </p>
-
-      </div>
-
-    </div>
-
-
-    <div class="friends-card">
-
-      <div class="big-icon">
-        👥
-      </div>
-
-
-      <h2>
-        Invite Friends
-      </h2>
-
-
-      <p>
-        Invite friends and earn SNP together.
-      </p>
-
-
-      <div
-        id="referralLink"
-        class="referral-link"
-      >
-        Your referral link
-      </div>
-
-
-      <button
-        id="invite"
-        class="primary-btn"
-      >
-        COPY INVITE LINK
-      </button>
-
-    </div>
-
-  </section>
-
-
-
-  <!-- TASKS -->
-
-  <section
-    id="tasksPage"
-    class="page"
-  >
-
-    <div class="page-title">
-
-      <div class="page-icon">
-        ⚡
-      </div>
-
-      <div>
-
-        <h2>
-          Tasks
-        </h2>
-
-        <p>
-          Complete tasks and earn SNP
-        </p>
-
-      </div>
-
-    </div>
-
-
-    <div class="task-card">
-
-      <div class="feature-icon">
-        📢
-      </div>
-
-
-      <div class="feature-info">
-
-        <b>
-          Join SINAPS Channel
-        </b>
-
-        <span>
-          +100 SNP
-        </span>
-
-      </div>
-
-
-      <button
-        class="action-btn"
-        disabled
-      >
-        SOON
-      </button>
-
-    </div>
-
-
-    <div class="task-card">
-
-      <div class="feature-icon">
-        👥
-      </div>
-
-
-      <div class="feature-info">
-
-        <b>
-          Invite a Friend
-        </b>
-
-        <span>
-          +250 SNP
-        </span>
-
-      </div>
-
-
-      <button
-        class="action-btn"
-        disabled
-      >
-        SOON
-      </button>
-
-    </div>
-
-  </section>
-
-
-
-  <!-- WALLET -->
-
-  <section
-    id="walletPage"
-    class="page"
-  >
-
-    <div class="page-title">
-
-      <div class="page-icon">
-        💎
-      </div>
-
-      <div>
-
-        <h2>
-          Wallet
-        </h2>
-
-        <p>
-          Manage your TON wallet
-        </p>
-
-      </div>
-
-    </div>
-
-
-    <div class="wallet-card">
-
-      <div class="wallet-big-icon">
-        💎
-      </div>
-
-
-      <h2 id="walletTitle">
-        Wallet not connected
-      </h2>
-
-
-      <p id="walletAddress">
-        Connect your TON wallet to continue.
-      </p>
-
-
-      <div id="ton-connect-button"></div>
-
-
-      <button
-        id="disconnectWallet"
-        class="disconnect-btn"
-      >
-        DISCONNECT
-      </button>
-
-
-      <div class="withdraw-box">
-
-        <h3>
-          SNP Withdrawal
-        </h3>
-
-        <p>
-          Withdraw your SNP to your connected wallet.
-        </p>
-
-
-        <div class="withdraw-row">
-
-          <input
-            id="withdrawAmount"
-            type="number"
-            min="1"
-            placeholder="Amount"
-          >
-
-          <button
-            id="withdrawBtn"
-            class="primary-btn"
-          >
-            WITHDRAW
-          </button>
-
-        </div>
-
-      </div>
-
-    </div>
-
-  </section>
-
-
-
-  <!-- BOTTOM NAV -->
-
-  <nav class="bottom-nav">
-
-
-    <button
-      class="nav-item active"
-      data-page="homePage"
-    >
-
-      <span>⌂</span>
-
-      <small>
-        Home
-      </small>
-
-    </button>
-
-
-    <button
-      class="nav-item"
-      data-page="boostPage"
-    >
-
-      <span>⚡</span>
-
-      <small>
-        Boost
-      </small>
-
-    </button>
-
-
-    <button
-      class="nav-item"
-      data-page="dailyPage"
-    >
-
-      <span>🎁</span>
-
-      <small>
-        Daily
-      </small>
-
-    </button>
-
-
-    <button
-      class="nav-item"
-      data-page="friendsPage"
-    >
-
-      <span>👥</span>
-
-      <small>
-        Friends
-      </small>
-
-    </button>
-
-
-    <button
-      class="nav-item"
-      data-page="walletPage"
-    >
-
-      <span>💎</span>
-
-      <small>
-        Wallet
-      </small>
-
-    </button>
-
-  </nav>
-
-
-
-  <footer>
-
-    <span id="status">
-      SINAPS
-    </span>
-
-  </footer>
-
-
-</main>
-
-
-<script src="app.js"></script>
-
-
-</body>
-</html>
+          Come back
