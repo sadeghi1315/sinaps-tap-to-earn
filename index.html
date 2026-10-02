@@ -1,775 +1,297 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-
 <head>
-
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SINAPS TEST</title>
 
-  <meta
-    name="viewport"
-    content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"
-  >
+  <style>
+    * {
+      box-sizing: border-box;
+    }
 
-  <title>SINAPS</title>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #06111b;
+      color: white;
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+    }
 
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    .app {
+      width: 100%;
+      max-width: 520px;
+      min-height: 100vh;
+      padding: 20px 15px 100px;
+      text-align: center;
+    }
 
-  <!-- TON CONNECT -->
-  <script src="https://unpkg.com/@tonconnect/ui@latest/dist/ton-connect-ui.min.js"></script>
+    h1 {
+      margin-top: 20px;
+    }
 
-  <link rel="stylesheet" href="style.css">
+    #balance {
+      font-size: 32px;
+      font-weight: bold;
+      margin: 20px 0;
+    }
 
+    #energy {
+      margin-bottom: 15px;
+    }
+
+    #tapArea {
+      position: relative;
+      width: 300px;
+      height: 300px;
+      margin: 30px auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+
+    #sLogo {
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 30%, #8ff3ff, #087da8 45%, #031923 75%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 90px;
+      font-weight: bold;
+      color: white;
+      box-shadow:
+        0 0 25px #00cfff,
+        0 0 70px rgba(0,207,255,.45);
+      transition: transform .15s ease;
+    }
+
+    #floaters {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .floater {
+      position: absolute;
+      font-size: 25px;
+      font-weight: bold;
+      color: #6be5ff;
+      transform: translate(-50%, -50%);
+      animation: floatUp .8s ease forwards;
+    }
+
+    @keyframes floatUp {
+      from {
+        opacity: 1;
+        transform: translate(-50%, -50%);
+      }
+
+      to {
+        opacity: 0;
+        transform: translate(-50%, -100px);
+      }
+    }
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: calc(100% - 20px);
+      max-width: 500px;
+      height: 65px;
+      display: flex;
+      background: #0b1d2a;
+      border: 1px solid #17465c;
+      border-radius: 18px;
+      z-index: 9999;
+    }
+
+    .nav-item {
+      flex: 1;
+      border: 0;
+      background: transparent;
+      color: #7593a0;
+      font-size: 12px;
+    }
+
+    .nav-item.active {
+      color: #6be5ff;
+    }
+
+    .page {
+      display: none;
+    }
+
+    .page.active {
+      display: block;
+    }
+
+    button {
+      cursor: pointer;
+    }
+  </style>
 </head>
-
 
 <body>
 
-<div class="stars"></div>
-<div class="nebula"></div>
+<div class="app">
 
+  <div id="homePage" class="page active">
+    <h1>SINAPS</h1>
 
-<main class="app">
+    <div id="balance">0</div>
 
+    <div id="energy">1000 / 1000</div>
 
-  <!-- =========================
-       HEADER
-  ========================== -->
-
-  <header class="top-header">
-
-    <div class="user-box">
-
-      <div class="user-avatar">
-        <span id="userAvatar">S</span>
-      </div>
-
-      <div>
-
-        <b id="username">
-          SINAPS User
-        </b>
-
-        <small>
-          SINAPS
-        </small>
-
-      </div>
-
-    </div>
-
-
-    <button
-      id="walletTop"
-      class="wallet-mini"
-      type="button"
-    >
-      Connect
-    </button>
-
-  </header>
-
-
-
-  <!-- =========================
-       HOME
-  ========================== -->
-
-  <section
-    id="homePage"
-    class="page active"
-  >
-
-    <div class="balance-card">
-
-      <div class="balance-label">
-        YOUR BALANCE
-      </div>
-
-
-      <div
-        id="balance"
-        class="points"
-      >
-        0
-      </div>
-
-
-      <div class="snp-label">
-        SNP
-      </div>
-
-
-      <div class="level-line">
-
-        LEVEL
-
-        <b id="level">
-          1
-        </b>
-
-        <span>•</span>
-
-        <b id="energy">
-          1000 / 1000
-        </b>
-
-        ENERGY
-
-      </div>
-
-    </div>
-
-
-
-    <!-- CENTER S LOGO -->
-
-    <div
-      id="tapArea"
-      class="tap-area"
-    >
-
-      <div
-        id="sLogo"
-        class="s-logo"
-      >
-
-        <div class="s-core">
-          S
-        </div>
-
-        <div class="s-ring ring-1"></div>
-
-        <div class="s-ring ring-2"></div>
-
-        <div class="s-ring ring-3"></div>
-
-      </div>
-
-
+    <div id="tapArea">
+      <div id="sLogo">S</div>
       <div id="floaters"></div>
-
     </div>
 
+    <div>Tap the SINAPS logo</div>
+  </div>
 
+  <div id="boostPage" class="page">
+    <h1>⚡ Boost</h1>
+    <p>Boost page works.</p>
+  </div>
 
-    <!-- ENERGY -->
+  <div id="dailyPage" class="page">
+    <h1>🎁 Daily</h1>
+    <p>Daily page works.</p>
+  </div>
 
-    <div class="energy-section">
+  <div id="friendsPage" class="page">
+    <h1>👥 Friends</h1>
+    <p>Friends page works.</p>
+  </div>
 
-      <div class="energy-info">
+  <div id="walletPage" class="page">
+    <h1>💎 Wallet</h1>
+    <p>Wallet page works.</p>
+  </div>
 
-        <span>
-          ENERGY
-        </span>
+</div>
 
-        <b>
+<nav class="bottom-nav">
 
-          <span id="energyCurrent">
-            1000
-          </span>
+  <button class="nav-item active" data-page="homePage">
+    ⌂<br>Home
+  </button>
 
-          /
+  <button class="nav-item" data-page="boostPage">
+    ⚡<br>Boost
+  </button>
 
-          <span id="energyMax">
-            1000
-          </span>
+  <button class="nav-item" data-page="dailyPage">
+    🎁<br>Daily
+  </button>
 
-        </b>
+  <button class="nav-item" data-page="friendsPage">
+    👥<br>Friends
+  </button>
 
-      </div>
+  <button class="nav-item" data-page="walletPage">
+    💎<br>Wallet
+  </button>
 
+</nav>
 
-      <div class="energybar">
+<script>
+(function () {
 
-        <div id="energyFill"></div>
+  let balance = 0;
+  let energy = 1000;
+  const maxEnergy = 1000;
 
-      </div>
+  function render() {
+    document.getElementById("balance").textContent = balance;
+    document.getElementById("energy").textContent =
+      energy + " / " + maxEnergy;
+  }
 
-    </div>
+  document.getElementById("tapArea").addEventListener("click", function (event) {
 
+    if (energy <= 0) return;
 
+    balance++;
+    energy--;
 
-    <!-- TAP POWER -->
+    render();
 
-    <div class="tap-power">
+    const floater = document.createElement("div");
 
-      <span>
-        TAP POWER
-      </span>
+    floater.className = "floater";
+    floater.textContent = "+1";
 
-      <b id="tapPower">
-        x1
-      </b>
+    const rect = document.getElementById("tapArea").getBoundingClientRect();
 
-    </div>
+    floater.style.left =
+      (event.clientX - rect.left) + "px";
 
-  </section>
+    floater.style.top =
+      (event.clientY - rect.top) + "px";
 
+    document.getElementById("floaters").appendChild(floater);
 
+    const logo = document.getElementById("sLogo");
 
-  <!-- =========================
-       BOOST
-  ========================== -->
+    logo.style.transform = "scale(0.92)";
 
-  <section
-    id="boostPage"
-    class="page"
-  >
+    setTimeout(function () {
+      logo.style.transform = "scale(1)";
+    }, 120);
 
-    <div class="page-title">
+    setTimeout(function () {
+      floater.remove();
+    }, 800);
 
-      <div class="page-icon">
-        ⚡
-      </div>
+  });
 
-      <div>
+  document.querySelectorAll(".nav-item").forEach(function (button) {
 
-        <h2>
-          Boost
-        </h2>
+    button.addEventListener("click", function () {
 
-        <p>
-          Increase your earning power
-        </p>
+      const pageId = button.getAttribute("data-page");
 
-      </div>
+      document.querySelectorAll(".page").forEach(function (page) {
+        page.classList.remove("active");
+      });
 
-    </div>
+      document.getElementById(pageId).classList.add("active");
 
+      document.querySelectorAll(".nav-item").forEach(function (item) {
+        item.classList.remove("active");
+      });
 
-    <div class="boost-card">
+      button.classList.add("active");
 
-      <div class="feature-icon">
-        ⚡
-      </div>
+    });
 
+  });
 
-      <div class="feature-info">
+  setInterval(function () {
 
-        <b>
-          Double Tap
-        </b>
+    if (energy < maxEnergy) {
+      energy++;
+      render();
+    }
 
-        <span>
-          Earn 2 SNP for every tap
-        </span>
+  }, 3000);
 
-      </div>
+  render();
 
-
-      <button
-        id="doubleBoost"
-        class="action-btn"
-        type="button"
-      >
-        ACTIVATE
-      </button>
-
-    </div>
-
-
-    <div class="boost-card">
-
-      <div class="feature-icon">
-        🔋
-      </div>
-
-
-      <div class="feature-info">
-
-        <b>
-          Energy Boost
-        </b>
-
-        <span>
-          Increase maximum energy
-        </span>
-
-      </div>
-
-
-      <button
-        id="energyBoost"
-        class="action-btn"
-        type="button"
-        disabled
-      >
-        SOON
-      </button>
-
-    </div>
-
-
-    <div class="boost-card">
-
-      <div class="feature-icon">
-        🚀
-      </div>
-
-
-      <div class="feature-info">
-
-        <b>
-          Turbo
-        </b>
-
-        <span>
-          Super fast earning
-        </span>
-
-      </div>
-
-
-      <button
-        class="action-btn"
-        type="button"
-        disabled
-      >
-        SOON
-      </button>
-
-    </div>
-
-  </section>
-
-
-
-  <!-- =========================
-       DAILY
-  ========================== -->
-
-  <section
-    id="dailyPage"
-    class="page"
-  >
-
-    <div class="page-title">
-
-      <div class="page-icon">
-        🎁
-      </div>
-
-      <div>
-
-        <h2>
-          Daily Bonus
-        </h2>
-
-        <p>
-          Come back every day
-        </p>
-
-      </div>
-
-    </div>
-
-
-    <div class="daily-card">
-
-      <div class="big-icon">
-        🎁
-      </div>
-
-
-      <h2>
-        Daily Reward
-      </h2>
-
-
-      <p>
-        Claim your daily SNP reward.
-      </p>
-
-
-      <div class="reward-number">
-        +100 SNP
-      </div>
-
-
-      <button
-        id="daily"
-        class="primary-btn"
-        type="button"
-      >
-        CLAIM REWARD
-      </button>
-
-    </div>
-
-  </section>
-
-
-
-  <!-- =========================
-       FRIENDS
-  ========================== -->
-
-  <section
-    id="friendsPage"
-    class="page"
-  >
-
-    <div class="page-title">
-
-      <div class="page-icon">
-        👥
-      </div>
-
-      <div>
-
-        <h2>
-          Friends
-        </h2>
-
-        <p>
-          Invite friends & earn
-        </p>
-
-      </div>
-
-    </div>
-
-
-    <div class="friends-card">
-
-      <div class="big-icon">
-        👥
-      </div>
-
-
-      <h2>
-        Invite Friends
-      </h2>
-
-
-      <p>
-        Invite friends and earn SNP together.
-      </p>
-
-
-      <div
-        id="referralLink"
-        class="referral-link"
-      >
-        Your referral link
-      </div>
-
-
-      <button
-        id="invite"
-        class="primary-btn"
-        type="button"
-      >
-        COPY INVITE LINK
-      </button>
-
-    </div>
-
-  </section>
-
-
-
-  <!-- =========================
-       TASKS
-  ========================== -->
-
-  <section
-    id="tasksPage"
-    class="page"
-  >
-
-    <div class="page-title">
-
-      <div class="page-icon">
-        ⚡
-      </div>
-
-      <div>
-
-        <h2>
-          Tasks
-        </h2>
-
-        <p>
-          Complete tasks and earn SNP
-        </p>
-
-      </div>
-
-    </div>
-
-
-    <div class="task-card">
-
-      <div class="feature-icon">
-        📢
-      </div>
-
-
-      <div class="feature-info">
-
-        <b>
-          Join SINAPS Channel
-        </b>
-
-        <span>
-          +100 SNP
-        </span>
-
-      </div>
-
-
-      <button
-        class="action-btn"
-        type="button"
-        disabled
-      >
-        SOON
-      </button>
-
-    </div>
-
-
-    <div class="task-card">
-
-      <div class="feature-icon">
-        👥
-      </div>
-
-
-      <div class="feature-info">
-
-        <b>
-          Invite a Friend
-        </b>
-
-        <span>
-          +250 SNP
-        </span>
-
-      </div>
-
-
-      <button
-        class="action-btn"
-        type="button"
-        disabled
-      >
-        SOON
-      </button>
-
-    </div>
-
-  </section>
-
-
-
-  <!-- =========================
-       WALLET
-  ========================== -->
-
-  <section
-    id="walletPage"
-    class="page"
-  >
-
-    <div class="page-title">
-
-      <div class="page-icon">
-        💎
-      </div>
-
-      <div>
-
-        <h2>
-          Wallet
-        </h2>
-
-        <p>
-          Manage your TON wallet
-        </p>
-
-      </div>
-
-    </div>
-
-
-    <div class="wallet-card">
-
-      <div class="wallet-big-icon">
-        💎
-      </div>
-
-
-      <h2 id="walletTitle">
-        Wallet not connected
-      </h2>
-
-
-      <p id="walletAddress">
-        Connect your TON wallet to continue.
-      </p>
-
-
-      <div id="ton-connect-button"></div>
-
-
-      <button
-        id="disconnectWallet"
-        class="disconnect-btn"
-        type="button"
-      >
-        DISCONNECT
-      </button>
-
-
-      <div class="withdraw-box">
-
-        <h3>
-          SNP Withdrawal
-        </h3>
-
-        <p>
-          Withdraw your SNP to your connected wallet.
-        </p>
-
-
-        <div class="withdraw-row">
-
-          <input
-            id="withdrawAmount"
-            type="number"
-            min="1"
-            placeholder="Amount"
-          >
-
-
-          <button
-            id="withdrawBtn"
-            class="primary-btn"
-            type="button"
-          >
-            WITHDRAW
-          </button>
-
-        </div>
-
-      </div>
-
-    </div>
-
-  </section>
-
-
-
-  <!-- =========================
-       BOTTOM NAVIGATION
-  ========================== -->
-
-  <nav
-    class="bottom-nav"
-    id="bottomNav"
-  >
-
-    <button
-      class="nav-item active"
-      type="button"
-      data-page="homePage"
-    >
-
-      <span>⌂</span>
-
-      <small>
-        Home
-      </small>
-
-    </button>
-
-
-    <button
-      class="nav-item"
-      type="button"
-      data-page="boostPage"
-    >
-
-      <span>⚡</span>
-
-      <small>
-        Boost
-      </small>
-
-    </button>
-
-
-    <button
-      class="nav-item"
-      type="button"
-      data-page="dailyPage"
-    >
-
-      <span>🎁</span>
-
-      <small>
-        Daily
-      </small>
-
-    </button>
-
-
-    <button
-      class="nav-item"
-      type="button"
-      data-page="friendsPage"
-    >
-
-      <span>👥</span>
-
-      <small>
-        Friends
-      </small>
-
-    </button>
-
-
-    <button
-      class="nav-item"
-      type="button"
-      data-page="walletPage"
-    >
-
-      <span>💎</span>
-
-      <small>
-        Wallet
-      </small>
-
-    </button>
-
-  </nav>
-
-
-
-  <!-- =========================
-       FOOTER
-  ========================== -->
-
-  <footer>
-
-    <span id="status">
-      SINAPS
-    </span>
-
-  </footer>
-
-
-</main>
-
-
-<!-- APP JAVASCRIPT -->
-
-<script src="app.js"></script>
-
+})();
+</script>
 
 </body>
-
 </html>
