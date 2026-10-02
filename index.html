@@ -2,646 +2,585 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#020812">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+  >
 
   <title>SINAPS — Tap to Earn</title>
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-  <!-- TON CONNECT -->
   <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
 
   <style>
-    *{
-      box-sizing:border-box;
-      -webkit-tap-highlight-color:transparent
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
     }
 
-    html,body{
-      margin:0;
-      padding:0;
-      width:100%;
-      min-height:100%;
-      background:#020812;
-      color:#fff;
-      font-family:Arial,Helvetica,sans-serif;
-      overflow-x:hidden
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #02030a;
+      color: white;
     }
 
-    body{
-      min-height:100vh
+    body {
+      position: relative;
     }
 
-    /* SPACE */
+    /* GALAXY */
 
-    .space{
-      position:fixed;
-      inset:0;
-      overflow:hidden;
-      pointer-events:none;
-      z-index:0;
-      background:
-        radial-gradient(circle at 50% 38%,rgba(0,107,155,.22),transparent 32%),
-        radial-gradient(circle at 15% 80%,rgba(38,0,102,.18),transparent 28%),
-        radial-gradient(circle at 85% 20%,rgba(0,130,180,.12),transparent 28%),
-        linear-gradient(180deg,#01050c 0%,#03111c 45%,#020711 100%)
-    }
-
-    .stars,
-    .stars2,
-    .stars3{
-      position:absolute;
-      inset:0;
-      background-repeat:repeat;
-      pointer-events:none
-    }
-
-    .stars{
-      opacity:.75;
-      background-image:
-        radial-gradient(circle,rgba(255,255,255,.9) 1px,transparent 1.5px),
-        radial-gradient(circle,rgba(126,220,255,.7) 1px,transparent 1.5px);
-      background-size:91px 91px,137px 137px;
-      animation:starsMove 35s linear infinite
-    }
-
-    .stars2{
-      opacity:.45;
-      background-image:
-        radial-gradient(circle,rgba(255,255,255,.9) 1px,transparent 1.5px);
-      background-size:181px 181px;
-      animation:starsMove 60s linear infinite reverse
-    }
-
-    .stars3{
-      opacity:.3;
-      background-image:
-        radial-gradient(circle,rgba(87,211,255,.8) 1.2px,transparent 2px);
-      background-size:257px 257px;
-      animation:starsMove 85s linear infinite
-    }
-
-    @keyframes starsMove{
-      from{transform:translate3d(0,0,0)}
-      to{transform:translate3d(-120px,80px,0)}
-    }
-
-    .nebula{
-      position:absolute;
-      width:520px;
-      height:520px;
-      left:50%;
-      top:42%;
-      transform:translate(-50%,-50%);
-      border-radius:50%;
+    .space {
+      position: fixed;
+      inset: 0;
+      overflow: hidden;
       background:
         radial-gradient(
-          ellipse,
-          rgba(0,179,255,.12) 0%,
-          rgba(0,100,180,.07) 35%,
-          transparent 70%
-        );
-      filter:blur(20px)
+          circle at 50% 25%,
+          rgba(75, 50, 150, .28),
+          transparent 35%
+        ),
+        radial-gradient(
+          circle at 20% 80%,
+          rgba(20, 90, 180, .20),
+          transparent 35%
+        ),
+        radial-gradient(
+          circle at 80% 70%,
+          rgba(130, 40, 170, .18),
+          transparent 35%
+        ),
+        #02030a;
+      z-index: -10;
+    }
+
+    .stars {
+      position: absolute;
+      inset: 0;
+      background-image:
+        radial-gradient(circle, rgba(255,255,255,.85) 1px, transparent 1px),
+        radial-gradient(circle, rgba(255,255,255,.55) 1px, transparent 1px),
+        radial-gradient(circle, rgba(255,255,255,.35) 1px, transparent 1px);
+      background-size:
+        95px 95px,
+        145px 145px,
+        210px 210px;
+      background-position:
+        10px 20px,
+        30px 50px,
+        70px 90px;
+      animation: starsMove 30s linear infinite;
+    }
+
+    @keyframes starsMove {
+      from {
+        transform: translateY(0);
+      }
+
+      to {
+        transform: translateY(80px);
+      }
+    }
+
+    .nebula {
+      position: absolute;
+      width: 500px;
+      height: 500px;
+      border-radius: 50%;
+      filter: blur(90px);
+      opacity: .20;
+    }
+
+    .nebula.one {
+      background: #5738ff;
+      top: -200px;
+      left: -200px;
+    }
+
+    .nebula.two {
+      background: #00aaff;
+      right: -250px;
+      bottom: -220px;
     }
 
     /* APP */
 
-    .app{
-      position:relative;
-      z-index:5;
-      width:100%;
-      max-width:520px;
-      min-height:100vh;
-      margin:0 auto;
-      padding:14px 15px 105px
+    .app {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
     }
 
     /* TOP */
 
-    .topbar{
-      width:100%;
-      min-height:62px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px
+    .top {
+      padding:
+        calc(env(safe-area-inset-top) + 12px)
+        16px
+        8px;
+
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
     }
 
-    .profile{
-      display:flex;
-      align-items:center;
-      gap:10px;
-      min-width:0
+    .profile {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
     }
 
-    .avatar{
-      width:43px;
-      height:43px;
-      flex:0 0 43px;
-      border-radius:50%;
-      overflow:hidden;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      background:linear-gradient(145deg,#36d9ff,#07527b);
-      border:1px solid rgba(111,225,255,.65);
-      box-shadow:0 0 18px rgba(0,207,255,.25);
-      font-size:19px;
-      font-weight:bold
+    .avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background:
+        linear-gradient(145deg, #ffd966, #c98500);
+      color: #17100a;
+      font-weight: 900;
+      box-shadow:
+        0 0 18px rgba(255,205,70,.35);
+      overflow: hidden;
+      flex-shrink: 0;
     }
 
-    #userAvatar{
-      width:100%;
-      height:100%;
-      object-fit:cover;
-      display:none
+    .avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: none;
     }
 
-    .profile-info{
-      min-width:0;
-      text-align:left
+    .profile-info {
+      min-width: 0;
     }
 
-    .welcome{
-      color:#7894a1;
-      font-size:10px;
-      margin-bottom:3px
+    .username {
+      font-weight: 800;
+      font-size: 14px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 150px;
     }
 
-    #username{
-      max-width:170px;
-      overflow:hidden;
-      text-overflow:ellipsis;
-      white-space:nowrap;
-      font-size:14px;
-      font-weight:bold
+    .wallet-mini {
+      margin-top: 3px;
+      font-size: 10px;
+      opacity: .65;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 170px;
     }
 
-    .wallet-mini{
-      max-width:145px;
-      overflow:hidden;
-      text-overflow:ellipsis;
-      white-space:nowrap;
-      padding:8px 11px;
-      border:1px solid rgba(77,190,225,.35);
-      border-radius:12px;
-      background:rgba(8,30,44,.72);
-      color:#71dfff;
-      font-size:10px
+    .network {
+      font-size: 10px;
+      padding: 6px 9px;
+      border-radius: 10px;
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.08);
+      color: #bfffcf;
     }
 
-    /* PAGES */
+    /* MAIN */
 
-    .page{
-      display:none;
-      width:100%
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 10px 16px 100px;
+      scrollbar-width: none;
     }
 
-    .page.active{
-      display:block
+    .content::-webkit-scrollbar {
+      display: none;
+    }
+
+    .page {
+      display: none;
+      min-height: 100%;
+    }
+
+    .page.active {
+      display: block;
     }
 
     /* HOME */
 
-    .home-title{
-      margin-top:18px;
-      color:#7895a3;
-      font-size:11px;
-      letter-spacing:4px
+    .balance-card {
+      text-align: center;
+      padding-top: 12px;
     }
 
-    #balance{
-      margin-top:5px;
-      font-size:38px;
-      line-height:1.1;
-      font-weight:800;
-      letter-spacing:.5px;
-      text-shadow:0 0 20px rgba(255,213,69,.18)
+    .balance-label {
+      font-size: 12px;
+      opacity: .6;
+      letter-spacing: 2px;
     }
 
-    .coin-name{
-      margin-top:5px;
-      color:#cba52f;
-      font-size:11px;
-      letter-spacing:2px
+    .balance {
+      margin-top: 4px;
+      font-size: 38px;
+      font-weight: 900;
+      color: #ffe070;
+      text-shadow:
+        0 0 20px rgba(255,213,74,.25);
     }
 
-    #tapArea{
-      position:relative;
-      width:330px;
-      height:330px;
-      max-width:92vw;
-      margin:22px auto 12px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      cursor:pointer;
-      user-select:none;
-      -webkit-user-select:none;
-      touch-action:manipulation
+    .symbol {
+      color: #fff;
+      font-size: 13px;
+      opacity: .7;
+      margin-top: 2px;
     }
 
-    .coin-glow{
-      position:absolute;
-      width:245px;
-      height:245px;
-      border-radius:50%;
-      background:rgba(255,191,30,.08);
-      filter:blur(25px);
-      animation:coinGlow 2.8s ease-in-out infinite
+    /* COIN */
+
+    .tap-area {
+      position: relative;
+      height: 390px;
+      margin-top: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      touch-action: manipulation;
+      user-select: none;
     }
 
-    @keyframes coinGlow{
-      0%,100%{
-        transform:scale(.94);
-        opacity:.6
-      }
-      50%{
-        transform:scale(1.08);
-        opacity:1
-      }
-    }
-
-    #sLogo{
-      position:relative;
-      z-index:5;
-      width:205px;
-      height:205px;
-      border-radius:50%;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-size:108px;
-      font-weight:900;
-      color:#fff5a5;
+    .coin {
+      width: 205px;
+      height: 205px;
+      border-radius: 50%;
+      position: relative;
 
       background:
         radial-gradient(
-          circle at 32% 23%,
-          #fffbd1 0%,
-          #ffe878 11%,
-          #f5c72e 33%,
-          #d99b0a 57%,
-          #a46600 76%,
-          #5a3500 100%
+          circle at 35% 30%,
+          #fff4a6 0%,
+          #ffd85a 18%,
+          #d89914 55%,
+          #80500a 100%
         );
 
-      border:8px solid #d69c18;
+      border: 5px solid #ffe17a;
 
       box-shadow:
-        inset 0 0 0 3px rgba(255,239,131,.9),
-        inset 0 0 16px rgba(77,43,0,.7),
-        inset 10px 10px 18px rgba(255,255,255,.4),
-        inset -12px -14px 20px rgba(57,30,0,.55),
-        0 0 25px rgba(255,194,30,.5),
-        0 18px 35px rgba(0,0,0,.65);
+        inset -15px -18px 25px rgba(70,35,0,.45),
+        inset 12px 10px 18px rgba(255,255,255,.35),
+        0 0 30px rgba(255,190,30,.35),
+        0 25px 60px rgba(0,0,0,.45);
 
-      text-shadow:
-        2px 2px 0 #9b6000,
-        4px 4px 0 #693e00,
-        0 0 12px rgba(255,250,180,.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
 
       transition:
-        transform .14s ease,
-        filter .14s ease
+        transform .12s cubic-bezier(.2,.8,.3,1);
+
+      will-change: transform;
     }
 
-    #sLogo::before{
-      content:"";
-      position:absolute;
-      inset:8px;
-      border-radius:50%;
-      border:2px solid rgba(255,239,132,.75);
-      box-shadow:inset 0 0 8px rgba(90,50,0,.35);
-      pointer-events:none
+    .coin::after {
+      content: "";
+      position: absolute;
+      inset: 10px;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,.28);
     }
 
-    #sLogo::after{
-      content:"";
-      position:absolute;
-      inset:22px;
-      border-radius:50%;
-      border:1px solid rgba(255,239,132,.3);
-      pointer-events:none
+    .s-logo {
+      font-size: 100px;
+      font-weight: 1000;
+      font-family: Arial Black, Arial, sans-serif;
+      color: #fff2a0;
+      text-shadow:
+        3px 5px 0 #8e5b08,
+        6px 9px 15px rgba(0,0,0,.5),
+        0 0 20px rgba(255,245,170,.25);
+      transform: translateZ(0);
+      transition: transform .12s ease-out;
     }
 
-    #floaters{
-      position:absolute;
-      inset:0;
-      z-index:20;
-      pointer-events:none
+    .coin.hit {
+      transform: scale(.94);
     }
 
-    .floater{
-      position:absolute;
-      color:#ffe66b;
-      font-size:25px;
-      font-weight:800;
-      transform:translate(-50%,-50%);
-      text-shadow:0 0 7px rgba(255,185,0,.8);
-      animation:floatUp .8s ease forwards
+    /* FLOAT +1 */
+
+    .floater {
+      position: absolute;
+      pointer-events: none;
+      color: #ffe45e;
+      font-size: 25px;
+      font-weight: 900;
+      text-shadow: 0 0 12px rgba(255,200,40,.7);
+      animation: floatUp .75s ease-out forwards;
+      z-index: 50;
     }
 
-    @keyframes floatUp{
-      0%{
-        opacity:1;
-        transform:translate(-50%,-50%) scale(1)
+    @keyframes floatUp {
+      0% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
       }
-      100%{
-        opacity:0;
-        transform:translate(-50%,-105px) scale(1.12)
+
+      100% {
+        opacity: 0;
+        transform: translate(-50%, -130px) scale(1.35);
       }
     }
 
-    .energy-box{
-      width:100%;
-      max-width:340px;
-      margin:10px auto 0
+    /* ENERGY */
+
+    .energy-wrap {
+      max-width: 430px;
+      margin: 0 auto;
     }
 
-    .energy-head{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      margin-bottom:7px;
-      color:#91aab6;
-      font-size:11px
+    .energy-line {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      opacity: .75;
+      margin-bottom: 7px;
     }
 
-    .energy-head strong{
-      color:#d5e6ec
+    .energy-bar {
+      height: 9px;
+      border-radius: 20px;
+      overflow: hidden;
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.05);
     }
 
-    .energy-bar{
-      width:100%;
-      height:9px;
-      overflow:hidden;
-      border-radius:20px;
-      background:rgba(255,255,255,.08);
-      border:1px solid rgba(75,188,220,.15)
-    }
-
-    #energyFill{
-      width:100%;
-      height:100%;
-      border-radius:inherit;
-      background:linear-gradient(90deg,#09a9df,#65eaff);
-      box-shadow:0 0 12px rgba(42,212,255,.45);
-      transition:width .15s linear
-    }
-
-    .tap-hint{
-      margin-top:10px;
-      color:#56737f;
-      font-size:10px;
-      letter-spacing:2px
-    }
-
-    .status{
-      height:16px;
-      margin-top:6px;
-      text-align:center;
-      color:#56737f;
-      font-size:9px
+    .energy-fill {
+      height: 100%;
+      width: 100%;
+      border-radius: inherit;
+      background:
+        linear-gradient(90deg, #ffd43d, #fff09b);
+      box-shadow: 0 0 12px rgba(255,210,50,.4);
+      transition: width .15s linear;
     }
 
     /* CARDS */
 
-    .simple-card{
-      margin-top:35px;
-      padding:25px 18px;
-      border-radius:20px;
-      background:rgba(7,25,37,.75);
-      border:1px solid rgba(77,188,220,.25);
-      box-shadow:0 15px 35px rgba(0,0,0,.25)
+    .card {
+      padding: 18px;
+      margin-top: 14px;
+      border-radius: 20px;
+      background: rgba(10,14,30,.78);
+      border: 1px solid rgba(255,255,255,.08);
+      box-shadow: 0 15px 40px rgba(0,0,0,.25);
     }
 
-    .simple-card h2{
-      margin-top:0
+    .card-title {
+      font-size: 19px;
+      font-weight: 900;
+      margin-bottom: 8px;
     }
 
-    .simple-card p{
-      color:#7895a3;
-      font-size:13px
+    .card-text {
+      opacity: .68;
+      font-size: 13px;
+      line-height: 1.6;
     }
 
     /* WALLET */
 
-    .wallet-card{
-      text-align:center;
-      margin-top:25px
+    .wallet-box {
+      margin-top: 15px;
     }
 
-    .wallet-title{
-      font-size:24px;
-      font-weight:bold;
-      margin-bottom:8px
+    #ton-connect {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+      pointer-events: none;
+      overflow: hidden;
     }
 
-    .wallet-subtitle{
-      color:#7895a3;
-      font-size:12px;
-      margin-bottom:22px
-    }
-
-    /* OUR OWN CONNECT BUTTON */
-
-    #connectWalletBtn{
-      width:100%;
-      max-width:320px;
-      min-height:54px;
-      margin:8px auto 0;
-
-      border:1px solid rgba(255,221,92,.75);
-      border-radius:16px;
-
+    #connectWalletBtn {
+      width: 100%;
+      padding: 15px;
+      border: 0;
+      border-radius: 15px;
+      font-size: 16px;
+      font-weight: 900;
       background:
-        linear-gradient(
-          135deg,
-          #f6d85a 0%,
-          #dca91d 45%,
-          #9b6505 100%
-        );
-
-      color:#161006;
-      font-size:15px;
-      font-weight:800;
-      letter-spacing:.3px;
-
-      box-shadow:
-        0 8px 25px rgba(215,164,25,.28),
-        inset 0 1px 0 rgba(255,255,255,.7);
-
-      cursor:pointer;
-      transition:
-        transform .12s ease,
-        filter .12s ease
+        linear-gradient(135deg, #ffe27a, #f3b82e);
+      color: #16100a;
+      cursor: pointer;
+      box-shadow: 0 8px 25px rgba(255,193,45,.2);
     }
 
-    #connectWalletBtn:active{
-      transform:scale(.97)
+    .wallet-address {
+      display: none;
+      margin-top: 15px;
+      padding: 14px;
+      border-radius: 15px;
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.08);
     }
 
-    #connectWalletBtn:hover{
-      filter:brightness(1.1)
+    .wallet-label {
+      font-size: 10px;
+      opacity: .5;
+      margin-bottom: 6px;
+      letter-spacing: 1px;
     }
 
-    #connectWalletBtn.connected{
-      background:
-        linear-gradient(
-          135deg,
-          #1ac9a1,
-          #087b69
-        );
-      color:white;
-      border-color:#5af0d0
+    #walletAddressText {
+      word-break: break-all;
+      font-size: 12px;
+      color: #ffe16a;
     }
 
-    /* TON CONNECT HIDDEN ROOT */
-
-    #ton-connect{
-      position:absolute;
-      width:1px;
-      height:1px;
-      overflow:hidden;
-      opacity:0;
-      pointer-events:none
+    .disconnect-btn {
+      width: 100%;
+      margin-top: 10px;
+      padding: 12px;
+      border-radius: 13px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.05);
+      color: white;
+      display: none;
     }
 
-    .wallet-address{
-      display:none;
-      margin:18px auto 0;
-      max-width:340px;
-      padding:14px;
-
-      border-radius:14px;
-
-      background:rgba(0,0,0,.3);
-      border:1px solid rgba(77,188,220,.25);
-
-      color:#83e6ff;
-      font-size:11px;
-      word-break:break-all;
-      line-height:1.55
+    #walletStatus {
+      text-align: center;
+      margin-top: 12px;
+      font-size: 12px;
+      opacity: .75;
+      line-height: 1.5;
     }
 
-    .wallet-label{
-      color:#5f7d89;
-      font-size:9px;
-      margin-bottom:6px;
-      letter-spacing:1px
+    /* WITHDRAW */
+
+    .withdraw-box {
+      margin-top: 20px;
+      padding: 18px;
+      border-radius: 20px;
+      background: rgba(10,14,30,.82);
+      border: 1px solid rgba(255,215,80,.25);
+      box-shadow: 0 0 25px rgba(0,0,0,.25);
     }
 
-    .disconnect-btn{
-      display:none;
-      width:100%;
-      max-width:320px;
-      margin:12px auto 0;
-      padding:13px;
-
-      border:1px solid rgba(255,100,100,.3);
-      border-radius:13px;
-
-      background:rgba(90,20,25,.35);
-      color:#ff9b9b;
-
-      font-size:12px;
-      cursor:pointer
+    .withdraw-title {
+      font-size: 20px;
+      font-weight: 900;
+      color: #ffd84d;
+      margin-bottom: 12px;
     }
 
-    .withdraw-box{
-      margin:22px auto 0;
-      max-width:320px;
-      padding-top:18px;
-
-      border-top:1px solid rgba(77,188,220,.15);
-
-      color:#66818e;
-      font-size:11px;
-      line-height:1.6
+    .withdraw-balance {
+      font-size: 13px;
+      opacity: .85;
+      margin-bottom: 12px;
     }
 
-    /* NAV */
-
-    .bottom-nav{
-      position:fixed;
-      left:50%;
-      bottom:9px;
-      transform:translateX(-50%);
-      width:calc(100% - 18px);
-      max-width:500px;
-      height:67px;
-      padding:5px;
-
-      display:grid;
-      grid-template-columns:repeat(5,1fr);
-      align-items:center;
-
-      z-index:99999;
-
-      border:1px solid rgba(67,180,215,.4);
-      border-radius:21px;
-
-      background:rgba(3,14,25,.94);
-
-      box-shadow:0 12px 40px rgba(0,0,0,.6);
-
-      backdrop-filter:blur(20px);
-      -webkit-backdrop-filter:blur(20px)
+    .withdraw-balance strong {
+      color: #ffd84d;
     }
 
-    .nav-item{
-      height:56px;
-      display:flex;
-      flex-direction:column;
-      justify-content:center;
-      align-items:center;
-      gap:2px;
-
-      border:0;
-      border-radius:15px;
-
-      background:transparent;
-      color:#587989;
-
-      font-size:19px;
-      cursor:pointer
+    #withdrawAmount {
+      width: 100%;
+      padding: 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,216,77,.3);
+      background: rgba(0,0,0,.35);
+      color: white;
+      outline: none;
+      font-size: 16px;
     }
 
-    .nav-item small{
-      font-size:9px;
-      margin-top:1px
+    .withdraw-fee {
+      margin: 12px 0;
+      font-size: 13px;
+      opacity: .85;
     }
 
-    .nav-item.active{
-      color:#6be5ff;
-      background:
-        linear-gradient(
-          145deg,
-          rgba(20,91,120,.75),
-          rgba(6,37,53,.75)
-        )
+    .withdraw-fee strong {
+      color: #ffd84d;
     }
 
-    @media(max-height:700px){
-
-      #tapArea{
-        margin-top:10px
-      }
-
-      #sLogo{
-        width:180px;
-        height:180px;
-        font-size:95px
-      }
-
-      .coin-glow{
-        width:220px;
-        height:220px
-      }
-
+    .withdraw-btn {
+      width: 100%;
+      border: 0;
+      border-radius: 14px;
+      padding: 14px;
+      font-size: 16px;
+      font-weight: 900;
+      color: #111;
+      background: linear-gradient(135deg,#ffe27a,#f5b927);
     }
+
+    .withdraw-btn:disabled {
+      opacity: .5;
+    }
+
+    .withdraw-status {
+      margin-top: 12px;
+      text-align: center;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    /* BOTTOM NAV */
+
+    .bottom {
+      position: fixed;
+      left: 10px;
+      right: 10px;
+      bottom: calc(env(safe-area-inset-bottom) + 8px);
+      height: 67px;
+      border-radius: 22px;
+      background: rgba(7,10,23,.90);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,.08);
+      display: grid;
+      grid-template-columns: repeat(5,1fr);
+      z-index: 100;
+      box-shadow: 0 15px 40px rgba(0,0,0,.45);
+    }
+
+    .nav-btn {
+      border: 0;
+      background: transparent;
+      color: rgba(255,255,255,.55);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      font-size: 10px;
+    }
+
+    .nav-icon {
+      font-size: 21px;
+    }
+
+    .nav-btn.active {
+      color: #ffe064;
+    }
+
   </style>
 </head>
 
@@ -649,321 +588,318 @@
 
   <div class="space">
     <div class="stars"></div>
-    <div class="stars2"></div>
-    <div class="stars3"></div>
-    <div class="nebula"></div>
+    <div class="nebula one"></div>
+    <div class="nebula two"></div>
   </div>
 
+  <div class="app">
 
-  <main class="app">
+    <!-- TOP -->
 
-    <header class="topbar">
+    <header class="top">
 
       <div class="profile">
 
         <div class="avatar">
-
           <span id="avatarLetter">S</span>
-
-          <img
-            id="userAvatar"
-            alt="Avatar"
-          >
-
+          <img id="userAvatar" alt="">
         </div>
 
         <div class="profile-info">
-
-          <div class="welcome">
-            WELCOME
+          <div id="username" class="username">
+            SINAPS User
           </div>
 
-          <div id="username">
-            SINAPS USER
+          <div id="wallet-mini" class="wallet-mini">
+            Wallet not connected
           </div>
-
         </div>
 
       </div>
 
-
-      <div
-        class="wallet-mini"
-        id="walletMini"
-      >
-        Wallet
+      <div class="network">
+        TON
       </div>
 
     </header>
 
+    <!-- CONTENT -->
 
-    <!-- HOME -->
+    <main class="content">
 
-    <section
-      id="homePage"
-      class="page active"
-    >
+      <!-- HOME -->
 
-      <div class="home-title">
-        SINAPS
-      </div>
+      <section id="home" class="page active">
 
-      <div id="balance">
-        0
-      </div>
+        <div class="balance-card">
 
-      <div class="coin-name">
-        SNP
-      </div>
-
-
-      <div id="tapArea">
-
-        <div class="coin-glow"></div>
-
-        <div id="sLogo">
-          S
-        </div>
-
-        <div id="floaters"></div>
-
-      </div>
-
-
-      <div class="energy-box">
-
-        <div class="energy-head">
-
-          <span>
-            ENERGY
-          </span>
-
-          <strong id="energy">
-            1000 / 1000
-          </strong>
-
-        </div>
-
-        <div class="energy-bar">
-
-          <div id="energyFill"></div>
-
-        </div>
-
-      </div>
-
-
-      <div class="tap-hint">
-        TAP TO EARN
-      </div>
-
-      <div
-        id="status"
-        class="status"
-      ></div>
-
-    </section>
-
-
-    <!-- BOOST -->
-
-    <section
-      id="boostPage"
-      class="page"
-    >
-
-      <div class="simple-card">
-
-        <h2>
-          ⚡ Boost
-        </h2>
-
-        <p>
-          Boosts will be added here.
-        </p>
-
-      </div>
-
-    </section>
-
-
-    <!-- DAILY -->
-
-    <section
-      id="dailyPage"
-      class="page"
-    >
-
-      <div class="simple-card">
-
-        <h2>
-          🎁 Daily
-        </h2>
-
-        <p>
-          Daily rewards will be added here.
-        </p>
-
-      </div>
-
-    </section>
-
-
-    <!-- FRIENDS -->
-
-    <section
-      id="friendsPage"
-      class="page"
-    >
-
-      <div class="simple-card">
-
-        <h2>
-          👥 Friends
-        </h2>
-
-        <p>
-          Referral system will be added here.
-        </p>
-
-      </div>
-
-    </section>
-
-
-    <!-- WALLET -->
-
-    <section
-      id="walletPage"
-      class="page"
-    >
-
-      <div class="simple-card wallet-card">
-
-        <div class="wallet-title">
-          💎 Wallet
-        </div>
-
-        <div class="wallet-subtitle">
-          Connect your TON wallet to SINAPS
-        </div>
-
-
-        <!-- REAL TON CONNECT UI ROOT -->
-        <div id="ton-connect"></div>
-
-
-        <!-- OUR VISIBLE BUTTON -->
-        <button
-          id="connectWalletBtn"
-          type="button"
-        >
-          🔗 Connect TON Wallet
-        </button>
-
-
-        <!-- CONNECTED ADDRESS -->
-
-        <div
-          id="walletAddress"
-          class="wallet-address"
-        >
-
-          <div class="wallet-label">
-            CONNECTED WALLET
+          <div class="balance-label">
+            YOUR BALANCE
           </div>
 
-          <div id="walletAddressText"></div>
+          <div id="balance" class="balance">
+            0
+          </div>
+
+          <div class="symbol">
+            SNP
+          </div>
+
+        </div>
+
+        <div id="tapArea" class="tap-area">
+
+          <div id="sCoin" class="coin">
+
+            <div id="sLogo" class="s-logo">
+              S
+            </div>
+
+          </div>
+
+          <div id="floaters"></div>
+
+        </div>
+
+        <div class="energy-wrap">
+
+          <div class="energy-line">
+            <span>⚡ Energy</span>
+            <span id="energy">
+              1000 / 1000
+            </span>
+          </div>
+
+          <div class="energy-bar">
+            <div id="energyFill" class="energy-fill"></div>
+          </div>
+
+        </div>
+
+      </section>
+
+
+      <!-- BOOST -->
+
+      <section id="boost" class="page">
+
+        <div class="card">
+
+          <div class="card-title">
+            ⚡ Boost
+          </div>
+
+          <div class="card-text">
+            Increase your tapping power and unlock stronger rewards.
+          </div>
+
+        </div>
+
+        <div class="card">
+
+          <div class="card-title">
+            Double Tap
+          </div>
+
+          <div class="card-text">
+            Tap power upgrade coming soon.
+          </div>
+
+        </div>
+
+      </section>
+
+
+      <!-- DAILY -->
+
+      <section id="daily" class="page">
+
+        <div class="card">
+
+          <div class="card-title">
+            🎁 Daily Bonus
+          </div>
+
+          <div class="card-text">
+            Daily reward system is active.
+          </div>
+
+        </div>
+
+      </section>
+
+
+      <!-- FRIENDS -->
+
+      <section id="friends" class="page">
+
+        <div class="card">
+
+          <div class="card-title">
+            👥 Friends
+          </div>
+
+          <div class="card-text">
+            Invite friends and earn SNP rewards.
+          </div>
+
+        </div>
+
+      </section>
+
+
+      <!-- WALLET -->
+
+      <section id="wallet" class="page">
+
+        <div class="card">
+
+          <div class="card-title">
+            💎 TON Wallet
+          </div>
+
+          <div class="card-text">
+            Connect your TON wallet to withdraw SNP.
+          </div>
+
+          <div class="wallet-box">
+
+            <div id="ton-connect"></div>
+
+            <button
+              id="connectWalletBtn"
+              type="button"
+            >
+              🔗 Connect TON Wallet
+            </button>
+
+            <div
+              id="walletAddress"
+              class="wallet-address"
+            >
+
+              <div class="wallet-label">
+                CONNECTED WALLET
+              </div>
+
+              <div id="walletAddressText"></div>
+
+            </div>
+
+            <button
+              id="disconnectWallet"
+              class="disconnect-btn"
+              type="button"
+            >
+              Disconnect Wallet
+            </button>
+
+            <div id="walletStatus"></div>
+
+          </div>
 
         </div>
 
 
-        <!-- DISCONNECT -->
-
-        <button
-          id="disconnectWallet"
-          class="disconnect-btn"
-          type="button"
-        >
-          Disconnect Wallet
-        </button>
-
+        <!-- WITHDRAW -->
 
         <div class="withdraw-box">
 
-          Withdraw will be enabled in the next stage.
+          <div class="withdraw-title">
+            🪙 Withdraw SNP
+          </div>
 
-          <br><br>
+          <div class="withdraw-balance">
+            Available:
+            <strong id="withdrawBalance">
+              0 SNP
+            </strong>
+          </div>
 
-          SNP withdrawal fee:
-          <strong>0.1 TON</strong>
+          <input
+            id="withdrawAmount"
+            type="number"
+            min="1"
+            step="1"
+            placeholder="Enter SNP amount"
+            autocomplete="off"
+          >
+
+          <div class="withdraw-fee">
+            Withdrawal fee:
+            <strong>0.1 TON</strong>
+          </div>
+
+          <button
+            id="withdrawBtn"
+            class="withdraw-btn"
+            type="button"
+          >
+            Withdraw SNP
+          </button>
+
+          <div
+            id="withdrawStatus"
+            class="withdraw-status"
+          ></div>
 
         </div>
 
-      </div>
+      </section>
 
-    </section>
-
-  </main>
+    </main>
 
 
-  <!-- NAV -->
+    <!-- NAV -->
 
-  <nav class="bottom-nav">
+    <nav class="bottom">
 
-    <button
-      class="nav-item active"
-      data-page="homePage"
-      type="button"
-    >
-      <span>⌂</span>
-      <small>Home</small>
-    </button>
+      <button
+        class="nav-btn active"
+        data-page="home"
+      >
+        <span class="nav-icon">⌂</span>
+        <span>Home</span>
+      </button>
 
+      <button
+        class="nav-btn"
+        data-page="boost"
+      >
+        <span class="nav-icon">⚡</span>
+        <span>Boost</span>
+      </button>
 
-    <button
-      class="nav-item"
-      data-page="boostPage"
-      type="button"
-    >
-      <span>⚡</span>
-      <small>Boost</small>
-    </button>
+      <button
+        class="nav-btn"
+        data-page="daily"
+      >
+        <span class="nav-icon">🎁</span>
+        <span>Daily</span>
+      </button>
 
+      <button
+        class="nav-btn"
+        data-page="friends"
+      >
+        <span class="nav-icon">👥</span>
+        <span>Friends</span>
+      </button>
 
-    <button
-      class="nav-item"
-      data-page="dailyPage"
-      type="button"
-    >
-      <span>🎁</span>
-      <small>Daily</small>
-    </button>
+      <button
+        class="nav-btn"
+        data-page="wallet"
+      >
+        <span class="nav-icon">💎</span>
+        <span>Wallet</span>
+      </button>
 
+    </nav>
 
-    <button
-      class="nav-item"
-      data-page="friendsPage"
-      type="button"
-    >
-      <span>👥</span>
-      <small>Friends</small>
-    </button>
-
-
-    <button
-      class="nav-item"
-      data-page="walletPage"
-      type="button"
-    >
-      <span>💎</span>
-      <small>Wallet</small>
-    </button>
-
-  </nav>
+  </div>
 
 
-  <script src="app.js?v=41"></script>
+  <script src="app.js?v=42"></script>
 
 </body>
 </html>
