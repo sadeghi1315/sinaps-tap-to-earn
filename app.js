@@ -5,17 +5,17 @@
   const API =
     "https://sinaps-backend.onrender.com";
 
+  const MANIFEST =
+    "https://sadeghi1315.github.io/sinaps-tap-to-earn/tonconnect-manifest.json";
+
+
   let telegramUser = null;
-
   let balance = 0;
-
   let energy = 1000;
-
   let maxEnergy = 1000;
-
   let lastTap = 0;
-
   let syncing = false;
+  let tonUI = null;
 
 
   function $(id) {
@@ -24,7 +24,7 @@
 
 
   /* =========================
-     TELEGRAM USER
+     TELEGRAM
   ========================= */
 
   function initTelegram() {
@@ -62,7 +62,7 @@
     } catch (e) {
 
       console.log(
-        "Telegram init error:",
+        "Telegram error:",
         e
       );
 
@@ -73,9 +73,7 @@
 
   function showTelegramUser() {
 
-    if (!telegramUser) {
-      return;
-    }
+    if (!telegramUser) return;
 
 
     const username =
@@ -117,18 +115,10 @@
     }
 
 
-    /*
-     * Some Telegram clients provide
-     * photo_url through initData.
-     */
-
-    if (
-      telegramUser.photo_url
-    ) {
+    if (telegramUser.photo_url) {
 
       const avatar =
         $("userAvatar");
-
 
       if (avatar) {
 
@@ -138,12 +128,9 @@
         avatar.style.display =
           "block";
 
-
         if (letter) {
-
           letter.style.display =
             "none";
-
         }
 
       }
@@ -172,11 +159,8 @@
     if (balanceEl) {
 
       balanceEl.textContent =
-        Math.floor(
-          balance
-        ).toLocaleString(
-          "en-US"
-        );
+        Math.floor(balance)
+          .toLocaleString("en-US");
 
     }
 
@@ -194,27 +178,15 @@
     if (energyFill) {
 
       let percent =
-        0;
-
-
-      if (maxEnergy > 0) {
-
-        percent =
-          (energy / maxEnergy) *
-          100;
-
-      }
-
+        maxEnergy > 0
+          ? (energy / maxEnergy) * 100
+          : 0;
 
       percent =
         Math.max(
           0,
-          Math.min(
-            100,
-            percent
-          )
+          Math.min(100, percent)
         );
-
 
       energyFill.style.width =
         percent + "%";
@@ -225,7 +197,7 @@
 
 
   /* =========================
-     LOCAL STORAGE
+     LOCAL
   ========================= */
 
   function saveLocal() {
@@ -233,18 +205,11 @@
     try {
 
       localStorage.setItem(
-        "sinaps_v3",
+        "sinaps_v4",
         JSON.stringify({
-
-          balance:
-            balance,
-
-          energy:
-            energy,
-
-          maxEnergy:
-            maxEnergy
-
+          balance: balance,
+          energy: energy,
+          maxEnergy: maxEnergy
         })
       );
 
@@ -259,21 +224,15 @@
 
       const raw =
         localStorage.getItem(
-          "sinaps_v3"
+          "sinaps_v4"
         );
 
-
-      if (!raw) {
-        return;
-      }
-
+      if (!raw) return;
 
       const data =
         JSON.parse(raw);
 
-
       if (
-        data &&
         typeof data.balance ===
         "number"
       ) {
@@ -283,9 +242,7 @@
 
       }
 
-
       if (
-        data &&
         typeof data.energy ===
         "number"
       ) {
@@ -295,9 +252,7 @@
 
       }
 
-
       if (
-        data &&
         typeof data.maxEnergy ===
         "number"
       ) {
@@ -313,7 +268,7 @@
 
 
   /* =========================
-     LOAD BACKEND USER
+     BACKEND USER
   ========================= */
 
   async function loadUser() {
@@ -332,7 +287,6 @@
 
       const controller =
         new AbortController();
-
 
       const timeout =
         setTimeout(
@@ -356,7 +310,6 @@
 
             body:
               JSON.stringify({
-
                 telegram_id:
                   telegramUser.id,
 
@@ -364,12 +317,10 @@
                   telegramUser.username ||
                   telegramUser.first_name ||
                   ""
-
               }),
 
             signal:
               controller.signal
-
           }
         );
 
@@ -378,12 +329,10 @@
 
 
       if (!response.ok) {
-
         throw new Error(
           "HTTP " +
           response.status
         );
-
       }
 
 
@@ -403,9 +352,7 @@
       ) {
 
         balance =
-          Number(
-            user.balance
-          ) || 0;
+          Number(user.balance) || 0;
 
       }
 
@@ -416,9 +363,7 @@
       ) {
 
         energy =
-          Number(
-            user.energy
-          );
+          Number(user.energy);
 
       }
 
@@ -429,33 +374,14 @@
       ) {
 
         maxEnergy =
-          Number(
-            user.max_energy
-          ) || 1000;
-
-      }
-
-
-      if (!Number.isFinite(energy)) {
-
-        energy =
-          1000;
-
-      }
-
-
-      if (!Number.isFinite(maxEnergy)) {
-
-        maxEnergy =
+          Number(user.max_energy) ||
           1000;
 
       }
 
 
       render();
-
       saveLocal();
-
 
     } catch (e) {
 
@@ -463,11 +389,6 @@
         "Backend unavailable:",
         e
       );
-
-      /*
-       * IMPORTANT:
-       * App continues normally.
-       */
 
       render();
 
@@ -477,22 +398,16 @@
 
 
   /* =========================
-     SEND TAP
+     TAP SYNC
   ========================= */
 
   async function syncTap() {
 
     if (
       !telegramUser ||
-      !telegramUser.id
+      !telegramUser.id ||
+      syncing
     ) {
-
-      return;
-
-    }
-
-
-    if (syncing) {
 
       return;
 
@@ -517,12 +432,9 @@
 
             body:
               JSON.stringify({
-
                 telegram_id:
                   telegramUser.id
-
               })
-
           }
         );
 
@@ -553,9 +465,8 @@
       ) {
 
         balance =
-          Number(
-            user.balance
-          ) || balance;
+          Number(user.balance) ||
+          balance;
 
       }
 
@@ -566,28 +477,20 @@
       ) {
 
         energy =
-          Number(
-            user.energy
-          );
+          Number(user.energy);
 
       }
 
 
       render();
-
       saveLocal();
-
 
     } catch (e) {
 
       console.log(
-        "Tap sync failed:",
+        "Tap sync error:",
         e
       );
-
-      /*
-       * Local tap remains.
-       */
 
       saveLocal();
 
@@ -601,12 +504,299 @@
 
 
   /* =========================
+     TON ADDRESS FORMAT
+  ========================= */
+
+  function shortAddress(address) {
+
+    if (!address) {
+      return "Wallet";
+    }
+
+    if (address.length < 18) {
+      return address;
+    }
+
+    return (
+      address.slice(0, 7) +
+      "..." +
+      address.slice(-7)
+    );
+
+  }
+
+
+  /* =========================
+     SAVE WALLET
+  ========================= */
+
+  async function saveWallet(address) {
+
+    if (
+      !telegramUser ||
+      !telegramUser.id ||
+      !address
+    ) {
+
+      return;
+
+    }
+
+
+    try {
+
+      const response =
+        await fetch(
+          API + "/api/wallet/connect",
+          {
+            method: "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json"
+            },
+
+            body:
+              JSON.stringify({
+
+                telegram_id:
+                  telegramUser.id,
+
+                wallet_address:
+                  address
+
+              })
+          }
+        );
+
+
+      if (!response.ok) {
+
+        throw new Error(
+          "HTTP " +
+          response.status
+        );
+
+      }
+
+
+      console.log(
+        "Wallet saved"
+      );
+
+    } catch (e) {
+
+      console.log(
+        "Wallet save error:",
+        e
+      );
+
+    }
+
+  }
+
+
+  /* =========================
+     DISPLAY WALLET
+  ========================= */
+
+  function showWallet(address) {
+
+    const mini =
+      $("walletMini");
+
+    const addressBox =
+      $("walletAddress");
+
+    const disconnect =
+      $("disconnectWallet");
+
+
+    if (mini) {
+
+      mini.textContent =
+        shortAddress(address);
+
+    }
+
+
+    if (addressBox) {
+
+      addressBox.style.display =
+        "block";
+
+      addressBox.textContent =
+        address;
+
+    }
+
+
+    if (disconnect) {
+
+      disconnect.style.display =
+        "block";
+
+    }
+
+  }
+
+
+  function clearWalletUI() {
+
+    const mini =
+      $("walletMini");
+
+    const addressBox =
+      $("walletAddress");
+
+    const disconnect =
+      $("disconnectWallet");
+
+
+    if (mini) {
+      mini.textContent =
+        "Wallet";
+    }
+
+
+    if (addressBox) {
+
+      addressBox.style.display =
+        "none";
+
+      addressBox.textContent =
+        "";
+
+    }
+
+
+    if (disconnect) {
+
+      disconnect.style.display =
+        "none";
+
+    }
+
+  }
+
+
+  /* =========================
+     TON CONNECT
+  ========================= */
+
+  function setupTonConnect() {
+
+    try {
+
+      if (
+        !window.TON_CONNECT_UI ||
+        !window.TON_CONNECT_UI.TonConnectUI
+      ) {
+
+        console.log(
+          "TON Connect library unavailable"
+        );
+
+        return;
+
+      }
+
+
+      tonUI =
+        new TON_CONNECT_UI.TonConnectUI({
+
+          manifestUrl:
+            MANIFEST,
+
+          buttonRootId:
+            "ton-connect"
+
+        });
+
+
+      tonUI.onStatusChange(
+        async function (wallet) {
+
+          if (
+            wallet &&
+            wallet.account &&
+            wallet.account.address
+          ) {
+
+            const address =
+              wallet.account.address;
+
+            showWallet(address);
+
+            await saveWallet(address);
+
+          } else {
+
+            clearWalletUI();
+
+          }
+
+        }
+      );
+
+
+    } catch (e) {
+
+      console.log(
+        "TON Connect init error:",
+        e
+      );
+
+    }
+
+  }
+
+
+  /* =========================
+     DISCONNECT
+  ========================= */
+
+  function setupDisconnect() {
+
+    const button =
+      $("disconnectWallet");
+
+
+    if (!button) return;
+
+
+    button.addEventListener(
+      "click",
+      async function () {
+
+        try {
+
+          if (tonUI) {
+
+            await tonUI.disconnect();
+
+          }
+
+        } catch (e) {
+
+          console.log(
+            "Disconnect error:",
+            e
+          );
+
+        }
+
+      }
+    );
+
+  }
+
+
+  /* =========================
      TAP EFFECT
   ========================= */
 
-  function tapEffect(
-    event
-  ) {
+  function tapEffect(event) {
 
     const tapArea =
       $("tapArea");
@@ -618,11 +808,7 @@
     if (
       !tapArea ||
       !floaters
-    ) {
-
-      return;
-
-    }
+    ) return;
 
 
     const rect =
@@ -630,9 +816,7 @@
 
 
     const floater =
-      document.createElement(
-        "div"
-      );
+      document.createElement("div");
 
 
     floater.className =
@@ -664,9 +848,7 @@
 
     setTimeout(
       function () {
-
         floater.remove();
-
       },
       850
     );
@@ -675,20 +857,16 @@
 
 
   /* =========================
-     COIN MOVEMENT
+     COIN MOVE
   ========================= */
 
-  function moveCoin(
-    event
-  ) {
+  function moveCoin(event) {
 
     const coin =
       $("sLogo");
 
 
-    if (!coin) {
-      return;
-    }
+    if (!coin) return;
 
 
     const rect =
@@ -723,7 +901,6 @@
 
 
     let x = 0;
-
     let y = 0;
 
 
@@ -788,9 +965,7 @@
       $("tapArea");
 
 
-    if (!tapArea) {
-      return;
-    }
+    if (!tapArea) return;
 
 
     tapArea.addEventListener(
@@ -817,40 +992,21 @@
 
 
         if (energy <= 0) {
-
           return;
-
         }
 
 
-        /*
-         * Instant UI update.
-         */
-
         balance += 1;
-
         energy -= 1;
 
 
         render();
-
         saveLocal();
 
 
-        tapEffect(
-          event
-        );
+        tapEffect(event);
+        moveCoin(event);
 
-
-        moveCoin(
-          event
-        );
-
-
-        /*
-         * Backend sync happens
-         * without freezing UI.
-         */
 
         syncTap();
 
@@ -972,16 +1128,9 @@
 
   async function start() {
 
-    /*
-     * Local data first.
-     * This guarantees UI starts
-     * even when Render is sleeping.
-     */
-
     loadLocal();
 
     render();
-
 
     initTelegram();
 
@@ -989,11 +1138,19 @@
 
     setupTap();
 
+    setupDisconnect();
+
     startEnergy();
 
+    /*
+     * TON Connect starts independently.
+     * If it fails, the Mini App continues.
+     */
+
+    setupTonConnect();
 
     /*
-     * Backend after UI starts.
+     * Backend starts after UI.
      */
 
     await loadUser();
