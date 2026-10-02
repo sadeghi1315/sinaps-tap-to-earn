@@ -14,7 +14,8 @@
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-  <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+  <!-- TON CONNECT -->
+  <script src="https://unpkg.com/@tonconnect/ui@latest/dist/ton-connect-ui.min.js"></script>
 
   <link rel="stylesheet" href="style.css">
 
@@ -30,7 +31,9 @@
 <main class="app">
 
 
-  <!-- HEADER -->
+  <!-- =========================
+       HEADER
+  ========================== -->
 
   <header class="top-header">
 
@@ -59,7 +62,6 @@
       id="walletTop"
       class="wallet-mini"
       type="button"
-      data-page="walletPage"
     >
       Connect
     </button>
@@ -68,7 +70,9 @@
 
 
 
-  <!-- HOME -->
+  <!-- =========================
+       HOME
+  ========================== -->
 
   <section
     id="homePage"
@@ -81,8 +85,6 @@
         YOUR BALANCE
       </div>
 
-
-      <!-- مهم: ID با app.js هماهنگ شده -->
 
       <div
         id="balance"
@@ -119,7 +121,7 @@
 
 
 
-    <!-- CENTER LOGO -->
+    <!-- CENTER S LOGO -->
 
     <div
       id="tapArea"
@@ -136,7 +138,9 @@
         </div>
 
         <div class="s-ring ring-1"></div>
+
         <div class="s-ring ring-2"></div>
+
         <div class="s-ring ring-3"></div>
 
       </div>
@@ -159,6 +163,7 @@
         </span>
 
         <b>
+
           <span id="energyCurrent">
             1000
           </span>
@@ -202,7 +207,9 @@
 
 
 
-  <!-- BOOST -->
+  <!-- =========================
+       BOOST
+  ========================== -->
 
   <section
     id="boostPage"
@@ -285,6 +292,7 @@
         id="energyBoost"
         class="action-btn"
         type="button"
+        disabled
       >
         SOON
       </button>
@@ -326,7 +334,9 @@
 
 
 
-  <!-- DAILY -->
+  <!-- =========================
+       DAILY
+  ========================== -->
 
   <section
     id="dailyPage"
@@ -346,4 +356,420 @@
         </h2>
 
         <p>
-          Come back
+          Come back every day
+        </p>
+
+      </div>
+
+    </div>
+
+
+    <div class="daily-card">
+
+      <div class="big-icon">
+        🎁
+      </div>
+
+
+      <h2>
+        Daily Reward
+      </h2>
+
+
+      <p>
+        Claim your daily SNP reward.
+      </p>
+
+
+      <div class="reward-number">
+        +100 SNP
+      </div>
+
+
+      <button
+        id="daily"
+        class="primary-btn"
+        type="button"
+      >
+        CLAIM REWARD
+      </button>
+
+    </div>
+
+  </section>
+
+
+
+  <!-- =========================
+       FRIENDS
+  ========================== -->
+
+  <section
+    id="friendsPage"
+    class="page"
+  >
+
+    <div class="page-title">
+
+      <div class="page-icon">
+        👥
+      </div>
+
+      <div>
+
+        <h2>
+          Friends
+        </h2>
+
+        <p>
+          Invite friends & earn
+        </p>
+
+      </div>
+
+    </div>
+
+
+    <div class="friends-card">
+
+      <div class="big-icon">
+        👥
+      </div>
+
+
+      <h2>
+        Invite Friends
+      </h2>
+
+
+      <p>
+        Invite friends and earn SNP together.
+      </p>
+
+
+      <div
+        id="referralLink"
+        class="referral-link"
+      >
+        Your referral link
+      </div>
+
+
+      <button
+        id="invite"
+        class="primary-btn"
+        type="button"
+      >
+        COPY INVITE LINK
+      </button>
+
+    </div>
+
+  </section>
+
+
+
+  <!-- =========================
+       TASKS
+  ========================== -->
+
+  <section
+    id="tasksPage"
+    class="page"
+  >
+
+    <div class="page-title">
+
+      <div class="page-icon">
+        ⚡
+      </div>
+
+      <div>
+
+        <h2>
+          Tasks
+        </h2>
+
+        <p>
+          Complete tasks and earn SNP
+        </p>
+
+      </div>
+
+    </div>
+
+
+    <div class="task-card">
+
+      <div class="feature-icon">
+        📢
+      </div>
+
+
+      <div class="feature-info">
+
+        <b>
+          Join SINAPS Channel
+        </b>
+
+        <span>
+          +100 SNP
+        </span>
+
+      </div>
+
+
+      <button
+        class="action-btn"
+        type="button"
+        disabled
+      >
+        SOON
+      </button>
+
+    </div>
+
+
+    <div class="task-card">
+
+      <div class="feature-icon">
+        👥
+      </div>
+
+
+      <div class="feature-info">
+
+        <b>
+          Invite a Friend
+        </b>
+
+        <span>
+          +250 SNP
+        </span>
+
+      </div>
+
+
+      <button
+        class="action-btn"
+        type="button"
+        disabled
+      >
+        SOON
+      </button>
+
+    </div>
+
+  </section>
+
+
+
+  <!-- =========================
+       WALLET
+  ========================== -->
+
+  <section
+    id="walletPage"
+    class="page"
+  >
+
+    <div class="page-title">
+
+      <div class="page-icon">
+        💎
+      </div>
+
+      <div>
+
+        <h2>
+          Wallet
+        </h2>
+
+        <p>
+          Manage your TON wallet
+        </p>
+
+      </div>
+
+    </div>
+
+
+    <div class="wallet-card">
+
+      <div class="wallet-big-icon">
+        💎
+      </div>
+
+
+      <h2 id="walletTitle">
+        Wallet not connected
+      </h2>
+
+
+      <p id="walletAddress">
+        Connect your TON wallet to continue.
+      </p>
+
+
+      <div id="ton-connect-button"></div>
+
+
+      <button
+        id="disconnectWallet"
+        class="disconnect-btn"
+        type="button"
+      >
+        DISCONNECT
+      </button>
+
+
+      <div class="withdraw-box">
+
+        <h3>
+          SNP Withdrawal
+        </h3>
+
+        <p>
+          Withdraw your SNP to your connected wallet.
+        </p>
+
+
+        <div class="withdraw-row">
+
+          <input
+            id="withdrawAmount"
+            type="number"
+            min="1"
+            placeholder="Amount"
+          >
+
+
+          <button
+            id="withdrawBtn"
+            class="primary-btn"
+            type="button"
+          >
+            WITHDRAW
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </section>
+
+
+
+  <!-- =========================
+       BOTTOM NAVIGATION
+  ========================== -->
+
+  <nav
+    class="bottom-nav"
+    id="bottomNav"
+  >
+
+    <button
+      class="nav-item active"
+      type="button"
+      data-page="homePage"
+    >
+
+      <span>⌂</span>
+
+      <small>
+        Home
+      </small>
+
+    </button>
+
+
+    <button
+      class="nav-item"
+      type="button"
+      data-page="boostPage"
+    >
+
+      <span>⚡</span>
+
+      <small>
+        Boost
+      </small>
+
+    </button>
+
+
+    <button
+      class="nav-item"
+      type="button"
+      data-page="dailyPage"
+    >
+
+      <span>🎁</span>
+
+      <small>
+        Daily
+      </small>
+
+    </button>
+
+
+    <button
+      class="nav-item"
+      type="button"
+      data-page="friendsPage"
+    >
+
+      <span>👥</span>
+
+      <small>
+        Friends
+      </small>
+
+    </button>
+
+
+    <button
+      class="nav-item"
+      type="button"
+      data-page="walletPage"
+    >
+
+      <span>💎</span>
+
+      <small>
+        Wallet
+      </small>
+
+    </button>
+
+  </nav>
+
+
+
+  <!-- =========================
+       FOOTER
+  ========================== -->
+
+  <footer>
+
+    <span id="status">
+      SINAPS
+    </span>
+
+  </footer>
+
+
+</main>
+
+
+<!-- APP JAVASCRIPT -->
+
+<script src="app.js"></script>
+
+
+</body>
+
+</html>
