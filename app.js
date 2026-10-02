@@ -21,21 +21,27 @@
     "-239";
 
   let telegramUser = null;
-
   let tonUI = null;
 
   let balance = 0;
-
   let energy = 1000;
-
   let maxEnergy = 1000;
 
-  let tapQueue = 0;
+  /* =========================
+     TAP STATE
+  ========================= */
 
+  let tapQueue = 0;
   let processingTaps = false;
 
-  let withdrawing = false;
+  /*
+   * تعداد Tap هایی که روی صفحه به صورت
+   * محلی ثبت شده ولی هنوز از Backend
+   * تأیید نگرفته‌اند.
+   */
+  let localPendingTaps = 0;
 
+  let withdrawing = false;
   let energyTimer = null;
 
 
@@ -76,7 +82,6 @@
 
           showTelegramUser();
         }
-
       }
 
     } catch (e) {
@@ -87,7 +92,6 @@
       );
 
     }
-
   }
 
 
@@ -111,7 +115,6 @@
           telegramUser.first_name;
 
       }
-
     }
 
     const letter =
@@ -126,7 +129,6 @@
 
       letter.textContent =
         name.charAt(0).toUpperCase();
-
     }
 
     if (telegramUser.photo_url) {
@@ -146,11 +148,8 @@
           letter.style.display =
             "none";
         }
-
       }
-
     }
-
   }
 
 
@@ -172,18 +171,16 @@
     if (balanceEl) {
 
       balanceEl.textContent =
-        Math.floor(balance)
+        Math.max(0, Math.floor(balance))
           .toLocaleString("en-US");
-
     }
 
     if (energyEl) {
 
       energyEl.textContent =
-        Math.floor(energy) +
+        Math.max(0, Math.floor(energy)) +
         " / " +
         Math.floor(maxEnergy);
-
     }
 
     if (energyFill) {
@@ -216,7 +213,7 @@
     try {
 
       localStorage.setItem(
-        "sinaps_v5",
+        "sinaps_v6",
         JSON.stringify({
           balance: balance,
           energy: energy,
@@ -225,7 +222,6 @@
       );
 
     } catch (e) {}
-
   }
 
 
@@ -235,7 +231,7 @@
 
       const raw =
         localStorage.getItem(
-          "sinaps_v5"
+          "sinaps_v6"
         );
 
       if (!raw) return;
@@ -252,7 +248,6 @@
 
         balance =
           Number(data.balance);
-
       }
 
       if (
@@ -264,7 +259,6 @@
 
         energy =
           Number(data.energy);
-
       }
 
       if (
@@ -276,11 +270,9 @@
 
         maxEnergy =
           Number(data.maxEnergy);
-
       }
 
     } catch (e) {}
-
   }
 
 
@@ -288,259 +280,342 @@
      BACKEND USER
   ========================= */
 
-  async function processTapQueue() {
+  async function loadUser() {
 
-  if (processingTaps) return;
+    if (
+      !telegramUser ||
+      !telegramUser.id
+    ) {
+      return;
+    }
 
-  if (
-    !telegramUser ||
-    !telegramUser.id
-  ) {
-    tapQueue = 0;
-    return;
+    /*
+     * اگر Tapهای تأییدنشده داریم،
+     * پاسخ /api/user نباید مقدار محلی
+     * را خراب کند.
+     */
+    if (localPendingTaps > 0) {
+      return;
+    }
+
+    try {
+
+      const response =
+        await fetch(
+          API + "/api/user",
+          {
+            method: "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json"
+            },
+
+            body:
+              JSON.stringify({
+                telegram_id:
+                  telegramUser.id,
+
+                username:
+                  telegramUser.username ||
+                  telegramUser.first_name ||
+                  ""
+              })
+          }
+        );
+
+      if (!response.ok) {
+
+        throw new Error(
+          "HTTP " +
+          response.status
+        );
+      }
+
+      const data =
+        await response.json();
+
+      const user =
+        data.user ||
+        data.data ||
+        data;
+
+      if (
+        user &&
+        user.balance !== undefined
+      ) {
+
+        const serverBalance =
+          Number(user.balance);
+
+        if (
+          Number.isFinite(serverBalance)
+        ) {
+
+          balance =
+            serverBalance;
+        }
+      }
+
+      if (
+        user &&
+        user.energy !== undefined
+      ) {
+
+        const serverEnergy =
+          Number(user.energy);
+
+        if (
+          Number.isFinite(serverEnergy)
+        ) {
+
+          energy =
+            serverEnergy;
+        }
+      }
+
+      if (
+        user &&
+        user.max_energy !== undefined
+      ) {
+
+        const serverMaxEnergy =
+          Number(user.max_energy);
+
+        if (
+          Number.isFinite(
+            serverMaxEnergy
+          ) &&
+          serverMaxEnergy > 0
+        ) {
+
+          maxEnergy =
+            serverMaxEnergy;
+        }
+      }
+
+      render();
+      saveLocal();
+
+    } catch (e) {
+
+      console.log(
+        "Backend unavailable:",
+        e
+      );
+
+      render();
+    }
   }
 
-  processingTaps = true;
 
-  try {
+  /* =========================
+     SEND ONE TAP
+  ========================= */
 
-    while (tapQueue > 0) {
+  async function sendOneTap() {
+
+    const response =
+      await fetch(
+        API + "/api/tap",
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
+
+          body:
+            JSON.stringify({
+              telegram_id:
+                telegramUser.id
+            })
+          }
+        );
+
+    if (!response.ok) {
+
+      let message =
+        "HTTP " +
+        response.status;
 
       try {
 
-        const response =
-          await fetch(
-            API + "/api/tap",
-            {
-              method: "POST",
-
-              headers: {
-                "Content-Type":
-                  "application/json"
-              },
-
-              body:
-                JSON.stringify({
-                  telegram_id:
-                    telegramUser.id
-                })
-            }
-          );
-
-        if (!response.ok) {
-
-          throw new Error(
-            "HTTP " +
-            response.status
-          );
-        }
-
-        const data =
+        const errorData =
           await response.json();
 
-        const user =
-          data.user ||
-          data.data ||
-          data;
+        message =
+          errorData.error ||
+          errorData.message ||
+          message;
 
-        /*
-         * این Tap با موفقیت روی سرور ثبت شد.
-         */
-        tapQueue--;
+      } catch (e) {}
 
-        /*
-         * اگر هنوز Tap در صف داریم،
-         * مقدار سرور را روی صفحه ننویس.
-         *
-         * چون balance فعلی شامل Tapهای
-         * در انتظار هم هست.
-         */
-        if (tapQueue === 0) {
-
-          if (
-            user &&
-            user.balance !== undefined
-          ) {
-
-            balance =
-              Number(user.balance);
-          }
-
-          if (
-            user &&
-            user.energy !== undefined
-          ) {
-
-            energy =
-              Number(user.energy);
-          }
-
-          if (
-            user &&
-            user.max_energy !== undefined
-          ) {
-
-            maxEnergy =
-              Number(user.max_energy) ||
-              1000;
-          }
-
-          render();
-          saveLocal();
-
-        }
-
-      } catch (e) {
-
-        console.log(
-          "Tap sync failed:",
-          e
-        );
-
-        /*
-         * Tap ناموفق را دوباره در صف نگه می‌داریم.
-         * چون هنوز در balance محلی حساب شده است.
-         */
-
-        break;
-      }
+      throw new Error(message);
     }
 
-  } finally {
-
-    processingTaps = false;
-
-    /*
-     * اگر Tap جدیدی هنگام پردازش وارد شده،
-     * دوباره صف را پردازش کن.
-     */
-
-    if (tapQueue > 0) {
-
-      setTimeout(
-        processTapQueue,
-        300
-      );
-
-    }
+    return await response.json();
   }
-}
+
+
   /* =========================
      TAP QUEUE
   ========================= */
 
   async function processTapQueue() {
 
-    if (processingTaps) return;
+    if (processingTaps) {
+      return;
+    }
 
     if (
       !telegramUser ||
       !telegramUser.id
     ) {
+
       tapQueue = 0;
+      localPendingTaps = 0;
+
+      return;
+    }
+
+    if (tapQueue <= 0) {
       return;
     }
 
     processingTaps = true;
 
-    while (tapQueue > 0) {
+    try {
 
-      tapQueue--;
+      while (tapQueue > 0) {
 
-      try {
+        try {
 
-        const response =
-          await fetch(
-            API + "/api/tap",
-            {
-              method: "POST",
+          const data =
+            await sendOneTap();
 
-              headers: {
-                "Content-Type":
-                  "application/json"
-              },
+          const user =
+            data.user ||
+            data.data ||
+            data;
 
-              body:
-                JSON.stringify({
-                  telegram_id:
-                    telegramUser.id
-                })
+          /*
+           * یک Tap با موفقیت روی سرور ثبت شد.
+           */
+          tapQueue--;
+
+          localPendingTaps =
+            Math.max(
+              0,
+              localPendingTaps - 1
+            );
+
+          /*
+           * پاسخ سرور فقط وقتی روی UI اعمال
+           * می‌شود که دیگر Tap محلی معلق
+           * نداشته باشیم.
+           */
+          if (
+            localPendingTaps === 0 &&
+            tapQueue === 0
+          ) {
+
+            if (
+              user &&
+              user.balance !== undefined
+            ) {
+
+              const serverBalance =
+                Number(user.balance);
+
+              if (
+                Number.isFinite(
+                  serverBalance
+                )
+              ) {
+
+                balance =
+                  serverBalance;
+              }
             }
+
+            if (
+              user &&
+              user.energy !== undefined
+            ) {
+
+              const serverEnergy =
+                Number(user.energy);
+
+              if (
+                Number.isFinite(
+                  serverEnergy
+                )
+              ) {
+
+                energy =
+                  serverEnergy;
+              }
+            }
+
+            if (
+              user &&
+              user.max_energy !== undefined
+            ) {
+
+              const serverMaxEnergy =
+                Number(user.max_energy);
+
+              if (
+                Number.isFinite(
+                  serverMaxEnergy
+                ) &&
+                serverMaxEnergy > 0
+              ) {
+
+                maxEnergy =
+                  serverMaxEnergy;
+              }
+            }
+
+            render();
+            saveLocal();
+          }
+
+        } catch (e) {
+
+          console.log(
+            "Tap sync failed:",
+            e
           );
 
-        if (!response.ok) {
+          /*
+           * Tap محلی را نگه می‌داریم.
+           * دوباره tapQueue را زیاد نمی‌کنیم،
+           * چون این Tap هنوز داخل صف است.
+           */
 
-          throw new Error(
-            "HTTP " +
-            response.status
-          );
-
+          break;
         }
-
-        const data =
-          await response.json();
-
-        const user =
-          data.user ||
-          data.data ||
-          data;
-
-        /*
-         * فقط پاسخ جدید را اعمال می‌کنیم.
-         * چون درخواست‌ها یکی‌یکی ارسال می‌شوند،
-         * پاسخ‌ها دیگر روی هم قرار نمی‌گیرند.
-         */
-
-        if (
-          user &&
-          user.balance !== undefined
-        ) {
-
-          balance =
-            Number(user.balance);
-
-        }
-
-        if (
-          user &&
-          user.energy !== undefined
-        ) {
-
-          energy =
-            Number(user.energy);
-
-        }
-
-        render();
-        saveLocal();
-
-      } catch (e) {
-
-        console.log(
-          "Tap sync failed:",
-          e
-        );
-
-        /*
-         * اگر Backend موقتاً قطع شد،
-         * Tap را از بین نمی‌بریم.
-         */
-
-        tapQueue++;
-
-        break;
       }
-    }
 
-    processingTaps = false;
+    } finally {
 
-    /*
-     * اگر هنگام پایان پردازش Tap جدیدی
-     * وارد شده باشد دوباره اجرا می‌کنیم.
-     */
+      processingTaps = false;
 
-    if (tapQueue > 0) {
-      processTapQueue();
+      /*
+       * اگر Tap جدیدی باقی مانده،
+       * کمی بعد دوباره ارسال کن.
+       */
+
+      if (tapQueue > 0) {
+
+        setTimeout(
+          processTapQueue,
+          500
+        );
+      }
     }
   }
 
@@ -564,11 +639,11 @@
     const rect =
       area.getBoundingClientRect();
 
-    let x =
+    const x =
       event.clientX -
       rect.left;
 
-    let y =
+    const y =
       event.clientY -
       rect.top;
 
@@ -613,7 +688,11 @@
     const area =
       $("tapArea");
 
-    if (!coin || !logo || !area) {
+    if (
+      !coin ||
+      !logo ||
+      !area
+    ) {
       return;
     }
 
@@ -677,7 +756,9 @@
     const area =
       $("tapArea");
 
-    if (!area) return;
+    if (!area) {
+      return;
+    }
 
     area.addEventListener(
       "pointerdown",
@@ -685,12 +766,27 @@
 
         event.preventDefault();
 
+        /*
+         * هیچ Tap بدون Telegram user
+         * به Backend فرستاده نمی‌شود.
+         */
+        if (
+          !telegramUser ||
+          !telegramUser.id
+        ) {
+          return;
+        }
+
         if (energy <= 0) {
           return;
         }
 
         /*
-         * Optimistic local update
+         * Optimistic update
+         *
+         * بلافاصله روی صفحه:
+         * Balance +1
+         * Energy -1
          */
 
         balance += 1;
@@ -698,10 +794,12 @@
         energy -= 1;
 
         /*
-         * Put this Tap into queue.
+         * این Tap هنوز روی سرور
+         * تأیید نشده است.
          */
 
-        tapQueue++;
+        tapQueue += 1;
+        localPendingTaps += 1;
 
         render();
         saveLocal();
@@ -710,7 +808,7 @@
         moveCoin(event);
 
         /*
-         * Send queued taps sequentially.
+         * صف را پردازش کن.
          */
 
         processTapQueue();
@@ -730,7 +828,10 @@
   function startEnergy() {
 
     if (energyTimer) {
-      clearInterval(energyTimer);
+
+      clearInterval(
+        energyTimer
+      );
     }
 
     energyTimer =
@@ -755,7 +856,6 @@
 
             render();
             saveLocal();
-
           }
 
         },
@@ -795,7 +895,6 @@
                   item.classList.remove(
                     "active"
                   );
-
                 }
               );
 
@@ -807,7 +906,6 @@
               target.classList.add(
                 "active"
               );
-
             }
 
             buttons.forEach(
@@ -816,7 +914,6 @@
                 item.classList.remove(
                   "active"
                 );
-
               }
             );
 
@@ -826,7 +923,6 @@
 
           }
         );
-
       }
     );
   }
@@ -888,12 +984,11 @@
     if (mini) {
 
       mini.textContent =
-        address.substring(0,6) +
+        address.substring(0, 6) +
         "..." +
         address.substring(
           address.length - 6
         );
-
     }
   }
 
@@ -969,6 +1064,7 @@
         );
 
       if (!response.ok) {
+
         throw new Error(
           "HTTP " +
           response.status
@@ -985,10 +1081,13 @@
         "Wallet save error:",
         e
       );
-
     }
   }
 
+
+  /* =========================
+     TON CONNECT
+  ========================= */
 
   function setupTonConnect() {
 
@@ -1049,9 +1148,7 @@
             clearWalletUI();
 
             setWalletStatus("");
-
           }
-
         }
       );
 
@@ -1087,9 +1184,7 @@
               setWalletStatus(
                 "Connection error."
               );
-
             }
-
           }
         );
       }
@@ -1108,12 +1203,18 @@
   }
 
 
-  async function setupDisconnect() {
+  /* =========================
+     DISCONNECT
+  ========================= */
+
+  function setupDisconnect() {
 
     const button =
       $("disconnectWallet");
 
-    if (!button) return;
+    if (!button) {
+      return;
+    }
 
     button.addEventListener(
       "click",
@@ -1137,9 +1238,7 @@
             "Disconnect error:",
             e
           );
-
         }
-
       }
     );
   }
@@ -1154,7 +1253,9 @@
     const el =
       $("withdrawBalance");
 
-    if (!el) return;
+    if (!el) {
+      return;
+    }
 
     el.textContent =
       Math.floor(balance)
@@ -1171,7 +1272,9 @@
     const el =
       $("withdrawStatus");
 
-    if (!el) return;
+    if (!el) {
+      return;
+    }
 
     el.textContent =
       message;
@@ -1284,7 +1387,9 @@
     const button =
       $("withdrawBtn");
 
-    if (!button) return;
+    if (!button) {
+      return;
+    }
 
     updateWithdrawBalance();
 
@@ -1292,7 +1397,9 @@
       "click",
       async function () {
 
-        if (withdrawing) return;
+        if (withdrawing) {
+          return;
+        }
 
         withdrawing = true;
         button.disabled = true;
@@ -1321,6 +1428,28 @@
             throw new Error(
               "First connect your TON wallet."
             );
+          }
+
+          /*
+           * قبل از برداشت، Tapهای در صف
+           * باید تمام شوند.
+           */
+
+          if (tapQueue > 0) {
+
+            setWithdrawStatus(
+              "Please wait for your taps to sync...",
+              false
+            );
+
+            await processTapQueue();
+
+            if (tapQueue > 0) {
+
+              throw new Error(
+                "Tap synchronization is still pending."
+              );
+            }
           }
 
           const input =
@@ -1404,11 +1533,9 @@
 
                 amount:
                   WITHDRAW_FEE_NANO
-
               }
 
             ]
-
           });
 
           setWithdrawStatus(
@@ -1439,7 +1566,6 @@
               "Payment received and withdrawal is pending.",
               true
             );
-
           }
 
           if (input) {
@@ -1463,9 +1589,7 @@
 
           withdrawing = false;
           button.disabled = false;
-
         }
-
       }
     );
   }
@@ -1476,6 +1600,11 @@
   ========================= */
 
   async function start() {
+
+    /*
+     * ابتدا Local را بخوان.
+     * این باعث می‌شود UI سریع نمایش داده شود.
+     */
 
     loadLocal();
 
@@ -1495,12 +1624,19 @@
 
     setupWithdraw();
 
+    /*
+     * بعد مقدار Backend را بگیر.
+     */
+
     await loadUser();
 
     render();
-
   }
 
+
+  /* =========================
+     START APP
+  ========================= */
 
   if (
     document.readyState ===
@@ -1515,7 +1651,6 @@
   } else {
 
     start();
-
   }
 
 })();
