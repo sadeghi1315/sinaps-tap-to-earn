@@ -8,6 +8,8 @@
     content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
   >
 
+  <meta name="theme-color" content="#02030a">
+
   <title>SINAPS — Tap to Earn</title>
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -33,6 +35,7 @@
 
     body {
       position: relative;
+      isolation: isolate;
     }
 
     /* =========================
@@ -42,121 +45,200 @@
     .space {
       position: fixed;
       inset: 0;
+      width: 100%;
+      height: 100%;
       overflow: hidden;
+      pointer-events: none;
+      z-index: 0;
+
       background:
         radial-gradient(
-          ellipse at 50% 35%,
-          rgba(83, 43, 190, .38),
+          ellipse at 50% 38%,
+          rgba(91, 48, 255, .38),
+          transparent 43%
+        ),
+        radial-gradient(
+          ellipse at 10% 80%,
+          rgba(0, 130, 255, .30),
           transparent 42%
         ),
         radial-gradient(
-          ellipse at 15% 75%,
-          rgba(0, 120, 255, .25),
-          transparent 38%
+          ellipse at 90% 72%,
+          rgba(210, 35, 220, .28),
+          transparent 40%
         ),
         radial-gradient(
-          ellipse at 85% 70%,
-          rgba(180, 40, 210, .24),
-          transparent 38%
-        ),
-        radial-gradient(
-          ellipse at 50% 100%,
-          rgba(20, 40, 130, .30),
-          transparent 45%
+          ellipse at 50% 110%,
+          rgba(20, 50, 160, .35),
+          transparent 48%
         ),
         #02030a;
-      z-index: 0;
-      pointer-events: none;
     }
 
     .space::before {
       content: "";
       position: absolute;
-      width: 720px;
-      height: 720px;
+
+      width: 150%;
+      height: 55%;
+
       left: 50%;
-      top: 42%;
-      transform: translate(-50%, -50%);
+      top: 48%;
+
+      transform:
+        translate(-50%, -50%)
+        rotate(-16deg);
+
       border-radius: 50%;
+
       background:
         radial-gradient(
           ellipse at center,
-          rgba(255,255,255,.07) 0%,
-          rgba(100,60,255,.10) 18%,
-          rgba(20,30,100,.04) 45%,
-          transparent 70%
+          rgba(255,255,255,.08) 0%,
+          rgba(130,80,255,.18) 18%,
+          rgba(60,100,255,.10) 34%,
+          rgba(30,40,130,.04) 55%,
+          transparent 72%
         );
-      filter: blur(15px);
-      animation: galaxyPulse 8s ease-in-out infinite;
+
+      filter: blur(25px);
+
+      opacity: .9;
+
+      animation:
+        galaxyRotate 18s ease-in-out infinite alternate;
+    }
+
+    .space::after {
+      content: "";
+      position: absolute;
+
+      width: 100%;
+      height: 100%;
+
+      inset: 0;
+
+      background:
+        radial-gradient(
+          circle at 50% 50%,
+          transparent 0%,
+          rgba(0,0,0,.05) 45%,
+          rgba(0,0,0,.45) 100%
+        );
     }
 
     .stars {
       position: absolute;
-      inset: -100px;
+      inset: -120px;
+
       background-image:
-        radial-gradient(circle, rgba(255,255,255,.95) 1px, transparent 1.5px),
-        radial-gradient(circle, rgba(150,210,255,.70) 1px, transparent 1.5px),
-        radial-gradient(circle, rgba(255,255,255,.50) .8px, transparent 1.3px);
+        radial-gradient(
+          circle,
+          rgba(255,255,255,.95) 1px,
+          transparent 1.5px
+        ),
+        radial-gradient(
+          circle,
+          rgba(150,210,255,.75) 1px,
+          transparent 1.5px
+        ),
+        radial-gradient(
+          circle,
+          rgba(255,255,255,.55) .8px,
+          transparent 1.3px
+        );
+
       background-size:
         83px 83px,
         137px 137px,
         211px 211px;
+
       background-position:
         5px 15px,
         40px 70px,
         90px 30px;
-      animation: starsMove 35s linear infinite;
+
+      animation:
+        starsMove 35s linear infinite;
+
+      opacity: .85;
     }
 
     .stars::after {
       content: "";
+
       position: absolute;
       inset: 0;
+
       background-image:
-        radial-gradient(circle, rgba(255,255,255,.9) 1px, transparent 1.5px);
+        radial-gradient(
+          circle,
+          rgba(255,255,255,.9) 1px,
+          transparent 1.5px
+        );
+
       background-size: 173px 173px;
       background-position: 100px 120px;
-      animation: starsMoveReverse 55s linear infinite;
+
+      animation:
+        starsMoveReverse 55s linear infinite;
     }
 
     .nebula {
       position: absolute;
       border-radius: 50%;
-      filter: blur(85px);
       pointer-events: none;
+      filter: blur(85px);
+      mix-blend-mode: screen;
     }
 
     .nebula.one {
       width: 520px;
       height: 520px;
-      background: rgba(91,48,255,.34);
+
+      background:
+        rgba(91,48,255,.34);
+
       top: -230px;
       left: -220px;
-      animation: nebulaOne 14s ease-in-out infinite;
+
+      animation:
+        nebulaOne 14s ease-in-out infinite;
     }
 
     .nebula.two {
       width: 570px;
       height: 570px;
-      background: rgba(0,130,255,.25);
+
+      background:
+        rgba(0,130,255,.25);
+
       right: -280px;
       bottom: -250px;
-      animation: nebulaTwo 17s ease-in-out infinite;
+
+      animation:
+        nebulaTwo 17s ease-in-out infinite;
     }
 
     .nebula.three {
       width: 400px;
       height: 400px;
-      background: rgba(210,35,220,.20);
+
+      background:
+        rgba(210,35,220,.20);
+
       right: -180px;
       top: 15%;
-      animation: nebulaThree 19s ease-in-out infinite;
+
+      animation:
+        nebulaThree 19s ease-in-out infinite;
     }
 
     @keyframes starsMove {
       from {
         transform: translate3d(0,0,0);
       }
+
       to {
         transform: translate3d(-35px,100px,0);
       }
@@ -166,46 +248,65 @@
       from {
         transform: translate3d(0,0,0);
       }
+
       to {
         transform: translate3d(45px,-80px,0);
       }
     }
 
-    @keyframes galaxyPulse {
-      0%,100% {
-        opacity: .55;
-        transform: translate(-50%,-50%) scale(1);
+    @keyframes galaxyRotate {
+      0% {
+        transform:
+          translate(-50%, -50%)
+          rotate(-16deg)
+          scale(1);
       }
-      50% {
-        opacity: .85;
-        transform: translate(-50%,-50%) scale(1.08);
+
+      100% {
+        transform:
+          translate(-50%, -50%)
+          rotate(-10deg)
+          scale(1.08);
       }
     }
 
     @keyframes nebulaOne {
       0%,100% {
-        transform: translate(0,0) scale(1);
+        transform:
+          translate(0,0)
+          scale(1);
       }
+
       50% {
-        transform: translate(70px,80px) scale(1.15);
+        transform:
+          translate(70px,80px)
+          scale(1.15);
       }
     }
 
     @keyframes nebulaTwo {
       0%,100% {
-        transform: translate(0,0) scale(1);
+        transform:
+          translate(0,0)
+          scale(1);
       }
+
       50% {
-        transform: translate(-70px,-60px) scale(1.12);
+        transform:
+          translate(-70px,-60px)
+          scale(1.12);
       }
     }
 
     @keyframes nebulaThree {
       0%,100% {
-        transform: translate(0,0);
+        transform:
+          translate(0,0);
       }
+
       50% {
-        transform: translate(-50px,50px);
+        transform:
+          translate(-50px,50px);
       }
     }
 
@@ -216,10 +317,14 @@
     .app {
       position: relative;
       z-index: 1;
+
       width: 100%;
       height: 100%;
+
       display: flex;
       flex-direction: column;
+
+      isolation: isolate;
     }
 
     /* =========================
@@ -227,6 +332,9 @@
     ========================= */
 
     .top {
+      position: relative;
+      z-index: 10;
+
       padding:
         calc(env(safe-area-inset-top) + 12px)
         16px
@@ -235,6 +343,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
+
       gap: 10px;
     }
 
@@ -248,16 +357,27 @@
     .avatar {
       width: 42px;
       height: 42px;
+
       border-radius: 50%;
+
       display: flex;
       align-items: center;
       justify-content: center;
+
       background:
-        linear-gradient(145deg,#fff08a,#d18a00);
+        linear-gradient(
+          145deg,
+          #fff08a,
+          #d18a00
+        );
+
       color: #17100a;
+
       font-weight: 900;
+
       box-shadow:
         0 0 18px rgba(255,205,70,.45);
+
       overflow: hidden;
       flex-shrink: 0;
     }
@@ -276,28 +396,40 @@
     .username {
       font-weight: 800;
       font-size: 14px;
+
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+
       max-width: 150px;
     }
 
     .wallet-mini {
       margin-top: 3px;
+
       font-size: 10px;
       opacity: .65;
+
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+
       max-width: 170px;
     }
 
     .network {
       font-size: 10px;
+
       padding: 6px 9px;
+
       border-radius: 10px;
-      background: rgba(255,255,255,.08);
-      border: 1px solid rgba(255,255,255,.08);
+
+      background:
+        rgba(255,255,255,.08);
+
+      border:
+        1px solid rgba(255,255,255,.08);
+
       color: #bfffcf;
     }
 
@@ -306,10 +438,19 @@
     ========================= */
 
     .content {
+      position: relative;
+      z-index: 2;
+
       flex: 1;
+
       overflow-y: auto;
       overflow-x: hidden;
-      padding: 10px 16px 100px;
+
+      padding:
+        10px
+        16px
+        100px;
+
       scrollbar-width: none;
     }
 
@@ -343,9 +484,12 @@
 
     .balance {
       margin-top: 4px;
+
       font-size: 38px;
       font-weight: 900;
+
       color: #ffe070;
+
       text-shadow:
         0 0 20px rgba(255,213,74,.35),
         0 0 45px rgba(255,180,20,.15);
@@ -364,11 +508,15 @@
 
     .tap-area {
       position: relative;
+
       height: 390px;
+
       margin-top: 5px;
+
       display: flex;
       align-items: center;
       justify-content: center;
+
       touch-action: manipulation;
       user-select: none;
       -webkit-user-select: none;
@@ -376,19 +524,27 @@
 
     .tap-area::before {
       content: "";
+
       position: absolute;
+
       width: 310px;
       height: 310px;
+
       border-radius: 50%;
+
       background:
         radial-gradient(
           circle,
-          rgba(255,210,60,.13),
-          rgba(100,70,255,.08) 40%,
+          rgba(255,210,60,.15),
+          rgba(100,70,255,.10) 40%,
           transparent 70%
         );
+
       filter: blur(8px);
-      animation: coinAura 4s ease-in-out infinite;
+
+      animation:
+        coinAura 4s ease-in-out infinite;
+
       pointer-events: none;
     }
 
@@ -397,6 +553,7 @@
         transform: scale(.95);
         opacity: .7;
       }
+
       50% {
         transform: scale(1.08);
         opacity: 1;
@@ -406,7 +563,9 @@
     .coin {
       width: 205px;
       height: 205px;
+
       border-radius: 50%;
+
       position: relative;
       z-index: 2;
 
@@ -420,7 +579,8 @@
           #744600 100%
         );
 
-      border: 5px solid #ffe17a;
+      border:
+        5px solid #ffe17a;
 
       box-shadow:
         inset -15px -18px 25px rgba(70,35,0,.45),
@@ -437,35 +597,56 @@
         transform .12s cubic-bezier(.2,.8,.3,1);
 
       will-change: transform;
+
+      cursor: pointer;
     }
 
     .coin::before {
       content: "";
+
       position: absolute;
       inset: 7px;
+
       border-radius: 50%;
-      border: 1px solid rgba(255,255,255,.35);
+
+      border:
+        1px solid rgba(255,255,255,.35);
     }
 
     .coin::after {
       content: "";
+
       position: absolute;
       inset: 13px;
+
       border-radius: 50%;
-      border: 2px solid rgba(255,255,255,.22);
+
+      border:
+        2px solid rgba(255,255,255,.22);
     }
 
     .s-logo {
       font-size: 100px;
       font-weight: 1000;
-      font-family: Arial Black, Arial, sans-serif;
+
+      font-family:
+        Arial Black,
+        Arial,
+        sans-serif;
+
       color: #fff2a0;
+
       text-shadow:
         3px 5px 0 #8e5b08,
         6px 9px 15px rgba(0,0,0,.5),
         0 0 20px rgba(255,245,170,.35);
+
       transform: translateZ(0);
-      transition: transform .12s ease-out;
+
+      transition:
+        transform .12s ease-out;
+
+      pointer-events: none;
     }
 
     .coin.hit {
@@ -476,26 +657,47 @@
        FLOAT +1
     ========================= */
 
+    .floaters {
+      position: absolute;
+      inset: 0;
+
+      pointer-events: none;
+
+      z-index: 50;
+    }
+
     .floater {
       position: absolute;
+
       pointer-events: none;
+
       color: #ffe45e;
+
       font-size: 25px;
       font-weight: 900;
-      text-shadow: 0 0 12px rgba(255,200,40,.7);
-      animation: floatUp .75s ease-out forwards;
+
+      text-shadow:
+        0 0 12px rgba(255,200,40,.7);
+
+      animation:
+        floatUp .75s ease-out forwards;
+
       z-index: 50;
     }
 
     @keyframes floatUp {
       0% {
         opacity: 1;
-        transform: translate(-50%,-50%) scale(1);
+        transform:
+          translate(-50%,-50%)
+          scale(1);
       }
 
       100% {
         opacity: 0;
-        transform: translate(-50%,-130px) scale(1.35);
+        transform:
+          translate(-50%,-130px)
+          scale(1.35);
       }
     }
 
@@ -511,27 +713,45 @@
     .energy-line {
       display: flex;
       justify-content: space-between;
+
       font-size: 12px;
       opacity: .75;
+
       margin-bottom: 7px;
     }
 
     .energy-bar {
       height: 9px;
+
       border-radius: 20px;
+
       overflow: hidden;
-      background: rgba(255,255,255,.08);
-      border: 1px solid rgba(255,255,255,.05);
+
+      background:
+        rgba(255,255,255,.08);
+
+      border:
+        1px solid rgba(255,255,255,.05);
     }
 
     .energy-fill {
       height: 100%;
       width: 100%;
+
       border-radius: inherit;
+
       background:
-        linear-gradient(90deg,#ffd43d,#fff09b);
-      box-shadow: 0 0 12px rgba(255,210,50,.4);
-      transition: width .15s linear;
+        linear-gradient(
+          90deg,
+          #ffd43d,
+          #fff09b
+        );
+
+      box-shadow:
+        0 0 12px rgba(255,210,50,.4);
+
+      transition:
+        width .15s linear;
     }
 
     /* =========================
@@ -541,11 +761,20 @@
     .card {
       padding: 18px;
       margin-top: 14px;
+
       border-radius: 20px;
-      background: rgba(10,14,30,.78);
+
+      background:
+        rgba(10,14,30,.78);
+
       backdrop-filter: blur(12px);
-      border: 1px solid rgba(255,255,255,.08);
-      box-shadow: 0 15px 40px rgba(0,0,0,.25);
+      -webkit-backdrop-filter: blur(12px);
+
+      border:
+        1px solid rgba(255,255,255,.08);
+
+      box-shadow:
+        0 15px 40px rgba(0,0,0,.25);
     }
 
     .card-title {
@@ -556,6 +785,7 @@
 
     .card-text {
       opacity: .68;
+
       font-size: 13px;
       line-height: 1.6;
     }
@@ -570,65 +800,102 @@
 
     #ton-connect {
       position: absolute;
+
       width: 1px;
       height: 1px;
+
       opacity: 0;
+
       pointer-events: none;
+
       overflow: hidden;
     }
 
     #connectWalletBtn {
       width: 100%;
+
       padding: 15px;
+
       border: 0;
       border-radius: 15px;
+
       font-size: 16px;
       font-weight: 900;
+
       background:
-        linear-gradient(135deg,#ffe27a,#f3b82e);
+        linear-gradient(
+          135deg,
+          #ffe27a,
+          #f3b82e
+        );
+
       color: #16100a;
+
       cursor: pointer;
-      box-shadow: 0 8px 25px rgba(255,193,45,.2);
+
+      box-shadow:
+        0 8px 25px rgba(255,193,45,.2);
     }
 
     .wallet-address {
       display: none;
+
       margin-top: 15px;
       padding: 14px;
+
       border-radius: 15px;
-      background: rgba(255,255,255,.06);
-      border: 1px solid rgba(255,255,255,.08);
+
+      background:
+        rgba(255,255,255,.06);
+
+      border:
+        1px solid rgba(255,255,255,.08);
     }
 
     .wallet-label {
       font-size: 10px;
       opacity: .5;
+
       margin-bottom: 6px;
       letter-spacing: 1px;
     }
 
     #walletAddressText {
       word-break: break-all;
+
       font-size: 12px;
+
       color: #ffe16a;
     }
 
     .disconnect-btn {
       width: 100%;
+
       margin-top: 10px;
       padding: 12px;
+
       border-radius: 13px;
-      border: 1px solid rgba(255,255,255,.12);
-      background: rgba(255,255,255,.05);
+
+      border:
+        1px solid rgba(255,255,255,.12);
+
+      background:
+        rgba(255,255,255,.05);
+
       color: white;
+
       display: none;
     }
 
     #walletStatus {
       text-align: center;
+
       margin-top: 12px;
+
       font-size: 12px;
+
       opacity: .75;
+
       line-height: 1.5;
     }
 
@@ -638,24 +905,38 @@
 
     .withdraw-box {
       margin-top: 20px;
+
       padding: 18px;
+
       border-radius: 20px;
-      background: rgba(10,14,30,.82);
+
+      background:
+        rgba(10,14,30,.82);
+
       backdrop-filter: blur(12px);
-      border: 1px solid rgba(255,215,80,.25);
-      box-shadow: 0 0 25px rgba(0,0,0,.25);
+      -webkit-backdrop-filter: blur(12px);
+
+      border:
+        1px solid rgba(255,215,80,.25);
+
+      box-shadow:
+        0 0 25px rgba(0,0,0,.25);
     }
 
     .withdraw-title {
       font-size: 20px;
       font-weight: 900;
+
       color: #ffd84d;
+
       margin-bottom: 12px;
     }
 
     .withdraw-balance {
       font-size: 13px;
+
       opacity: .85;
+
       margin-bottom: 12px;
     }
 
@@ -665,18 +946,29 @@
 
     #withdrawAmount {
       width: 100%;
+
       padding: 14px;
+
       border-radius: 14px;
-      border: 1px solid rgba(255,216,77,.3);
-      background: rgba(0,0,0,.35);
+
+      border:
+        1px solid rgba(255,216,77,.3);
+
+      background:
+        rgba(0,0,0,.35);
+
       color: white;
+
       outline: none;
+
       font-size: 16px;
     }
 
     .withdraw-fee {
       margin: 12px 0;
+
       font-size: 13px;
+
       opacity: .85;
     }
 
@@ -686,14 +978,23 @@
 
     .withdraw-btn {
       width: 100%;
+
       border: 0;
       border-radius: 14px;
+
       padding: 14px;
+
       font-size: 16px;
       font-weight: 900;
+
       color: #111;
+
       background:
-        linear-gradient(135deg,#ffe27a,#f5b927);
+        linear-gradient(
+          135deg,
+          #ffe27a,
+          #f5b927
+        );
     }
 
     .withdraw-btn:disabled {
@@ -702,8 +1003,11 @@
 
     .withdraw-status {
       margin-top: 12px;
+
       text-align: center;
+
       font-size: 12px;
+
       line-height: 1.5;
     }
 
@@ -713,29 +1017,56 @@
 
     .bottom {
       position: fixed;
+
       left: 10px;
       right: 10px;
-      bottom: calc(env(safe-area-inset-bottom) + 8px);
+
+      bottom:
+        calc(
+          env(safe-area-inset-bottom) + 8px
+        );
+
       height: 67px;
+
       border-radius: 22px;
-      background: rgba(7,10,23,.90);
+
+      background:
+        rgba(7,10,23,.90);
+
       backdrop-filter: blur(20px);
-      border: 1px solid rgba(255,255,255,.08);
+      -webkit-backdrop-filter: blur(20px);
+
+      border:
+        1px solid rgba(255,255,255,.08);
+
       display: grid;
-      grid-template-columns: repeat(5,1fr);
+
+      grid-template-columns:
+        repeat(5,1fr);
+
       z-index: 100;
-      box-shadow: 0 15px 40px rgba(0,0,0,.45);
+
+      box-shadow:
+        0 15px 40px rgba(0,0,0,.45);
     }
 
     .nav-btn {
       border: 0;
+
       background: transparent;
-      color: rgba(255,255,255,.55);
+
+      color:
+        rgba(255,255,255,.55);
+
       display: flex;
+
       flex-direction: column;
+
       align-items: center;
       justify-content: center;
+
       gap: 3px;
+
       font-size: 10px;
     }
 
@@ -751,31 +1082,58 @@
 
 <body>
 
+  <!-- =========================
+       GALAXY
+  ========================= -->
+
   <div class="space">
+
     <div class="stars"></div>
+
     <div class="nebula one"></div>
     <div class="nebula two"></div>
     <div class="nebula three"></div>
+
   </div>
 
+  <!-- =========================
+       APP
+  ========================= -->
+
   <div class="app">
+
+    <!-- TOP -->
 
     <header class="top">
 
       <div class="profile">
 
         <div class="avatar">
-          <span id="avatarLetter">S</span>
-          <img id="userAvatar" alt="">
+
+          <span id="avatarLetter">
+            S
+          </span>
+
+          <img
+            id="userAvatar"
+            alt=""
+          >
+
         </div>
 
         <div class="profile-info">
 
-          <div id="username" class="username">
+          <div
+            id="username"
+            class="username"
+          >
             SINAPS User
           </div>
 
-          <div id="wallet-mini" class="wallet-mini">
+          <div
+            id="wallet-mini"
+            class="wallet-mini"
+          >
             Wallet not connected
           </div>
 
@@ -789,9 +1147,16 @@
 
     </header>
 
+    <!-- CONTENT -->
+
     <main class="content">
 
-      <section id="home" class="page active">
+      <!-- HOME -->
+
+      <section
+        id="home"
+        class="page active"
+      >
 
         <div class="balance-card">
 
@@ -799,7 +1164,10 @@
             YOUR BALANCE
           </div>
 
-          <div id="balance" class="balance">
+          <div
+            id="balance"
+            class="balance"
+          >
             0
           </div>
 
@@ -809,17 +1177,29 @@
 
         </div>
 
-        <div id="tapArea" class="tap-area">
+        <div
+          id="tapArea"
+          class="tap-area"
+        >
 
-          <div id="sCoin" class="coin">
+          <div
+            id="sCoin"
+            class="coin"
+          >
 
-            <div id="sLogo" class="s-logo">
+            <div
+              id="sLogo"
+              class="s-logo"
+            >
               S
             </div>
 
           </div>
 
-          <div id="floaters"></div>
+          <div
+            id="floaters"
+            class="floaters"
+          ></div>
 
         </div>
 
@@ -827,7 +1207,9 @@
 
           <div class="energy-line">
 
-            <span>⚡ Energy</span>
+            <span>
+              ⚡ Energy
+            </span>
 
             <span id="energy">
               1000 / 1000
@@ -836,17 +1218,24 @@
           </div>
 
           <div class="energy-bar">
+
             <div
               id="energyFill"
               class="energy-fill"
             ></div>
+
           </div>
 
         </div>
 
       </section>
 
-      <section id="boost" class="page">
+      <!-- BOOST -->
+
+      <section
+        id="boost"
+        class="page"
+      >
 
         <div class="card">
 
@@ -874,7 +1263,12 @@
 
       </section>
 
-      <section id="daily" class="page">
+      <!-- DAILY -->
+
+      <section
+        id="daily"
+        class="page"
+      >
 
         <div class="card">
 
@@ -890,7 +1284,12 @@
 
       </section>
 
-      <section id="friends" class="page">
+      <!-- FRIENDS -->
+
+      <section
+        id="friends"
+        class="page"
+      >
 
         <div class="card">
 
@@ -906,7 +1305,12 @@
 
       </section>
 
-      <section id="wallet" class="page">
+      <!-- WALLET -->
+
+      <section
+        id="wallet"
+        class="page"
+      >
 
         <div class="card">
 
@@ -938,7 +1342,9 @@
                 CONNECTED WALLET
               </div>
 
-              <div id="walletAddressText"></div>
+              <div
+                id="walletAddressText"
+              ></div>
 
             </div>
 
@@ -950,11 +1356,15 @@
               Disconnect Wallet
             </button>
 
-            <div id="walletStatus"></div>
+            <div
+              id="walletStatus"
+            ></div>
 
           </div>
 
         </div>
+
+        <!-- WITHDRAW -->
 
         <div class="withdraw-box">
 
@@ -963,10 +1373,13 @@
           </div>
 
           <div class="withdraw-balance">
+
             Available:
+
             <strong id="withdrawBalance">
               0 SNP
             </strong>
+
           </div>
 
           <input
@@ -979,8 +1392,13 @@
           >
 
           <div class="withdraw-fee">
+
             Withdrawal fee:
-            <strong>0.1 TON</strong>
+
+            <strong>
+              0.1 TON
+            </strong>
+
           </div>
 
           <button
@@ -1002,53 +1420,106 @@
 
     </main>
 
+    <!-- BOTTOM NAV -->
+
     <nav class="bottom">
 
       <button
         class="nav-btn active"
         data-page="home"
+        type="button"
       >
-        <span class="nav-icon">⌂</span>
-        <span>Home</span>
+
+        <span class="nav-icon">
+          ⌂
+        </span>
+
+        <span>
+          Home
+        </span>
+
       </button>
 
       <button
         class="nav-btn"
         data-page="boost"
+        type="button"
       >
-        <span class="nav-icon">⚡</span>
-        <span>Boost</span>
+
+        <span class="nav-icon">
+          ⚡
+        </span>
+
+        <span>
+          Boost
+        </span>
+
       </button>
 
       <button
         class="nav-btn"
         data-page="daily"
+        type="button"
       >
-        <span class="nav-icon">🎁</span>
-        <span>Daily</span>
+
+        <span class="nav-icon">
+          🎁
+        </span>
+
+        <span>
+          Daily
+        </span>
+
       </button>
 
       <button
         class="nav-btn"
         data-page="friends"
+        type="button"
       >
-        <span class="nav-icon">👥</span>
-        <span>Friends</span>
+
+        <span class="nav-icon">
+          👥
+        </span>
+
+        <span>
+          Friends
+        </span>
+
       </button>
 
       <button
         class="nav-btn"
         data-page="wallet"
+        type="button"
       >
-        <span class="nav-icon">💎</span>
-        <span>Wallet</span>
+
+        <span class="nav-icon">
+          💎
+        </span>
+
+        <span>
+          Wallet
+        </span>
+
       </button>
 
     </nav>
 
   </div>
 
-  <script src="app.js?v=43"></script>
+  <!-- =========================
+       APP JS
+       CACHE BUSTER
+  ========================= -->
+
+  <script src="app.js?v=44"></script>
 
 </body>
 </html>
+
+این را جایگزین "index.html" کن و Commit کن.
+
+نکته: من "app.js" را به "v=44" تغییر دادم تا نسخه قبلی از Cache تلگرام لود نشود.
+
+بعد از این، اگر رقم هنوز برمی‌گردد، دیگر "index.html" را تغییر نمی‌دهیم؛ مستقیم "server.js" را اصلاح می‌کنیم، چون مشکل از API "/api/tap" خواهد بود.
