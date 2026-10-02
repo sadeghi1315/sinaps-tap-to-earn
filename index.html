@@ -4,22 +4,43 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#020812">
+
   <title>SINAPS — Tap to Earn</title>
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="https://unpkg.com/@tonconnect/ui@latest/dist/ton-connect-ui.min.js"></script>
+
+  <!-- TON CONNECT -->
+  <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
 
   <style>
-    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-    html,body{
-      margin:0;padding:0;width:100%;min-height:100%;
-      background:#020812;color:#fff;
-      font-family:Arial,Helvetica,sans-serif;overflow-x:hidden
+    *{
+      box-sizing:border-box;
+      -webkit-tap-highlight-color:transparent
     }
-    body{min-height:100vh}
+
+    html,body{
+      margin:0;
+      padding:0;
+      width:100%;
+      min-height:100%;
+      background:#020812;
+      color:#fff;
+      font-family:Arial,Helvetica,sans-serif;
+      overflow-x:hidden
+    }
+
+    body{
+      min-height:100vh
+    }
+
+    /* SPACE */
 
     .space{
-      position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0;
+      position:fixed;
+      inset:0;
+      overflow:hidden;
+      pointer-events:none;
+      z-index:0;
       background:
         radial-gradient(circle at 50% 38%,rgba(0,107,155,.22),transparent 32%),
         radial-gradient(circle at 15% 80%,rgba(38,0,102,.18),transparent 28%),
@@ -27,9 +48,15 @@
         linear-gradient(180deg,#01050c 0%,#03111c 45%,#020711 100%)
     }
 
-    .stars,.stars2,.stars3{
-      position:absolute;inset:0;background-repeat:repeat;pointer-events:none
+    .stars,
+    .stars2,
+    .stars3{
+      position:absolute;
+      inset:0;
+      background-repeat:repeat;
+      pointer-events:none
     }
+
     .stars{
       opacity:.75;
       background-image:
@@ -38,100 +65,230 @@
       background-size:91px 91px,137px 137px;
       animation:starsMove 35s linear infinite
     }
+
     .stars2{
       opacity:.45;
-      background-image:radial-gradient(circle,rgba(255,255,255,.9) 1px,transparent 1.5px);
+      background-image:
+        radial-gradient(circle,rgba(255,255,255,.9) 1px,transparent 1.5px);
       background-size:181px 181px;
       animation:starsMove 60s linear infinite reverse
     }
+
     .stars3{
       opacity:.3;
-      background-image:radial-gradient(circle,rgba(87,211,255,.8) 1.2px,transparent 2px);
+      background-image:
+        radial-gradient(circle,rgba(87,211,255,.8) 1.2px,transparent 2px);
       background-size:257px 257px;
       animation:starsMove 85s linear infinite
     }
+
     @keyframes starsMove{
       from{transform:translate3d(0,0,0)}
       to{transform:translate3d(-120px,80px,0)}
     }
 
     .nebula{
-      position:absolute;width:520px;height:520px;left:50%;top:42%;
-      transform:translate(-50%,-50%);border-radius:50%;
-      background:radial-gradient(ellipse,rgba(0,179,255,.12) 0%,rgba(0,100,180,.07) 35%,transparent 70%);
+      position:absolute;
+      width:520px;
+      height:520px;
+      left:50%;
+      top:42%;
+      transform:translate(-50%,-50%);
+      border-radius:50%;
+      background:
+        radial-gradient(
+          ellipse,
+          rgba(0,179,255,.12) 0%,
+          rgba(0,100,180,.07) 35%,
+          transparent 70%
+        );
       filter:blur(20px)
     }
 
+    /* APP */
+
     .app{
-      position:relative;z-index:5;width:100%;max-width:520px;
-      min-height:100vh;margin:0 auto;padding:14px 15px 105px
+      position:relative;
+      z-index:5;
+      width:100%;
+      max-width:520px;
+      min-height:100vh;
+      margin:0 auto;
+      padding:14px 15px 105px
     }
+
+    /* TOP */
 
     .topbar{
-      width:100%;min-height:62px;display:flex;
-      align-items:center;justify-content:space-between;gap:10px
+      width:100%;
+      min-height:62px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px
     }
 
-    .profile{display:flex;align-items:center;gap:10px;min-width:0}
+    .profile{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      min-width:0
+    }
+
     .avatar{
-      width:43px;height:43px;flex:0 0 43px;border-radius:50%;overflow:hidden;
-      display:flex;align-items:center;justify-content:center;
+      width:43px;
+      height:43px;
+      flex:0 0 43px;
+      border-radius:50%;
+      overflow:hidden;
+      display:flex;
+      align-items:center;
+      justify-content:center;
       background:linear-gradient(145deg,#36d9ff,#07527b);
       border:1px solid rgba(111,225,255,.65);
       box-shadow:0 0 18px rgba(0,207,255,.25);
-      font-size:19px;font-weight:bold
+      font-size:19px;
+      font-weight:bold
     }
-    #userAvatar{width:100%;height:100%;object-fit:cover;display:none}
-    .profile-info{min-width:0;text-align:left}
-    .welcome{color:#7894a1;font-size:10px;margin-bottom:3px}
+
+    #userAvatar{
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      display:none
+    }
+
+    .profile-info{
+      min-width:0;
+      text-align:left
+    }
+
+    .welcome{
+      color:#7894a1;
+      font-size:10px;
+      margin-bottom:3px
+    }
+
     #username{
-      max-width:170px;overflow:hidden;text-overflow:ellipsis;
-      white-space:nowrap;font-size:14px;font-weight:bold
+      max-width:170px;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+      font-size:14px;
+      font-weight:bold
     }
 
     .wallet-mini{
-      max-width:145px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
-      padding:8px 11px;border:1px solid rgba(77,190,225,.35);
-      border-radius:12px;background:rgba(8,30,44,.72);
-      color:#71dfff;font-size:10px
+      max-width:145px;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+      padding:8px 11px;
+      border:1px solid rgba(77,190,225,.35);
+      border-radius:12px;
+      background:rgba(8,30,44,.72);
+      color:#71dfff;
+      font-size:10px
     }
 
-    .page{display:none;width:100%}
-    .page.active{display:block}
+    /* PAGES */
 
-    .home-title{margin-top:18px;color:#7895a3;font-size:11px;letter-spacing:4px}
+    .page{
+      display:none;
+      width:100%
+    }
+
+    .page.active{
+      display:block
+    }
+
+    /* HOME */
+
+    .home-title{
+      margin-top:18px;
+      color:#7895a3;
+      font-size:11px;
+      letter-spacing:4px
+    }
 
     #balance{
-      margin-top:5px;font-size:38px;line-height:1.1;font-weight:800;
-      letter-spacing:.5px;text-shadow:0 0 20px rgba(255,213,69,.18)
+      margin-top:5px;
+      font-size:38px;
+      line-height:1.1;
+      font-weight:800;
+      letter-spacing:.5px;
+      text-shadow:0 0 20px rgba(255,213,69,.18)
     }
 
-    .coin-name{margin-top:5px;color:#cba52f;font-size:11px;letter-spacing:2px}
+    .coin-name{
+      margin-top:5px;
+      color:#cba52f;
+      font-size:11px;
+      letter-spacing:2px
+    }
 
     #tapArea{
-      position:relative;width:330px;height:330px;max-width:92vw;
-      margin:22px auto 12px;display:flex;align-items:center;
-      justify-content:center;cursor:pointer;user-select:none;
-      -webkit-user-select:none;touch-action:manipulation
+      position:relative;
+      width:330px;
+      height:330px;
+      max-width:92vw;
+      margin:22px auto 12px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      cursor:pointer;
+      user-select:none;
+      -webkit-user-select:none;
+      touch-action:manipulation
     }
 
     .coin-glow{
-      position:absolute;width:245px;height:245px;border-radius:50%;
-      background:rgba(255,191,30,.08);filter:blur(25px);
+      position:absolute;
+      width:245px;
+      height:245px;
+      border-radius:50%;
+      background:rgba(255,191,30,.08);
+      filter:blur(25px);
       animation:coinGlow 2.8s ease-in-out infinite
     }
 
     @keyframes coinGlow{
-      0%,100%{transform:scale(.94);opacity:.6}
-      50%{transform:scale(1.08);opacity:1}
+      0%,100%{
+        transform:scale(.94);
+        opacity:.6
+      }
+      50%{
+        transform:scale(1.08);
+        opacity:1
+      }
     }
 
     #sLogo{
-      position:relative;z-index:5;width:205px;height:205px;border-radius:50%;
-      display:flex;align-items:center;justify-content:center;
-      font-size:108px;font-weight:900;color:#fff5a5;
-      background:radial-gradient(circle at 32% 23%,#fffbd1 0%,#ffe878 11%,#f5c72e 33%,#d99b0a 57%,#a46600 76%,#5a3500 100%);
+      position:relative;
+      z-index:5;
+      width:205px;
+      height:205px;
+      border-radius:50%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:108px;
+      font-weight:900;
+      color:#fff5a5;
+
+      background:
+        radial-gradient(
+          circle at 32% 23%,
+          #fffbd1 0%,
+          #ffe878 11%,
+          #f5c72e 33%,
+          #d99b0a 57%,
+          #a46600 76%,
+          #5a3500 100%
+        );
+
       border:8px solid #d69c18;
+
       box-shadow:
         inset 0 0 0 3px rgba(255,239,131,.9),
         inset 0 0 16px rgba(77,43,0,.7),
@@ -139,297 +296,674 @@
         inset -12px -14px 20px rgba(57,30,0,.55),
         0 0 25px rgba(255,194,30,.5),
         0 18px 35px rgba(0,0,0,.65);
-      text-shadow:2px 2px 0 #9b6000,4px 4px 0 #693e00,0 0 12px rgba(255,250,180,.7);
-      transition:transform .14s ease,filter .14s ease
+
+      text-shadow:
+        2px 2px 0 #9b6000,
+        4px 4px 0 #693e00,
+        0 0 12px rgba(255,250,180,.7);
+
+      transition:
+        transform .14s ease,
+        filter .14s ease
     }
 
     #sLogo::before{
-      content:"";position:absolute;inset:8px;border-radius:50%;
+      content:"";
+      position:absolute;
+      inset:8px;
+      border-radius:50%;
       border:2px solid rgba(255,239,132,.75);
-      box-shadow:inset 0 0 8px rgba(90,50,0,.35);pointer-events:none
-    }
-    #sLogo::after{
-      content:"";position:absolute;inset:22px;border-radius:50%;
-      border:1px solid rgba(255,239,132,.3);pointer-events:none
+      box-shadow:inset 0 0 8px rgba(90,50,0,.35);
+      pointer-events:none
     }
 
-    #floaters{position:absolute;inset:0;z-index:20;pointer-events:none}
+    #sLogo::after{
+      content:"";
+      position:absolute;
+      inset:22px;
+      border-radius:50%;
+      border:1px solid rgba(255,239,132,.3);
+      pointer-events:none
+    }
+
+    #floaters{
+      position:absolute;
+      inset:0;
+      z-index:20;
+      pointer-events:none
+    }
 
     .floater{
-      position:absolute;color:#ffe66b;font-size:25px;font-weight:800;
+      position:absolute;
+      color:#ffe66b;
+      font-size:25px;
+      font-weight:800;
       transform:translate(-50%,-50%);
       text-shadow:0 0 7px rgba(255,185,0,.8);
       animation:floatUp .8s ease forwards
     }
 
     @keyframes floatUp{
-      0%{opacity:1;transform:translate(-50%,-50%) scale(1)}
-      100%{opacity:0;transform:translate(-50%,-105px) scale(1.12)}
+      0%{
+        opacity:1;
+        transform:translate(-50%,-50%) scale(1)
+      }
+      100%{
+        opacity:0;
+        transform:translate(-50%,-105px) scale(1.12)
+      }
     }
 
-    .energy-box{width:100%;max-width:340px;margin:10px auto 0}
+    .energy-box{
+      width:100%;
+      max-width:340px;
+      margin:10px auto 0
+    }
+
     .energy-head{
-      display:flex;justify-content:space-between;align-items:center;
-      margin-bottom:7px;color:#91aab6;font-size:11px
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:7px;
+      color:#91aab6;
+      font-size:11px
     }
-    .energy-head strong{color:#d5e6ec}
+
+    .energy-head strong{
+      color:#d5e6ec
+    }
+
     .energy-bar{
-      width:100%;height:9px;overflow:hidden;border-radius:20px;
-      background:rgba(255,255,255,.08);border:1px solid rgba(75,188,220,.15)
+      width:100%;
+      height:9px;
+      overflow:hidden;
+      border-radius:20px;
+      background:rgba(255,255,255,.08);
+      border:1px solid rgba(75,188,220,.15)
     }
+
     #energyFill{
-      width:100%;height:100%;border-radius:inherit;
+      width:100%;
+      height:100%;
+      border-radius:inherit;
       background:linear-gradient(90deg,#09a9df,#65eaff);
       box-shadow:0 0 12px rgba(42,212,255,.45);
       transition:width .15s linear
     }
 
-    .tap-hint{margin-top:10px;color:#56737f;font-size:10px;letter-spacing:2px}
-    .status{height:16px;margin-top:6px;text-align:center;color:#56737f;font-size:9px}
+    .tap-hint{
+      margin-top:10px;
+      color:#56737f;
+      font-size:10px;
+      letter-spacing:2px
+    }
+
+    .status{
+      height:16px;
+      margin-top:6px;
+      text-align:center;
+      color:#56737f;
+      font-size:9px
+    }
+
+    /* CARDS */
 
     .simple-card{
-      margin-top:35px;padding:25px 18px;border-radius:20px;
-      background:rgba(7,25,37,.75);border:1px solid rgba(77,188,220,.25);
+      margin-top:35px;
+      padding:25px 18px;
+      border-radius:20px;
+      background:rgba(7,25,37,.75);
+      border:1px solid rgba(77,188,220,.25);
       box-shadow:0 15px 35px rgba(0,0,0,.25)
     }
-    .simple-card h2{margin-top:0}
-    .simple-card p{color:#7895a3;font-size:13px}
 
-    .wallet-card{text-align:center}
+    .simple-card h2{
+      margin-top:0
+    }
+
+    .simple-card p{
+      color:#7895a3;
+      font-size:13px
+    }
+
+    /* WALLET */
+
+    .wallet-card{
+      text-align:center;
+      margin-top:25px
+    }
+
+    .wallet-title{
+      font-size:24px;
+      font-weight:bold;
+      margin-bottom:8px
+    }
+
+    .wallet-subtitle{
+      color:#7895a3;
+      font-size:12px;
+      margin-bottom:22px
+    }
+
+    /* OUR OWN CONNECT BUTTON */
+
+    #connectWalletBtn{
+      width:100%;
+      max-width:320px;
+      min-height:54px;
+      margin:8px auto 0;
+
+      border:1px solid rgba(255,221,92,.75);
+      border-radius:16px;
+
+      background:
+        linear-gradient(
+          135deg,
+          #f6d85a 0%,
+          #dca91d 45%,
+          #9b6505 100%
+        );
+
+      color:#161006;
+      font-size:15px;
+      font-weight:800;
+      letter-spacing:.3px;
+
+      box-shadow:
+        0 8px 25px rgba(215,164,25,.28),
+        inset 0 1px 0 rgba(255,255,255,.7);
+
+      cursor:pointer;
+      transition:
+        transform .12s ease,
+        filter .12s ease
+    }
+
+    #connectWalletBtn:active{
+      transform:scale(.97)
+    }
+
+    #connectWalletBtn:hover{
+      filter:brightness(1.1)
+    }
+
+    #connectWalletBtn.connected{
+      background:
+        linear-gradient(
+          135deg,
+          #1ac9a1,
+          #087b69
+        );
+      color:white;
+      border-color:#5af0d0
+    }
+
+    /* TON CONNECT HIDDEN ROOT */
 
     #ton-connect{
-      display:flex;
-      justify-content:center;
-      margin:22px 0
+      position:absolute;
+      width:1px;
+      height:1px;
+      overflow:hidden;
+      opacity:0;
+      pointer-events:none
     }
 
     .wallet-address{
       display:none;
-      margin-top:15px;
-      padding:13px;
-      border-radius:13px;
-      background:rgba(0,0,0,.25);
-      border:1px solid rgba(77,188,220,.2);
+      margin:18px auto 0;
+      max-width:340px;
+      padding:14px;
+
+      border-radius:14px;
+
+      background:rgba(0,0,0,.3);
+      border:1px solid rgba(77,188,220,.25);
+
       color:#83e6ff;
       font-size:11px;
       word-break:break-all;
-      line-height:1.5
+      line-height:1.55
+    }
+
+    .wallet-label{
+      color:#5f7d89;
+      font-size:9px;
+      margin-bottom:6px;
+      letter-spacing:1px
     }
 
     .disconnect-btn{
       display:none;
       width:100%;
-      margin-top:12px;
+      max-width:320px;
+      margin:12px auto 0;
       padding:13px;
+
       border:1px solid rgba(255,100,100,.3);
       border-radius:13px;
+
       background:rgba(90,20,25,.35);
       color:#ff9b9b;
+
       font-size:12px;
       cursor:pointer
     }
 
     .withdraw-box{
-      margin-top:18px;
+      margin:22px auto 0;
+      max-width:320px;
       padding-top:18px;
+
       border-top:1px solid rgba(77,188,220,.15);
+
       color:#66818e;
-      font-size:11px
+      font-size:11px;
+      line-height:1.6
     }
 
+    /* NAV */
+
     .bottom-nav{
-      position:fixed;left:50%;bottom:9px;transform:translateX(-50%);
-      width:calc(100% - 18px);max-width:500px;height:67px;padding:5px;
-      display:grid;grid-template-columns:repeat(5,1fr);align-items:center;
-      z-index:99999;border:1px solid rgba(67,180,215,.4);
-      border-radius:21px;background:rgba(3,14,25,.94);
+      position:fixed;
+      left:50%;
+      bottom:9px;
+      transform:translateX(-50%);
+      width:calc(100% - 18px);
+      max-width:500px;
+      height:67px;
+      padding:5px;
+
+      display:grid;
+      grid-template-columns:repeat(5,1fr);
+      align-items:center;
+
+      z-index:99999;
+
+      border:1px solid rgba(67,180,215,.4);
+      border-radius:21px;
+
+      background:rgba(3,14,25,.94);
+
       box-shadow:0 12px 40px rgba(0,0,0,.6);
-      backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)
+
+      backdrop-filter:blur(20px);
+      -webkit-backdrop-filter:blur(20px)
     }
 
     .nav-item{
-      height:56px;display:flex;flex-direction:column;justify-content:center;
-      align-items:center;gap:2px;border:0;border-radius:15px;
-      background:transparent;color:#587989;font-size:19px;cursor:pointer
+      height:56px;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      align-items:center;
+      gap:2px;
+
+      border:0;
+      border-radius:15px;
+
+      background:transparent;
+      color:#587989;
+
+      font-size:19px;
+      cursor:pointer
     }
 
-    .nav-item small{font-size:9px;margin-top:1px}
+    .nav-item small{
+      font-size:9px;
+      margin-top:1px
+    }
+
     .nav-item.active{
       color:#6be5ff;
-      background:linear-gradient(145deg,rgba(20,91,120,.75),rgba(6,37,53,.75))
+      background:
+        linear-gradient(
+          145deg,
+          rgba(20,91,120,.75),
+          rgba(6,37,53,.75)
+        )
     }
 
     @media(max-height:700px){
-      #tapArea{margin-top:10px}
-      #sLogo{width:180px;height:180px;font-size:95px}
-      .coin-glow{width:220px;height:220px}
+
+      #tapArea{
+        margin-top:10px
+      }
+
+      #sLogo{
+        width:180px;
+        height:180px;
+        font-size:95px
+      }
+
+      .coin-glow{
+        width:220px;
+        height:220px
+      }
+
     }
   </style>
 </head>
 
 <body>
 
-<div class="space">
-  <div class="stars"></div>
-  <div class="stars2"></div>
-  <div class="stars3"></div>
-  <div class="nebula"></div>
-</div>
+  <div class="space">
+    <div class="stars"></div>
+    <div class="stars2"></div>
+    <div class="stars3"></div>
+    <div class="nebula"></div>
+  </div>
 
-<main class="app">
 
-  <header class="topbar">
+  <main class="app">
 
-    <div class="profile">
+    <header class="topbar">
 
-      <div class="avatar">
-        <span id="avatarLetter">S</span>
-        <img id="userAvatar" alt="Avatar">
+      <div class="profile">
+
+        <div class="avatar">
+
+          <span id="avatarLetter">S</span>
+
+          <img
+            id="userAvatar"
+            alt="Avatar"
+          >
+
+        </div>
+
+        <div class="profile-info">
+
+          <div class="welcome">
+            WELCOME
+          </div>
+
+          <div id="username">
+            SINAPS USER
+          </div>
+
+        </div>
+
       </div>
 
-      <div class="profile-info">
-        <div class="welcome">WELCOME</div>
-        <div id="username">SINAPS USER</div>
-      </div>
-
-    </div>
-
-    <div class="wallet-mini" id="walletMini">
-      Wallet
-    </div>
-
-  </header>
-
-
-  <section id="homePage" class="page active">
-
-    <div class="home-title">SINAPS</div>
-
-    <div id="balance">0</div>
-
-    <div class="coin-name">SNP</div>
-
-    <div id="tapArea">
-
-      <div class="coin-glow"></div>
-
-      <div id="sLogo">S</div>
-
-      <div id="floaters"></div>
-
-    </div>
-
-    <div class="energy-box">
-
-      <div class="energy-head">
-        <span>ENERGY</span>
-        <strong id="energy">1000 / 1000</strong>
-      </div>
-
-      <div class="energy-bar">
-        <div id="energyFill"></div>
-      </div>
-
-    </div>
-
-    <div class="tap-hint">
-      TAP TO EARN
-    </div>
-
-    <div id="status" class="status"></div>
-
-  </section>
-
-
-  <section id="boostPage" class="page">
-    <div class="simple-card">
-      <h2>⚡ Boost</h2>
-      <p>Boosts will be added here.</p>
-    </div>
-  </section>
-
-
-  <section id="dailyPage" class="page">
-    <div class="simple-card">
-      <h2>🎁 Daily</h2>
-      <p>Daily rewards will be added here.</p>
-    </div>
-  </section>
-
-
-  <section id="friendsPage" class="page">
-    <div class="simple-card">
-      <h2>👥 Friends</h2>
-      <p>Referral system will be added here.</p>
-    </div>
-  </section>
-
-
-  <section id="walletPage" class="page">
-
-    <div class="simple-card wallet-card">
-
-      <h2>💎 Wallet</h2>
-
-      <p>
-        Connect your TON wallet
-      </p>
-
-      <div id="ton-connect"></div>
 
       <div
-        id="walletAddress"
-        class="wallet-address">
+        class="wallet-mini"
+        id="walletMini"
+      >
+        Wallet
       </div>
 
-      <button
-        id="disconnectWallet"
-        class="disconnect-btn">
-        Disconnect Wallet
-      </button>
+    </header>
 
-      <div class="withdraw-box">
-        Withdraw will be enabled after wallet connection.
+
+    <!-- HOME -->
+
+    <section
+      id="homePage"
+      class="page active"
+    >
+
+      <div class="home-title">
+        SINAPS
       </div>
 
-    </div>
+      <div id="balance">
+        0
+      </div>
 
-  </section>
-
-</main>
-
-
-<nav class="bottom-nav">
-
-  <button class="nav-item active" data-page="homePage">
-    <span>⌂</span>
-    <small>Home</small>
-  </button>
-
-  <button class="nav-item" data-page="boostPage">
-    <span>⚡</span>
-    <small>Boost</small>
-  </button>
-
-  <button class="nav-item" data-page="dailyPage">
-    <span>🎁</span>
-    <small>Daily</small>
-  </button>
-
-  <button class="nav-item" data-page="friendsPage">
-    <span>👥</span>
-    <small>Friends</small>
-  </button>
-
-  <button class="nav-item" data-page="walletPage">
-    <span>💎</span>
-    <small>Wallet</small>
-  </button>
-
-</nav>
+      <div class="coin-name">
+        SNP
+      </div>
 
 
-<script src="app.js?v=4"></script>
+      <div id="tapArea">
+
+        <div class="coin-glow"></div>
+
+        <div id="sLogo">
+          S
+        </div>
+
+        <div id="floaters"></div>
+
+      </div>
+
+
+      <div class="energy-box">
+
+        <div class="energy-head">
+
+          <span>
+            ENERGY
+          </span>
+
+          <strong id="energy">
+            1000 / 1000
+          </strong>
+
+        </div>
+
+        <div class="energy-bar">
+
+          <div id="energyFill"></div>
+
+        </div>
+
+      </div>
+
+
+      <div class="tap-hint">
+        TAP TO EARN
+      </div>
+
+      <div
+        id="status"
+        class="status"
+      ></div>
+
+    </section>
+
+
+    <!-- BOOST -->
+
+    <section
+      id="boostPage"
+      class="page"
+    >
+
+      <div class="simple-card">
+
+        <h2>
+          ⚡ Boost
+        </h2>
+
+        <p>
+          Boosts will be added here.
+        </p>
+
+      </div>
+
+    </section>
+
+
+    <!-- DAILY -->
+
+    <section
+      id="dailyPage"
+      class="page"
+    >
+
+      <div class="simple-card">
+
+        <h2>
+          🎁 Daily
+        </h2>
+
+        <p>
+          Daily rewards will be added here.
+        </p>
+
+      </div>
+
+    </section>
+
+
+    <!-- FRIENDS -->
+
+    <section
+      id="friendsPage"
+      class="page"
+    >
+
+      <div class="simple-card">
+
+        <h2>
+          👥 Friends
+        </h2>
+
+        <p>
+          Referral system will be added here.
+        </p>
+
+      </div>
+
+    </section>
+
+
+    <!-- WALLET -->
+
+    <section
+      id="walletPage"
+      class="page"
+    >
+
+      <div class="simple-card wallet-card">
+
+        <div class="wallet-title">
+          💎 Wallet
+        </div>
+
+        <div class="wallet-subtitle">
+          Connect your TON wallet to SINAPS
+        </div>
+
+
+        <!-- REAL TON CONNECT UI ROOT -->
+        <div id="ton-connect"></div>
+
+
+        <!-- OUR VISIBLE BUTTON -->
+        <button
+          id="connectWalletBtn"
+          type="button"
+        >
+          🔗 Connect TON Wallet
+        </button>
+
+
+        <!-- CONNECTED ADDRESS -->
+
+        <div
+          id="walletAddress"
+          class="wallet-address"
+        >
+
+          <div class="wallet-label">
+            CONNECTED WALLET
+          </div>
+
+          <div id="walletAddressText"></div>
+
+        </div>
+
+
+        <!-- DISCONNECT -->
+
+        <button
+          id="disconnectWallet"
+          class="disconnect-btn"
+          type="button"
+        >
+          Disconnect Wallet
+        </button>
+
+
+        <div class="withdraw-box">
+
+          Withdraw will be enabled in the next stage.
+
+          <br><br>
+
+          SNP withdrawal fee:
+          <strong>0.1 TON</strong>
+
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+
+  <!-- NAV -->
+
+  <nav class="bottom-nav">
+
+    <button
+      class="nav-item active"
+      data-page="homePage"
+      type="button"
+    >
+      <span>⌂</span>
+      <small>Home</small>
+    </button>
+
+
+    <button
+      class="nav-item"
+      data-page="boostPage"
+      type="button"
+    >
+      <span>⚡</span>
+      <small>Boost</small>
+    </button>
+
+
+    <button
+      class="nav-item"
+      data-page="dailyPage"
+      type="button"
+    >
+      <span>🎁</span>
+      <small>Daily</small>
+    </button>
+
+
+    <button
+      class="nav-item"
+      data-page="friendsPage"
+      type="button"
+    >
+      <span>👥</span>
+      <small>Friends</small>
+    </button>
+
+
+    <button
+      class="nav-item"
+      data-page="walletPage"
+      type="button"
+    >
+      <span>💎</span>
+      <small>Wallet</small>
+    </button>
+
+  </nav>
+
+
+  <script src="app.js?v=41"></script>
 
 </body>
 </html>
