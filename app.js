@@ -2,16 +2,28 @@
 
   "use strict";
 
-
   const API =
     "https://sinaps-backend.onrender.com";
-
 
   const MANIFEST =
     "https://sadeghi1315.github.io/sinaps-tap-to-earn/tonconnect-manifest.json";
 
+  const TREASURY_WALLET =
+    "UQDMsJu14wu-EHSjaRpufQdPb73pKVRkQvHNezgA2zF69sJX";
+
+  const SNP_CONTRACT =
+    "EQAmLlerUViNn9PwFVRlR_AjDvhd5pkmeLNOu5bNDpvXV0ls";
+
+  const WITHDRAW_FEE_NANO =
+    "100000000";
+
+  const MAINNET =
+    "-239";
+
 
   let telegramUser = null;
+
+  let tonUI = null;
 
   let balance = 0;
 
@@ -19,11 +31,9 @@
 
   let maxEnergy = 1000;
 
-  let lastTap = 0;
-
   let syncing = false;
 
-  let tonUI = null;
+  let withdrawing = false;
 
 
   function $(id) {
@@ -31,9 +41,9 @@
   }
 
 
-  /* =========================================
+  /* =========================
      TELEGRAM
-  ========================================= */
+  ========================= */
 
   function initTelegram() {
 
@@ -47,14 +57,11 @@
         const tg =
           window.Telegram.WebApp;
 
-
         tg.ready();
-
 
         try {
           tg.expand();
         } catch (e) {}
-
 
         if (
           tg.initDataUnsafe &&
@@ -64,9 +71,7 @@
           telegramUser =
             tg.initDataUnsafe.user;
 
-
           showTelegramUser();
-
         }
 
       }
@@ -74,7 +79,7 @@
     } catch (e) {
 
       console.log(
-        "Telegram error:",
+        "Telegram init error:",
         e
       );
 
@@ -87,26 +92,17 @@
 
     if (!telegramUser) return;
 
-
     const username =
       $("username");
 
-
     if (username) {
 
-      if (
-        telegramUser.username
-      ) {
+      if (telegramUser.username) {
 
         username.textContent =
-          "@" +
-          telegramUser.username;
+          "@" + telegramUser.username;
 
-      }
-
-      else if (
-        telegramUser.first_name
-      ) {
+      } else if (telegramUser.first_name) {
 
         username.textContent =
           telegramUser.first_name;
@@ -119,7 +115,6 @@
     const letter =
       $("avatarLetter");
 
-
     if (letter) {
 
       const name =
@@ -127,38 +122,28 @@
         telegramUser.username ||
         "S";
 
-
       letter.textContent =
-        name
-          .charAt(0)
-          .toUpperCase();
+        name.charAt(0).toUpperCase();
 
     }
 
 
-    if (
-      telegramUser.photo_url
-    ) {
+    if (telegramUser.photo_url) {
 
       const avatar =
         $("userAvatar");
-
 
       if (avatar) {
 
         avatar.src =
           telegramUser.photo_url;
 
-
         avatar.style.display =
           "block";
 
-
         if (letter) {
-
           letter.style.display =
             "none";
-
         }
 
       }
@@ -168,19 +153,17 @@
   }
 
 
-  /* =========================================
+  /* =========================
      RENDER
-  ========================================= */
+  ========================= */
 
   function render() {
 
     const balanceEl =
       $("balance");
 
-
     const energyEl =
       $("energy");
-
 
     const energyFill =
       $("energyFill");
@@ -209,58 +192,44 @@
 
       let percent =
         maxEnergy > 0
-          ? (
-              energy /
-              maxEnergy
-            ) * 100
+          ? (energy / maxEnergy) * 100
           : 0;
-
 
       percent =
         Math.max(
           0,
-          Math.min(
-            100,
-            percent
-          )
+          Math.min(100, percent)
         );
-
 
       energyFill.style.width =
         percent + "%";
 
     }
 
+
+    updateWithdrawBalance();
+
   }
 
 
-  /* =========================================
+  /* =========================
      LOCAL STORAGE
-  ========================================= */
+  ========================= */
 
   function saveLocal() {
 
     try {
 
       localStorage.setItem(
-        "sinaps_v41",
+        "sinaps_v4",
         JSON.stringify({
-
-          balance:
-            balance,
-
-          energy:
-            energy,
-
-          maxEnergy:
-            maxEnergy
-
+          balance: balance,
+          energy: energy,
+          maxEnergy: maxEnergy
         })
       );
 
-    }
-
-    catch (e) {}
+    } catch (e) {}
 
   }
 
@@ -271,59 +240,46 @@
 
       const raw =
         localStorage.getItem(
-          "sinaps_v41"
+          "sinaps_v4"
         );
 
-
       if (!raw) return;
-
 
       const data =
         JSON.parse(raw);
 
-
       if (
-        typeof data.balance ===
-        "number"
+        data &&
+        typeof data.balance === "number"
       ) {
-
         balance =
           data.balance;
-
       }
 
-
       if (
-        typeof data.energy ===
-        "number"
+        data &&
+        typeof data.energy === "number"
       ) {
-
         energy =
           data.energy;
-
       }
-
 
       if (
-        typeof data.maxEnergy ===
-        "number"
+        data &&
+        typeof data.maxEnergy === "number"
       ) {
-
         maxEnergy =
           data.maxEnergy;
-
       }
 
-    }
-
-    catch (e) {}
+    } catch (e) {}
 
   }
 
 
-  /* =========================================
-     LOAD USER
-  ========================================= */
+  /* =========================
+     BACKEND USER
+  ========================= */
 
   async function loadUser() {
 
@@ -331,9 +287,7 @@
       !telegramUser ||
       !telegramUser.id
     ) {
-
       return;
-
     }
 
 
@@ -342,13 +296,10 @@
       const controller =
         new AbortController();
 
-
       const timeout =
         setTimeout(
           function () {
-
             controller.abort();
-
           },
           7000
         );
@@ -358,9 +309,7 @@
         await fetch(
           API + "/api/user",
           {
-
-            method:
-              "POST",
+            method: "POST",
 
             headers: {
               "Content-Type":
@@ -369,7 +318,6 @@
 
             body:
               JSON.stringify({
-
                 telegram_id:
                   telegramUser.id,
 
@@ -377,12 +325,10 @@
                   telegramUser.username ||
                   telegramUser.first_name ||
                   ""
-
               }),
 
             signal:
               controller.signal
-
           }
         );
 
@@ -416,9 +362,7 @@
       ) {
 
         balance =
-          Number(
-            user.balance
-          ) || 0;
+          Number(user.balance) || 0;
 
       }
 
@@ -429,9 +373,7 @@
       ) {
 
         energy =
-          Number(
-            user.energy
-          );
+          Number(user.energy);
 
       }
 
@@ -442,10 +384,19 @@
       ) {
 
         maxEnergy =
-          Number(
-            user.max_energy
-          ) || 1000;
+          Number(user.max_energy) ||
+          1000;
 
+      }
+
+
+      if (!Number.isFinite(energy)) {
+        energy = 1000;
+      }
+
+
+      if (!Number.isFinite(maxEnergy)) {
+        maxEnergy = 1000;
       }
 
 
@@ -453,9 +404,7 @@
 
       saveLocal();
 
-    }
-
-    catch (e) {
+    } catch (e) {
 
       console.log(
         "Backend unavailable:",
@@ -469,22 +418,21 @@
   }
 
 
-  /* =========================================
-     TAP SYNC
-  ========================================= */
+  /* =========================
+     TAP
+  ========================= */
 
   async function syncTap() {
 
     if (
       !telegramUser ||
-      !telegramUser.id ||
-      syncing
+      !telegramUser.id
     ) {
-
       return;
-
     }
 
+
+    if (syncing) return;
 
     syncing = true;
 
@@ -495,9 +443,7 @@
         await fetch(
           API + "/api/tap",
           {
-
-            method:
-              "POST",
+            method: "POST",
 
             headers: {
               "Content-Type":
@@ -506,12 +452,9 @@
 
             body:
               JSON.stringify({
-
                 telegram_id:
                   telegramUser.id
-
               })
-
           }
         );
 
@@ -542,9 +485,8 @@
       ) {
 
         balance =
-          Number(
-            user.balance
-          ) || balance;
+          Number(user.balance) ||
+          balance;
 
       }
 
@@ -555,9 +497,7 @@
       ) {
 
         energy =
-          Number(
-            user.energy
-          );
+          Number(user.energy);
 
       }
 
@@ -566,20 +506,16 @@
 
       saveLocal();
 
-    }
-
-    catch (e) {
+    } catch (e) {
 
       console.log(
-        "Tap sync error:",
+        "Tap sync failed:",
         e
       );
 
       saveLocal();
 
-    }
-
-    finally {
+    } finally {
 
       syncing = false;
 
@@ -588,105 +524,383 @@
   }
 
 
-  /* =========================================
-     ADDRESS
-  ========================================= */
+  function tapEffect(event) {
 
-  function shortAddress(address) {
+    const area =
+      $("tapArea");
 
-    if (!address) {
+    const container =
+      $("floaters");
 
-      return "Wallet";
-
+    if (!area || !container) {
+      return;
     }
+
+
+    const rect =
+      area.getBoundingClientRect();
+
+
+    let x =
+      event.clientX -
+      rect.left;
+
+    let y =
+      event.clientY -
+      rect.top;
 
 
     if (
-      address.length < 18
+      event.touches &&
+      event.touches.length
     ) {
 
-      return address;
+      x =
+        event.touches[0].clientX -
+        rect.left;
+
+      y =
+        event.touches[0].clientY -
+        rect.top;
 
     }
 
 
-    return (
-      address.substring(0, 7) +
-      "..." +
-      address.substring(
-        address.length - 7
-      )
+    const el =
+      document.createElement("div");
+
+    el.className =
+      "floater";
+
+    el.textContent =
+      "+1";
+
+
+    el.style.left =
+      x + "px";
+
+    el.style.top =
+      y + "px";
+
+
+    container.appendChild(el);
+
+
+    setTimeout(
+      function () {
+        el.remove();
+      },
+      800
     );
 
   }
 
 
-  /* =========================================
-     WALLET UI
-  ========================================= */
+  function moveCoin(event) {
+
+    const coin =
+      $("sCoin");
+
+    const logo =
+      $("sLogo");
+
+    const area =
+      $("tapArea");
+
+    if (!coin || !logo || !area) {
+      return;
+    }
+
+
+    const rect =
+      area.getBoundingClientRect();
+
+
+    let x =
+      event.clientX -
+      rect.left;
+
+    let y =
+      event.clientY -
+      rect.top;
+
+
+    if (
+      event.touches &&
+      event.touches.length
+    ) {
+
+      x =
+        event.touches[0].clientX -
+        rect.left;
+
+      y =
+        event.touches[0].clientY -
+        rect.top;
+
+    }
+
+
+    const centerX =
+      rect.width / 2;
+
+    const centerY =
+      rect.height / 2;
+
+
+    const dx =
+      x - centerX;
+
+    const dy =
+      y - centerY;
+
+
+    const angle =
+      Math.atan2(dy, dx) *
+      180 /
+      Math.PI;
+
+
+    logo.style.transform =
+      "rotate(" +
+      (angle * 0.10) +
+      "deg)";
+
+
+    coin.classList.add("hit");
+
+
+    setTimeout(
+      function () {
+        coin.classList.remove("hit");
+        logo.style.transform =
+          "rotate(0deg)";
+      },
+      120
+    );
+
+  }
+
+
+  function setupTap() {
+
+    const area =
+      $("tapArea");
+
+    if (!area) return;
+
+
+    area.addEventListener(
+      "pointerdown",
+      function (event) {
+
+        event.preventDefault();
+
+
+        if (energy <= 0) {
+
+          return;
+
+        }
+
+
+        balance += 1;
+
+        energy -= 1;
+
+
+        render();
+
+        saveLocal();
+
+        tapEffect(event);
+
+        moveCoin(event);
+
+        syncTap();
+
+      },
+      {
+        passive: false
+      }
+    );
+
+  }
+
+
+  /* =========================
+     ENERGY
+  ========================= */
+
+  function startEnergy() {
+
+    setInterval(
+      function () {
+
+        if (
+          energy <
+          maxEnergy
+        ) {
+
+          energy += 1;
+
+          if (
+            energy >
+            maxEnergy
+          ) {
+            energy =
+              maxEnergy;
+          }
+
+          render();
+
+          saveLocal();
+
+        }
+
+      },
+      3000
+    );
+
+  }
+
+
+  /* =========================
+     NAVIGATION
+  ========================= */
+
+  function setupNavigation() {
+
+    const buttons =
+      document.querySelectorAll(
+        ".nav-btn"
+      );
+
+
+    buttons.forEach(
+      function (button) {
+
+        button.addEventListener(
+          "click",
+          function () {
+
+            const page =
+              button.dataset.page;
+
+            document
+              .querySelectorAll(
+                ".page"
+              )
+              .forEach(
+                function (item) {
+                  item.classList.remove(
+                    "active"
+                  );
+                }
+              );
+
+
+            const target =
+              $(page);
+
+            if (target) {
+              target.classList.add(
+                "active"
+              );
+            }
+
+
+            buttons.forEach(
+              function (item) {
+                item.classList.remove(
+                  "active"
+                );
+              }
+            );
+
+
+            button.classList.add(
+              "active"
+            );
+
+          }
+        );
+
+      }
+    );
+
+  }
+
+
+  /* =========================
+     TON CONNECT
+  ========================= */
+
+  function setWalletStatus(
+    message
+  ) {
+
+    const el =
+      $("walletStatus");
+
+    if (el) {
+      el.textContent =
+        message;
+    }
+
+  }
+
 
   function showWallet(address) {
-
-    const mini =
-      $("walletMini");
-
 
     const box =
       $("walletAddress");
 
-
     const text =
       $("walletAddressText");
-
 
     const disconnect =
       $("disconnectWallet");
 
-
     const connect =
       $("connectWalletBtn");
+
+    const mini =
+      $("wallet-mini");
+
+
+    if (box) {
+      box.style.display =
+        "block";
+    }
+
+
+    if (disconnect) {
+      disconnect.style.display =
+        "block";
+    }
+
+
+    if (connect) {
+      connect.style.display =
+        "none";
+    }
+
+
+    if (text) {
+      text.textContent =
+        address;
+    }
 
 
     if (mini) {
 
       mini.textContent =
-        shortAddress(address);
-
-    }
-
-
-    if (box) {
-
-      box.style.display =
-        "block";
-
-    }
-
-
-    if (text) {
-
-      text.textContent =
-        address;
-
-    }
-
-
-    if (disconnect) {
-
-      disconnect.style.display =
-        "block";
-
-    }
-
-
-    if (connect) {
-
-      connect.textContent =
-        "✓ Wallet Connected";
-
-      connect.classList.add(
-        "connected"
-      );
+        address.substring(0, 6) +
+        "..." +
+        address.substring(
+          address.length - 6
+        );
 
     }
 
@@ -695,87 +909,54 @@
 
   function clearWalletUI() {
 
-    const mini =
-      $("walletMini");
-
-
     const box =
       $("walletAddress");
-
-
-    const text =
-      $("walletAddressText");
-
 
     const disconnect =
       $("disconnectWallet");
 
-
     const connect =
       $("connectWalletBtn");
 
-
-    if (mini) {
-
-      mini.textContent =
-        "Wallet";
-
-    }
+    const mini =
+      $("wallet-mini");
 
 
     if (box) {
-
       box.style.display =
         "none";
-
-    }
-
-
-    if (text) {
-
-      text.textContent =
-        "";
-
     }
 
 
     if (disconnect) {
-
       disconnect.style.display =
         "none";
-
     }
 
 
     if (connect) {
+      connect.style.display =
+        "block";
+    }
 
-      connect.textContent =
-        "🔗 Connect TON Wallet";
 
-      connect.classList.remove(
-        "connected"
-      );
-
+    if (mini) {
+      mini.textContent =
+        "Wallet not connected";
     }
 
   }
 
 
-  /* =========================================
-     SAVE WALLET TO BACKEND
-  ========================================= */
-
-  async function saveWallet(address) {
+  async function saveWallet(
+    address
+  ) {
 
     if (
       !telegramUser ||
       !telegramUser.id ||
       !address
     ) {
-
-      console.log(
-        "Cannot save wallet: Telegram user missing"
-      );
 
       return;
 
@@ -786,12 +967,9 @@
 
       const response =
         await fetch(
-          API +
-          "/api/wallet/connect",
+          API + "/api/wallet/connect",
           {
-
-            method:
-              "POST",
+            method: "POST",
 
             headers: {
               "Content-Type":
@@ -800,15 +978,12 @@
 
             body:
               JSON.stringify({
-
                 telegram_id:
                   telegramUser.id,
 
                 wallet_address:
                   address
-
               })
-
           }
         );
 
@@ -824,12 +999,10 @@
 
 
       console.log(
-        "Wallet saved successfully"
+        "Wallet saved."
       );
 
-    }
-
-    catch (e) {
+    } catch (e) {
 
       console.log(
         "Wallet save error:",
@@ -841,10 +1014,6 @@
   }
 
 
-  /* =========================================
-     TON CONNECT
-  ========================================= */
-
   function setupTonConnect() {
 
     console.log(
@@ -852,19 +1021,15 @@
     );
 
 
-    if (
-      !window.TON_CONNECT_UI
-    ) {
+    if (!window.TON_CONNECT_UI) {
 
       console.error(
         "TON_CONNECT_UI not found"
       );
 
-
       setWalletStatus(
-        "TON Connect library failed to load."
+        "TON Connect failed to load."
       );
-
 
       return;
 
@@ -874,27 +1039,22 @@
     try {
 
       tonUI =
-        new window.TON_CONNECT_UI.TonConnectUI({
+        new window
+          .TON_CONNECT_UI
+          .TonConnectUI({
+            manifestUrl:
+              MANIFEST,
 
-          manifestUrl:
-            MANIFEST,
-
-          buttonRootId:
-            "ton-connect"
-
-        });
-
-
-      console.log(
-        "TON Connect initialized"
-      );
+            buttonRootId:
+              "ton-connect"
+          });
 
 
       tonUI.onStatusChange(
         async function (wallet) {
 
           console.log(
-            "TON wallet status:",
+            "TON wallet:",
             wallet
           );
 
@@ -908,24 +1068,23 @@
             const address =
               wallet.account.address;
 
-
             showWallet(address);
-
 
             await saveWallet(
               address
             );
 
-
             setWalletStatus(
               "Wallet connected successfully."
             );
 
-          }
-
-          else {
+          } else {
 
             clearWalletUI();
+
+            setWalletStatus(
+              ""
+            );
 
           }
 
@@ -933,27 +1092,15 @@
       );
 
 
-      /*
-       * OUR BUTTON
-       *
-       * We do NOT depend on the library
-       * rendering a visible button.
-       */
-
-      const connectButton =
+      const button =
         $("connectWalletBtn");
 
 
-      if (connectButton) {
+      if (button) {
 
-        connectButton.addEventListener(
+        button.addEventListener(
           "click",
           async function () {
-
-            console.log(
-              "Connect button clicked"
-            );
-
 
             if (!tonUI) {
 
@@ -970,18 +1117,15 @@
 
               await tonUI.openModal();
 
-            }
-
-            catch (e) {
+            } catch (e) {
 
               console.error(
-                "TON Connect modal error:",
+                "TON Connect error:",
                 e
               );
 
-
               setWalletStatus(
-                "Connection error. Check TON Connect."
+                "Connection error."
               );
 
             }
@@ -992,15 +1136,12 @@
       }
 
 
-    }
-
-    catch (e) {
+    } catch (e) {
 
       console.error(
-        "TON Connect initialization error:",
+        "TON Connect init error:",
         e
       );
-
 
       setWalletStatus(
         "TON Connect initialization failed."
@@ -1011,52 +1152,10 @@
   }
 
 
-  /* =========================================
-     STATUS
-  ========================================= */
-
-  function setWalletStatus(message) {
-
-    const status =
-      $("status");
-
-
-    if (!status) return;
-
-
-    status.textContent =
-      message;
-
-
-    setTimeout(
-      function () {
-
-        if (
-          status.textContent ===
-          message
-        ) {
-
-          status.textContent =
-            "";
-
-        }
-
-      },
-      4000
-    );
-
-  }
-
-
-  /* =========================================
-     DISCONNECT
-  ========================================= */
-
-  function setupDisconnect() {
+  async function setupDisconnect() {
 
     const button =
       $("disconnectWallet");
-
 
     if (!button) return;
 
@@ -1076,14 +1175,12 @@
 
           clearWalletUI();
 
-
           setWalletStatus(
             "Wallet disconnected."
           );
 
-        }
 
-        catch (e) {
+        } catch (e) {
 
           console.error(
             "Disconnect error:",
@@ -1098,319 +1195,384 @@
   }
 
 
-  /* =========================================
-     TAP EFFECT
-  ========================================= */
+  /* =========================
+     WITHDRAW
+  ========================= */
 
-  function tapEffect(event) {
+  function updateWithdrawBalance() {
 
-    const tapArea =
-      $("tapArea");
+    const el =
+      $("withdrawBalance");
 
-
-    const floaters =
-      $("floaters");
+    if (!el) return;
 
 
-    if (
-      !tapArea ||
-      !floaters
-    ) {
-
-      return;
-
-    }
-
-
-    const rect =
-      tapArea.getBoundingClientRect();
-
-
-    const floater =
-      document.createElement(
-        "div"
-      );
-
-
-    floater.className =
-      "floater";
-
-
-    floater.textContent =
-      "+1";
-
-
-    floater.style.left =
-      (
-        event.clientX -
-        rect.left
-      ) + "px";
-
-
-    floater.style.top =
-      (
-        event.clientY -
-        rect.top
-      ) + "px";
-
-
-    floaters.appendChild(
-      floater
-    );
-
-
-    setTimeout(
-      function () {
-
-        floater.remove();
-
-      },
-      850
-    );
+    el.textContent =
+      Math.floor(balance)
+        .toLocaleString("en-US") +
+      " SNP";
 
   }
 
 
-  /* =========================================
-     COIN MOVE
-  ========================================= */
+  function setWithdrawStatus(
+    message,
+    success
+  ) {
 
-  function moveCoin(event) {
+    const el =
+      $("withdrawStatus");
 
-    const coin =
-      $("sLogo");
-
-
-    if (!coin) return;
+    if (!el) return;
 
 
-    const rect =
-      coin.getBoundingClientRect();
+    el.textContent =
+      message;
 
 
-    const centerX =
-      rect.left +
-      rect.width / 2;
-
-
-    const centerY =
-      rect.top +
-      rect.height / 2;
-
-
-    const dx =
-      event.clientX -
-      centerX;
-
-
-    const dy =
-      event.clientY -
-      centerY;
-
-
-    const distance =
-      Math.sqrt(
-        dx * dx +
-        dy * dy
-      );
-
-
-    let x = 0;
-
-    let y = 0;
-
-
-    if (distance > 0) {
-
-      const amount =
-        Math.min(
-          15,
-          distance * .05
-        );
-
-
-      x =
-        dx /
-        distance *
-        amount;
-
-
-      y =
-        dy /
-        distance *
-        amount;
-
-    }
-
-
-    coin.style.transform =
-      "translate(" +
-      x +
-      "px," +
-      y +
-      "px) scale(.93)";
-
-
-    coin.style.filter =
-      "brightness(1.25)";
-
-
-    setTimeout(
-      function () {
-
-        coin.style.transform =
-          "translate(0,0) scale(1)";
-
-        coin.style.filter =
-          "brightness(1)";
-
-      },
-      140
-    );
+    el.style.color =
+      success
+        ? "#7CFF9B"
+        : "#FFD86B";
 
   }
 
 
-  /* =========================================
-     TAP
-  ========================================= */
+  async function createWithdrawal(
+    amount,
+    walletAddress
+  ) {
 
-  function setupTap() {
+    const response =
+      await fetch(
+        API + "/api/withdraw/create",
+        {
+          method: "POST",
 
-    const tapArea =
-      $("tapArea");
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
+
+          body:
+            JSON.stringify({
+
+              telegram_id:
+                telegramUser.id,
+
+              wallet_address:
+                walletAddress,
+
+              amount:
+                Math.floor(amount)
+
+            })
+        }
+      );
 
 
-    if (!tapArea) return;
+    const data =
+      await response.json();
 
 
-    tapArea.addEventListener(
+    if (!response.ok) {
+
+      throw new Error(
+        data.message ||
+        "Could not create withdrawal."
+      );
+
+    }
+
+
+    return data;
+
+  }
+
+
+  async function verifyWithdrawal(
+    withdrawalId,
+    walletAddress
+  ) {
+
+    const response =
+      await fetch(
+        API + "/api/withdraw/verify",
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
+
+          body:
+            JSON.stringify({
+
+              withdrawal_id:
+                withdrawalId,
+
+              telegram_id:
+                telegramUser.id,
+
+              wallet_address:
+                walletAddress
+
+            })
+        }
+      );
+
+
+    const data =
+      await response.json();
+
+
+    if (!response.ok) {
+
+      throw new Error(
+        data.message ||
+        "Payment verification failed."
+      );
+
+    }
+
+
+    return data;
+
+  }
+
+
+  async function setupWithdraw() {
+
+    const button =
+      $("withdrawBtn");
+
+    if (!button) return;
+
+
+    updateWithdrawBalance();
+
+
+    button.addEventListener(
       "click",
-      function (event) {
+      async function () {
 
-        const now =
-          Date.now();
+        if (withdrawing) return;
 
+        withdrawing = true;
 
-        if (
-          now -
-          lastTap <
-          40
-        ) {
-
-          return;
-
-        }
+        button.disabled = true;
 
 
-        lastTap =
-          now;
+        try {
 
+          if (
+            !telegramUser ||
+            !telegramUser.id
+          ) {
 
-        if (
-          energy <= 0
-        ) {
-
-          return;
-
-        }
-
-
-        balance += 1;
-
-        energy -= 1;
-
-
-        render();
-
-        saveLocal();
-
-
-        tapEffect(event);
-
-        moveCoin(event);
-
-
-        syncTap();
-
-      }
-    );
-
-  }
-
-
-  /* =========================================
-     NAVIGATION
-  ========================================= */
-
-  function setupNavigation() {
-
-    const buttons =
-      document.querySelectorAll(
-        ".nav-item"
-      );
-
-
-    buttons.forEach(
-      function (button) {
-
-        button.addEventListener(
-          "click",
-          function () {
-
-            const pageId =
-              button.getAttribute(
-                "data-page"
-              );
-
-
-            document
-              .querySelectorAll(
-                ".page"
-              )
-              .forEach(
-                function (page) {
-
-                  page.classList.remove(
-                    "active"
-                  );
-
-                }
-              );
-
-
-            const page =
-              document.getElementById(
-                pageId
-              );
-
-
-            if (page) {
-
-              page.classList.add(
-                "active"
-              );
-
-            }
-
-
-            buttons.forEach(
-              function (item) {
-
-                item.classList.remove(
-                  "active"
-                );
-
-              }
-            );
-
-
-            button.classList.add(
-              "active"
+            throw new Error(
+              "Telegram user not detected."
             );
 
           }
-        );
+
+
+          if (!tonUI) {
+
+            throw new Error(
+              "TON Connect is not ready."
+            );
+
+          }
+
+
+          if (!tonUI.wallet) {
+
+            throw new Error(
+              "First connect your TON wallet."
+            );
+
+          }
+
+
+          const input =
+            $("withdrawAmount");
+
+
+          const amount =
+            Number(
+              input
+                ? input.value
+                : 0
+            );
+
+
+          if (
+            !Number.isFinite(amount) ||
+            amount <= 0
+          ) {
+
+            throw new Error(
+              "Enter a valid SNP amount."
+            );
+
+          }
+
+
+          if (
+            !Number.isInteger(amount)
+          ) {
+
+            throw new Error(
+              "SNP amount must be a whole number."
+            );
+
+          }
+
+
+          if (
+            amount > balance
+          ) {
+
+            throw new Error(
+              "Insufficient SNP balance."
+            );
+
+          }
+
+
+          const walletAddress =
+            tonUI.wallet.account.address;
+
+
+          setWithdrawStatus(
+            "Creating withdrawal request...",
+            true
+          );
+
+
+          const request =
+            await createWithdrawal(
+              amount,
+              walletAddress
+            );
+
+
+          const withdrawalId =
+            request.withdrawal_id;
+
+
+          if (!withdrawalId) {
+
+            throw new Error(
+              "Invalid withdrawal ID."
+            );
+
+          }
+
+
+          setWithdrawStatus(
+            "Approve the 0.1 TON fee in your wallet...",
+            true
+          );
+
+
+          /*
+           * IMPORTANT:
+           * This transaction only pays the
+           * fixed withdrawal fee.
+           */
+
+          await tonUI.sendTransaction({
+
+            validUntil:
+              Math.floor(
+                Date.now() / 1000
+              ) + 300,
+
+            network:
+              MAINNET,
+
+            messages: [
+
+              {
+                address:
+                  TREASURY_WALLET,
+
+                amount:
+                  WITHDRAW_FEE_NANO
+              }
+
+            ]
+
+          });
+
+
+          setWithdrawStatus(
+            "Payment sent. Verifying...",
+            true
+          );
+
+
+          /*
+           * Backend checks the blockchain.
+           */
+
+          const verification =
+            await verifyWithdrawal(
+              withdrawalId,
+              walletAddress
+            );
+
+
+          if (
+            verification.status ===
+            "verified"
+          ) {
+
+            setWithdrawStatus(
+              "Payment verified. Your SNP withdrawal is processing.",
+              true
+            );
+
+          } else {
+
+            setWithdrawStatus(
+              verification.message ||
+              "Payment received and withdrawal is pending.",
+              true
+            );
+
+          }
+
+
+          if (input) {
+            input.value = "";
+          }
+
+
+        } catch (error) {
+
+          console.error(
+            "Withdraw error:",
+            error
+          );
+
+
+          setWithdrawStatus(
+            error.message ||
+            "Withdrawal failed or cancelled.",
+            false
+          );
+
+        } finally {
+
+          withdrawing = false;
+
+          button.disabled = false;
+
+        }
 
       }
     );
@@ -1418,81 +1580,33 @@
   }
 
 
-  /* =========================================
-     ENERGY
-  ========================================= */
-
-  function startEnergy() {
-
-    setInterval(
-      function () {
-
-        if (
-          energy <
-          maxEnergy
-        ) {
-
-          energy += 1;
-
-
-          render();
-
-
-          saveLocal();
-
-        }
-
-      },
-      3000
-    );
-
-  }
-
-
-  /* =========================================
+  /* =========================
      START
-  ========================================= */
+  ========================= */
 
   async function start() {
 
-    console.log(
-      "SINAPS Stage 4.1 starting..."
-    );
-
-
     loadLocal();
-
 
     render();
 
-
     initTelegram();
-
 
     setupNavigation();
 
-
     setupTap();
-
-
-    setupDisconnect();
-
 
     startEnergy();
 
-
-    /*
-     * TON CONNECT
-     */
-
     setupTonConnect();
 
+    setupDisconnect();
 
-    /*
-     * BACKEND
-     */
+    setupWithdraw();
 
     await loadUser();
+
+    render();
 
   }
 
@@ -1507,9 +1621,7 @@
       start
     );
 
-  }
-
-  else {
+  } else {
 
     start();
 
