@@ -3,499 +3,1075 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SINAPS</title>
+  <meta name="theme-color" content="#020812">
+  <title>SINAPS — Tap to Earn</title>
 
   <style>
     * {
       box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
     }
 
+    html,
     body {
       margin: 0;
-      min-height: 100vh;
-      background:
-        radial-gradient(circle at 50% 35%, #102f42 0%, #06131e 45%, #02070c 100%);
-      color: white;
-      font-family: Arial, sans-serif;
-      display: flex;
-      justify-content: center;
+      padding: 0;
+      width: 100%;
+      min-height: 100%;
+      background: #020812;
+      color: #fff;
+      font-family: Arial, Helvetica, sans-serif;
       overflow-x: hidden;
     }
 
-    .app {
-      width: 100%;
-      max-width: 520px;
+    body {
       min-height: 100vh;
-      padding: 20px 15px 100px;
-      text-align: center;
-    }
-
-    h1 {
-      margin-top: 20px;
-      letter-spacing: 3px;
-    }
-
-    #balance {
-      font-size: 32px;
-      font-weight: bold;
-      margin: 20px 0 8px;
-    }
-
-    #energy {
-      color: #8ca8b5;
-      margin-bottom: 15px;
-    }
-
-    #tapArea {
       position: relative;
-      width: 320px;
-      height: 320px;
-      max-width: 90vw;
-      margin: 30px auto;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      user-select: none;
-      -webkit-user-select: none;
-      touch-action: manipulation;
     }
 
-    /* GOLD COIN */
+    /* =========================
+       GALAXY BACKGROUND
+    ========================= */
 
-    #sLogo {
-      width: 205px;
-      height: 205px;
-      border-radius: 50%;
-
-      display: flex;
-      align-items: center;
-      justify-content: center;
-
-      position: relative;
-
-      font-size: 105px;
-      font-weight: 900;
-      font-family: Arial, sans-serif;
-
-      color: #fff7b0;
-
+    .space {
+      position: fixed;
+      inset: 0;
+      overflow: hidden;
+      pointer-events: none;
+      z-index: 0;
       background:
         radial-gradient(
-          circle at 35% 25%,
-          #fff8bd 0%,
-          #ffe76a 12%,
-          #f7c928 35%,
-          #d99b08 60%,
-          #8d5700 82%,
-          #5b3500 100%
+          circle at 50% 38%,
+          rgba(0, 107, 155, .22),
+          transparent 32%
+        ),
+        radial-gradient(
+          circle at 15% 80%,
+          rgba(38, 0, 102, .18),
+          transparent 28%
+        ),
+        radial-gradient(
+          circle at 85% 20%,
+          rgba(0, 130, 180, .12),
+          transparent 28%
+        ),
+        linear-gradient(
+          180deg,
+          #01050c 0%,
+          #03111c 45%,
+          #020711 100%
         );
-
-      border: 8px solid #d69b16;
-
-      box-shadow:
-        inset 0 0 0 4px #ffe77a,
-        inset 0 0 18px rgba(83, 48, 0, .8),
-        inset 8px 8px 18px rgba(255,255,255,.45),
-        inset -10px -12px 20px rgba(60,30,0,.55),
-        0 0 20px rgba(255,196,35,.55),
-        0 0 55px rgba(255,174,0,.25),
-        0 18px 30px rgba(0,0,0,.65);
-
-      text-shadow:
-        2px 2px 0 #8d5700,
-        3px 3px 0 #6a3e00,
-        0 0 12px rgba(255,245,160,.7);
-
-      transition:
-        transform .15s ease,
-        filter .15s ease;
     }
 
-    /* Outer coin rim */
-
-    #sLogo::before {
-      content: "";
-      position: absolute;
-      inset: 7px;
-      border-radius: 50%;
-      border: 3px solid rgba(255,240,130,.8);
-      pointer-events: none;
-    }
-
-    /* Inner embossed circle */
-
-    #sLogo::after {
-      content: "S";
-      position: absolute;
-      inset: 25px;
-      border-radius: 50%;
-
-      display: flex;
-      align-items: center;
-      justify-content: center;
-
-      border: 2px solid rgba(255,240,140,.28);
-
-      color: transparent;
-
-      box-shadow:
-        inset 0 0 12px rgba(70,40,0,.35);
-
-      pointer-events: none;
-    }
-
-    #floaters {
+    .stars,
+    .stars2,
+    .stars3 {
       position: absolute;
       inset: 0;
+      background-repeat: repeat;
       pointer-events: none;
-      z-index: 20;
     }
 
-    .floater {
-      position: absolute;
-      font-size: 25px;
-      font-weight: bold;
-      color: #ffe66b;
-      transform: translate(-50%, -50%);
-      animation: floatUp .8s ease forwards;
-      text-shadow: 0 0 8px rgba(255,190,0,.7);
+    .stars {
+      opacity: .75;
+      background-image:
+        radial-gradient(circle, rgba(255,255,255,.9) 1px, transparent 1.5px),
+        radial-gradient(circle, rgba(126,220,255,.7) 1px, transparent 1.5px);
+      background-size: 91px 91px, 137px 137px;
+      animation: starsMove 35s linear infinite;
     }
 
-    @keyframes floatUp {
+    .stars2 {
+      opacity: .45;
+      background-image:
+        radial-gradient(circle, rgba(255,255,255,.9) 1px, transparent 1.5px);
+      background-size: 181px 181px;
+      animation: starsMove 60s linear infinite reverse;
+    }
+
+    .stars3 {
+      opacity: .3;
+      background-image:
+        radial-gradient(circle, rgba(87,211,255,.8) 1.2px, transparent 2px);
+      background-size: 257px 257px;
+      animation: starsMove 85s linear infinite;
+    }
+
+    @keyframes starsMove {
       from {
-        opacity: 1;
-        transform: translate(-50%, -50%) scale(1);
+        transform: translate3d(0,0,0);
       }
 
       to {
-        opacity: 0;
-        transform: translate(-50%, -100px) scale(1.15);
+        transform: translate3d(-120px,80px,0);
       }
     }
 
-    .bottom-nav {
-      position: fixed;
-      bottom: 10px;
+    .nebula {
+      position: absolute;
+      width: 520px;
+      height: 520px;
       left: 50%;
-      transform: translateX(-50%);
+      top: 42%;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      background:
+        radial-gradient(
+          ellipse,
+          rgba(0, 179, 255, .12) 0%,
+          rgba(0, 100, 180, .07) 35%,
+          transparent 70%
+        );
+      filter: blur(20px);
+    }
 
-      width: calc(100% - 20px);
-      max-width: 500px;
-      height: 65px;
+    /* =========================
+       APP
+    ========================= */
 
+    .app {
+      position: relative;
+      z-index: 5;
+      width: 100%;
+      max-width: 520px;
+      min-height: 100vh;
+      margin: 0 auto;
+      padding: 14px 15px 105px;
+    }
+
+    /* =========================
+       TOP PROFILE
+    ========================= */
+
+    .topbar {
+      width: 100%;
+      min-height: 62px;
       display: flex;
-
-      background: rgba(11,29,42,.96);
-
-      border: 1px solid #17465c;
-      border-radius: 18px;
-
-      z-index: 9999;
-
-      box-shadow: 0 10px 30px rgba(0,0,0,.5);
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
     }
 
-    .nav-item {
-      flex: 1;
-      border: 0;
-      background: transparent;
-      color: #7593a0;
-      font-size: 12px;
-      cursor: pointer;
+    .profile {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
     }
 
-    .nav-item.active {
-      color: #6be5ff;
+    .avatar {
+      width: 43px;
+      height: 43px;
+      flex: 0 0 43px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background:
+        linear-gradient(
+          145deg,
+          #36d9ff,
+          #07527b
+        );
+      border: 1px solid rgba(111,225,255,.65);
+      box-shadow:
+        0 0 18px rgba(0,207,255,.25);
+      font-size: 19px;
+      font-weight: bold;
     }
+
+    .profile-info {
+      min-width: 0;
+      text-align: left;
+    }
+
+    .welcome {
+      color: #7894a1;
+      font-size: 10px;
+      margin-bottom: 3px;
+    }
+
+    #username {
+      max-width: 150px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .wallet-mini {
+      max-width: 125px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      padding: 8px 11px;
+      border: 1px solid rgba(77,190,225,.35);
+      border-radius: 12px;
+      background: rgba(8,30,44,.72);
+      color: #71dfff;
+      font-size: 10px;
+    }
+
+    /* =========================
+       PAGES
+    ========================= */
 
     .page {
       display: none;
+      width: 100%;
     }
 
     .page.active {
       display: block;
     }
 
-    .hint {
-      color: #7795a2;
+    /* =========================
+       HOME
+    ========================= */
+
+    .home-title {
+      margin-top: 18px;
+      color: #7895a3;
+      font-size: 11px;
+      letter-spacing: 4px;
+    }
+
+    #balance {
+      margin-top: 5px;
+      font-size: 38px;
+      line-height: 1.1;
+      font-weight: 800;
+      letter-spacing: .5px;
+      text-shadow:
+        0 0 20px rgba(255,213,69,.18);
+    }
+
+    .coin-name {
+      margin-top: 5px;
+      color: #cba52f;
+      font-size: 11px;
+      letter-spacing: 2px;
+    }
+
+    /* =========================
+       TAP AREA
+    ========================= */
+
+    #tapArea {
+      position: relative;
+      width: 330px;
+      height: 330px;
+      max-width: 92vw;
+      margin: 22px auto 12px;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+
+    .coin-glow {
+      position: absolute;
+      width: 245px;
+      height: 245px;
+      border-radius: 50%;
+      background: rgba(255,191,30,.08);
+      filter: blur(25px);
+      animation: coinGlow 2.8s ease-in-out infinite;
+    }
+
+    @keyframes coinGlow {
+      0%, 100% {
+        transform: scale(.94);
+        opacity: .6;
+      }
+
+      50% {
+        transform: scale(1.08);
+        opacity: 1;
+      }
+    }
+
+    /* =========================
+       GOLD COIN
+    ========================= */
+
+    #sLogo {
+      position: relative;
+      z-index: 5;
+
+      width: 205px;
+      height: 205px;
+
+      border-radius: 50%;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 108px;
+      font-weight: 900;
+
+      color: #fff5a5;
+
+      background:
+        radial-gradient(
+          circle at 32% 23%,
+          #fffbd1 0%,
+          #ffe878 11%,
+          #f5c72e 33%,
+          #d99b0a 57%,
+          #a46600 76%,
+          #5a3500 100%
+        );
+
+      border: 8px solid #d69c18;
+
+      box-shadow:
+        inset 0 0 0 3px rgba(255,239,131,.9),
+        inset 0 0 16px rgba(77,43,0,.7),
+        inset 10px 10px 18px rgba(255,255,255,.4),
+        inset -12px -14px 20px rgba(57,30,0,.55),
+        0 0 25px rgba(255,194,30,.5),
+        0 18px 35px rgba(0,0,0,.65);
+
+      text-shadow:
+        2px 2px 0 #9b6000,
+        4px 4px 0 #693e00,
+        0 0 12px rgba(255,250,180,.7);
+
+      transition:
+        transform .14s ease,
+        filter .14s ease;
+    }
+
+    #sLogo::before {
+      content: "";
+      position: absolute;
+      inset: 8px;
+      border-radius: 50%;
+      border: 2px solid rgba(255,239,132,.75);
+      box-shadow:
+        inset 0 0 8px rgba(90,50,0,.35);
+      pointer-events: none;
+    }
+
+    #sLogo::after {
+      content: "";
+      position: absolute;
+      inset: 22px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,239,132,.3);
+      pointer-events: none;
+    }
+
+    /* =========================
+       FLOATING +1
+    ========================= */
+
+    #floaters {
+      position: absolute;
+      inset: 0;
+      z-index: 20;
+      pointer-events: none;
+    }
+
+    .floater {
+      position: absolute;
+      color: #ffe66b;
+      font-size: 25px;
+      font-weight: 800;
+      transform: translate(-50%, -50%);
+      text-shadow:
+        0 0 7px rgba(255,185,0,.8);
+      animation: floatUp .8s ease forwards;
+    }
+
+    @keyframes floatUp {
+      0% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+      }
+
+      100% {
+        opacity: 0;
+        transform: translate(-50%, -105px) scale(1.12);
+      }
+    }
+
+    /* =========================
+       ENERGY
+    ========================= */
+
+    .energy-box {
+      width: 100%;
+      max-width: 340px;
+      margin: 10px auto 0;
+    }
+
+    .energy-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 7px;
+      color: #91aab6;
+      font-size: 11px;
+    }
+
+    .energy-head strong {
+      color: #d5e6ec;
+    }
+
+    .energy-bar {
+      width: 100%;
+      height: 9px;
+      overflow: hidden;
+      border-radius: 20px;
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(75,188,220,.15);
+    }
+
+    #energyFill {
+      width: 100%;
+      height: 100%;
+      border-radius: inherit;
+      background:
+        linear-gradient(
+          90deg,
+          #09a9df,
+          #65eaff
+        );
+      box-shadow:
+        0 0 12px rgba(42,212,255,.45);
+      transition: width .15s linear;
+    }
+
+    .tap-hint {
+      margin-top: 10px;
+      color: #56737f;
+      font-size: 10px;
+      letter-spacing: 2px;
+    }
+
+    /* =========================
+       OTHER PAGES
+    ========================= */
+
+    .simple-card {
+      margin-top: 35px;
+      padding: 25px 18px;
+      border-radius: 20px;
+      background: rgba(7,25,37,.75);
+      border: 1px solid rgba(77,188,220,.25);
+      box-shadow: 0 15px 35px rgba(0,0,0,.25);
+    }
+
+    .simple-card h2 {
+      margin-top: 0;
+    }
+
+    .simple-card p {
+      color: #7895a3;
       font-size: 13px;
+    }
+
+    /* =========================
+       BOTTOM NAV
+    ========================= */
+
+    .bottom-nav {
+      position: fixed;
+      left: 50%;
+      bottom: 9px;
+      transform: translateX(-50%);
+
+      width: calc(100% - 18px);
+      max-width: 500px;
+      height: 67px;
+
+      padding: 5px;
+
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      align-items: center;
+
+      z-index: 99999;
+
+      border: 1px solid rgba(67,180,215,.4);
+      border-radius: 21px;
+
+      background: rgba(3,14,25,.94);
+
+      box-shadow:
+        0 12px 40px rgba(0,0,0,.6);
+
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+
+    .nav-item {
+      height: 56px;
+
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+
+      gap: 2px;
+
+      border: 0;
+      border-radius: 15px;
+
+      background: transparent;
+      color: #587989;
+
+      font-size: 19px;
+      cursor: pointer;
+    }
+
+    .nav-item small {
+      font-size: 9px;
+      margin-top: 1px;
+    }
+
+    .nav-item.active {
+      color: #6be5ff;
+      background:
+        linear-gradient(
+          145deg,
+          rgba(20,91,120,.75),
+          rgba(6,37,53,.75)
+        );
+    }
+
+    /* =========================
+       MOBILE
+    ========================= */
+
+    @media (max-height: 700px) {
+
+      #tapArea {
+        margin-top: 10px;
+      }
+
+      #sLogo {
+        width: 180px;
+        height: 180px;
+        font-size: 95px;
+      }
+
+      .coin-glow {
+        width: 220px;
+        height: 220px;
+      }
+
     }
   </style>
 </head>
 
 <body>
 
-<div class="app">
+  <!-- SPACE BACKGROUND -->
 
-  <!-- HOME -->
-
-  <div id="homePage" class="page active">
-
-    <h1>SINAPS</h1>
-
-    <div id="balance">0</div>
-
-    <div id="energy">1000 / 1000</div>
-
-    <div id="tapArea">
-
-      <div id="sLogo">S</div>
-
-      <div id="floaters"></div>
-
-    </div>
-
-    <div class="hint">
-      TAP TO EARN
-    </div>
-
+  <div class="space">
+    <div class="stars"></div>
+    <div class="stars2"></div>
+    <div class="stars3"></div>
+    <div class="nebula"></div>
   </div>
 
 
-  <!-- BOOST -->
+  <main class="app">
 
-  <div id="boostPage" class="page">
+    <!-- TOP BAR -->
 
-    <h1>⚡ Boost</h1>
+    <header class="topbar">
 
-    <p>Boost page works.</p>
+      <div class="profile">
 
-  </div>
+        <div class="avatar">
+          S
+        </div>
 
+        <div class="profile-info">
 
-  <!-- DAILY -->
+          <div class="welcome">
+            WELCOME
+          </div>
 
-  <div id="dailyPage" class="page">
+          <div id="username">
+            SINAPS USER
+          </div>
 
-    <h1>🎁 Daily</h1>
+        </div>
 
-    <p>Daily page works.</p>
+      </div>
 
-  </div>
+      <div class="wallet-mini">
+        Wallet
+      </div>
 
+    </header>
 
-  <!-- FRIENDS -->
 
-  <div id="friendsPage" class="page">
+    <!-- HOME -->
 
-    <h1>👥 Friends</h1>
+    <section
+      id="homePage"
+      class="page active"
+    >
 
-    <p>Friends page works.</p>
+      <div class="home-title">
+        SINAPS
+      </div>
 
-  </div>
+      <div id="balance">
+        0
+      </div>
 
+      <div class="coin-name">
+        SNP
+      </div>
 
-  <!-- WALLET -->
 
-  <div id="walletPage" class="page">
+      <!-- TAP -->
 
-    <h1>💎 Wallet</h1>
+      <div id="tapArea">
 
-    <p>Wallet page works.</p>
+        <div class="coin-glow"></div>
 
-  </div>
+        <div id="sLogo">
+          S
+        </div>
 
-</div>
+        <div id="floaters"></div>
 
+      </div>
 
-<!-- BOTTOM NAV -->
 
-<nav class="bottom-nav">
+      <!-- ENERGY -->
 
-  <button class="nav-item active" data-page="homePage">
-    ⌂<br>Home
-  </button>
+      <div class="energy-box">
 
-  <button class="nav-item" data-page="boostPage">
-    ⚡<br>Boost
-  </button>
+        <div class="energy-head">
 
-  <button class="nav-item" data-page="dailyPage">
-    🎁<br>Daily
-  </button>
+          <span>ENERGY</span>
 
-  <button class="nav-item" data-page="friendsPage">
-    👥<br>Friends
-  </button>
+          <strong id="energy">
+            1000 / 1000
+          </strong>
 
-  <button class="nav-item" data-page="walletPage">
-    💎<br>Wallet
-  </button>
+        </div>
 
-</nav>
+        <div class="energy-bar">
 
+          <div id="energyFill"></div>
 
-<script>
+        </div>
 
-(function () {
+      </div>
 
-  "use strict";
+      <div class="tap-hint">
+        TAP TO EARN
+      </div>
 
-  let balance = 0;
-  let energy = 1000;
+    </section>
 
-  const maxEnergy = 1000;
 
+    <!-- BOOST -->
 
-  function render() {
+    <section
+      id="boostPage"
+      class="page"
+    >
 
-    document.getElementById("balance").textContent =
-      balance.toLocaleString("en-US");
+      <div class="simple-card">
 
-    document.getElementById("energy").textContent =
-      energy + " / " + maxEnergy;
+        <h2>⚡ Boost</h2>
 
-  }
+        <p>
+          Boosts will be added here.
+        </p>
 
+      </div>
 
-  /* TAP */
+    </section>
 
-  document.getElementById("tapArea").addEventListener(
-    "click",
-    function (event) {
 
-      if (energy <= 0) return;
+    <!-- DAILY -->
 
+    <section
+      id="dailyPage"
+      class="page"
+    >
 
-      balance++;
-      energy--;
+      <div class="simple-card">
 
+        <h2>🎁 Daily</h2>
 
-      render();
+        <p>
+          Daily rewards will be added here.
+        </p>
 
+      </div>
 
-      /* +1 AT TOUCH POSITION */
+    </section>
 
-      const floater =
-        document.createElement("div");
 
-      floater.className = "floater";
+    <!-- FRIENDS -->
 
-      floater.textContent = "+1";
+    <section
+      id="friendsPage"
+      class="page"
+    >
 
+      <div class="simple-card">
 
-      const rect =
-        document.getElementById("tapArea")
-        .getBoundingClientRect();
+        <h2>👥 Friends</h2>
 
+        <p>
+          Referral system will be added here.
+        </p>
 
-      floater.style.left =
-        (event.clientX - rect.left) + "px";
+      </div>
 
-      floater.style.top =
-        (event.clientY - rect.top) + "px";
+    </section>
 
 
-      document
-        .getElementById("floaters")
-        .appendChild(floater);
+    <!-- WALLET -->
 
+    <section
+      id="walletPage"
+      class="page"
+    >
 
-      /* COIN TAP ANIMATION */
+      <div class="simple-card">
 
-      const coin =
-        document.getElementById("sLogo");
+        <h2>💎 Wallet</h2>
 
+        <p>
+          Wallet connection will be added here.
+        </p>
 
-      coin.style.transform =
-        "scale(.90) rotate(-4deg)";
+      </div>
 
+    </section>
 
-      coin.style.filter =
-        "brightness(1.25)";
+  </main>
 
 
-      setTimeout(function () {
+  <!-- BOTTOM NAV -->
 
-        coin.style.transform =
-          "scale(1) rotate(0deg)";
+  <nav class="bottom-nav">
 
-        coin.style.filter =
-          "brightness(1)";
+    <button
+      class="nav-item active"
+      data-page="homePage"
+    >
+      <span>⌂</span>
+      <small>Home</small>
+    </button>
 
-      }, 130);
+    <button
+      class="nav-item"
+      data-page="boostPage"
+    >
+      <span>⚡</span>
+      <small>Boost</small>
+    </button>
 
+    <button
+      class="nav-item"
+      data-page="dailyPage"
+    >
+      <span>🎁</span>
+      <small>Daily</small>
+    </button>
 
-      setTimeout(function () {
+    <button
+      class="nav-item"
+      data-page="friendsPage"
+    >
+      <span>👥</span>
+      <small>Friends</small>
+    </button>
 
-        floater.remove();
+    <button
+      class="nav-item"
+      data-page="walletPage"
+    >
+      <span>💎</span>
+      <small>Wallet</small>
+    </button>
 
-      }, 800);
+  </nav>
 
-    }
-  );
 
+  <!-- SAFE JAVASCRIPT -->
 
-  /* NAVIGATION */
+  <script>
 
-  document
-    .querySelectorAll(".nav-item")
-    .forEach(function (button) {
+    (function () {
 
-      button.addEventListener(
-        "click",
-        function () {
+      "use strict";
 
-          const pageId =
-            button.getAttribute("data-page");
+      let balance = 0;
 
+      let energy = 1000;
 
-          document
-            .querySelectorAll(".page")
-            .forEach(function (page) {
+      const maxEnergy = 1000;
 
-              page.classList.remove("active");
 
-            });
+      function render() {
 
+        const balanceElement =
+          document.getElementById("balance");
 
-          const page =
-            document.getElementById(pageId);
+        const energyElement =
+          document.getElementById("energy");
 
+        const energyFill =
+          document.getElementById("energyFill");
 
-          if (page) {
-            page.classList.add("active");
+
+        if (balanceElement) {
+
+          balanceElement.textContent =
+            balance.toLocaleString("en-US");
+
+        }
+
+
+        if (energyElement) {
+
+          energyElement.textContent =
+            energy + " / " + maxEnergy;
+
+        }
+
+
+        if (energyFill) {
+
+          const percent =
+            (energy / maxEnergy) * 100;
+
+          energyFill.style.width =
+            percent + "%";
+
+        }
+
+      }
+
+
+      /* =========================
+         TAP
+      ========================= */
+
+      const tapArea =
+        document.getElementById("tapArea");
+
+
+      if (tapArea) {
+
+        tapArea.addEventListener(
+          "click",
+          function (event) {
+
+            if (energy <= 0) {
+              return;
+            }
+
+
+            balance += 1;
+
+            energy -= 1;
+
+
+            render();
+
+
+            /* +1 */
+
+            const floater =
+              document.createElement("div");
+
+            floater.className =
+              "floater";
+
+            floater.textContent =
+              "+1";
+
+
+            const rect =
+              tapArea.getBoundingClientRect();
+
+
+            floater.style.left =
+              (event.clientX - rect.left) + "px";
+
+            floater.style.top =
+              (event.clientY - rect.top) + "px";
+
+
+            const floaters =
+              document.getElementById("floaters");
+
+
+            if (floaters) {
+
+              floaters.appendChild(
+                floater
+              );
+
+            }
+
+
+            /* COIN ANIMATION */
+
+            const coin =
+              document.getElementById("sLogo");
+
+
+            if (coin) {
+
+              coin.style.transform =
+                "scale(.91) rotate(-4deg)";
+
+              coin.style.filter =
+                "brightness(1.25)";
+
+
+              setTimeout(function () {
+
+                coin.style.transform =
+                  "scale(1) rotate(0deg)";
+
+                coin.style.filter =
+                  "brightness(1)";
+
+              }, 130);
+
+            }
+
+
+            setTimeout(function () {
+
+              if (floater) {
+                floater.remove();
+              }
+
+            }, 800);
+
           }
+        );
+
+      }
 
 
-          document
-            .querySelectorAll(".nav-item")
-            .forEach(function (item) {
+      /* =========================
+         NAVIGATION
+      ========================= */
 
-              item.classList.remove("active");
+      const navItems =
+        document.querySelectorAll(
+          ".nav-item"
+        );
 
-            });
+
+      navItems.forEach(
+        function (button) {
+
+          button.addEventListener(
+            "click",
+            function () {
+
+              const pageId =
+                button.getAttribute(
+                  "data-page"
+                );
 
 
-          button.classList.add("active");
+              document
+                .querySelectorAll(".page")
+                .forEach(
+                  function (page) {
+
+                    page.classList.remove(
+                      "active"
+                    );
+
+                  }
+                );
+
+
+              const target =
+                document.getElementById(
+                  pageId
+                );
+
+
+              if (target) {
+
+                target.classList.add(
+                  "active"
+                );
+
+              }
+
+
+              navItems.forEach(
+                function (item) {
+
+                  item.classList.remove(
+                    "active"
+                  );
+
+                }
+              );
+
+
+              button.classList.add(
+                "active"
+              );
+
+            }
+          );
 
         }
       );
 
-    });
 
+      /* =========================
+         ENERGY REGENERATION
+      ========================= */
 
-  /* ENERGY REGEN */
+      setInterval(
+        function () {
 
-  setInterval(function () {
+          if (energy < maxEnergy) {
 
-    if (energy < maxEnergy) {
+            energy += 1;
 
-      energy++;
+            render();
+
+          }
+
+        },
+        3000
+      );
+
 
       render();
 
-    }
+    })();
 
-  }, 3000);
-
-
-  render();
-
-})();
-
-</script>
+  </script>
 
 </body>
 </html>
