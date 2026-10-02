@@ -288,113 +288,143 @@
      BACKEND USER
   ========================= */
 
-  async function loadUser() {
+  async function processTapQueue() {
 
-    if (
-      !telegramUser ||
-      !telegramUser.id
-    ) {
-      return;
-    }
+  if (processingTaps) return;
 
-    try {
-
-      const response =
-        await fetch(
-          API + "/api/user",
-          {
-            method: "POST",
-
-            headers: {
-              "Content-Type":
-                "application/json"
-            },
-
-            body:
-              JSON.stringify({
-                telegram_id:
-                  telegramUser.id,
-
-                username:
-                  telegramUser.username ||
-                  telegramUser.first_name ||
-                  ""
-              })
-          }
-        );
-
-      if (!response.ok) {
-
-        throw new Error(
-          "HTTP " +
-          response.status
-        );
-
-      }
-
-      const data =
-        await response.json();
-
-      const user =
-        data.user ||
-        data.data ||
-        data;
-
-      if (
-        user &&
-        user.balance !== undefined
-      ) {
-
-        balance =
-          Number(user.balance) || 0;
-
-      }
-
-      if (
-        user &&
-        user.energy !== undefined
-      ) {
-
-        energy =
-          Number(user.energy);
-
-      }
-
-      if (
-        user &&
-        user.max_energy !== undefined
-      ) {
-
-        maxEnergy =
-          Number(user.max_energy) ||
-          1000;
-
-      }
-
-      if (!Number.isFinite(energy)) {
-        energy = 1000;
-      }
-
-      if (!Number.isFinite(maxEnergy)) {
-        maxEnergy = 1000;
-      }
-
-      render();
-      saveLocal();
-
-    } catch (e) {
-
-      console.log(
-        "Backend unavailable:",
-        e
-      );
-
-      render();
-    }
-
+  if (
+    !telegramUser ||
+    !telegramUser.id
+  ) {
+    tapQueue = 0;
+    return;
   }
 
+  processingTaps = true;
 
+  try {
+
+    while (tapQueue > 0) {
+
+      try {
+
+        const response =
+          await fetch(
+            API + "/api/tap",
+            {
+              method: "POST",
+
+              headers: {
+                "Content-Type":
+                  "application/json"
+              },
+
+              body:
+                JSON.stringify({
+                  telegram_id:
+                    telegramUser.id
+                })
+            }
+          );
+
+        if (!response.ok) {
+
+          throw new Error(
+            "HTTP " +
+            response.status
+          );
+        }
+
+        const data =
+          await response.json();
+
+        const user =
+          data.user ||
+          data.data ||
+          data;
+
+        /*
+         * این Tap با موفقیت روی سرور ثبت شد.
+         */
+        tapQueue--;
+
+        /*
+         * اگر هنوز Tap در صف داریم،
+         * مقدار سرور را روی صفحه ننویس.
+         *
+         * چون balance فعلی شامل Tapهای
+         * در انتظار هم هست.
+         */
+        if (tapQueue === 0) {
+
+          if (
+            user &&
+            user.balance !== undefined
+          ) {
+
+            balance =
+              Number(user.balance);
+          }
+
+          if (
+            user &&
+            user.energy !== undefined
+          ) {
+
+            energy =
+              Number(user.energy);
+          }
+
+          if (
+            user &&
+            user.max_energy !== undefined
+          ) {
+
+            maxEnergy =
+              Number(user.max_energy) ||
+              1000;
+          }
+
+          render();
+          saveLocal();
+
+        }
+
+      } catch (e) {
+
+        console.log(
+          "Tap sync failed:",
+          e
+        );
+
+        /*
+         * Tap ناموفق را دوباره در صف نگه می‌داریم.
+         * چون هنوز در balance محلی حساب شده است.
+         */
+
+        break;
+      }
+    }
+
+  } finally {
+
+    processingTaps = false;
+
+    /*
+     * اگر Tap جدیدی هنگام پردازش وارد شده،
+     * دوباره صف را پردازش کن.
+     */
+
+    if (tapQueue > 0) {
+
+      setTimeout(
+        processTapQueue,
+        300
+      );
+
+    }
+  }
+}
   /* =========================
      TAP QUEUE
   ========================= */
