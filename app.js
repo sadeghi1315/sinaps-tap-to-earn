@@ -2,21 +2,8 @@
 
   "use strict";
 
-  /*
-   * SINAPS STAGE 3
-   *
-   * Telegram user
-   * Backend balance
-   * Backend energy
-   * Tap synchronization
-   *
-   * Backend:
-   * https://sinaps-backend.onrender.com
-   */
-
   const API =
     "https://sinaps-backend.onrender.com";
-
 
   let telegramUser = null;
 
@@ -26,11 +13,9 @@
 
   let maxEnergy = 1000;
 
-  let lastTapTime = 0;
+  let lastTap = 0;
 
-  let loadingUser = false;
-
-  let savingTap = false;
+  let syncing = false;
 
 
   function $(id) {
@@ -39,10 +24,10 @@
 
 
   /* =========================
-     TELEGRAM
+     TELEGRAM USER
   ========================= */
 
-  function setupTelegram() {
+  function initTelegram() {
 
     try {
 
@@ -68,17 +53,17 @@
           telegramUser =
             tg.initDataUnsafe.user;
 
-          renderTelegramUser();
+          showTelegramUser();
 
         }
 
       }
 
-    } catch (error) {
+    } catch (e) {
 
       console.log(
-        "SINAPS Telegram error:",
-        error
+        "Telegram init error:",
+        e
       );
 
     }
@@ -86,7 +71,7 @@
   }
 
 
-  function renderTelegramUser() {
+  function showTelegramUser() {
 
     if (!telegramUser) {
       return;
@@ -102,17 +87,13 @@
       if (telegramUser.username) {
 
         username.textContent =
-          "@" + telegramUser.username;
+          "@" +
+          telegramUser.username;
 
       } else if (telegramUser.first_name) {
 
         username.textContent =
           telegramUser.first_name;
-
-      } else {
-
-        username.textContent =
-          "SINAPS USER";
 
       }
 
@@ -123,45 +104,48 @@
       $("avatarLetter");
 
 
-    const avatar =
-      $("userAvatar");
-
-
     if (letter) {
 
-      const first =
+      const name =
         telegramUser.first_name ||
         telegramUser.username ||
         "S";
 
       letter.textContent =
-        first.charAt(0).toUpperCase();
+        name.charAt(0).toUpperCase();
 
     }
 
 
     /*
-     * Telegram WebApp normally does not expose
-     * the user's profile photo directly.
-     *
-     * So we keep the generated letter avatar
-     * unless a usable photo URL exists.
+     * Some Telegram clients provide
+     * photo_url through initData.
      */
 
     if (
-      telegramUser.photo_url &&
-      avatar
+      telegramUser.photo_url
     ) {
 
-      avatar.src =
-        telegramUser.photo_url;
+      const avatar =
+        $("userAvatar");
 
-      avatar.style.display =
-        "block";
 
-      if (letter) {
-        letter.style.display =
-          "none";
+      if (avatar) {
+
+        avatar.src =
+          telegramUser.photo_url;
+
+        avatar.style.display =
+          "block";
+
+
+        if (letter) {
+
+          letter.style.display =
+            "none";
+
+        }
+
       }
 
     }
@@ -175,47 +159,65 @@
 
   function render() {
 
-    const balanceElement =
+    const balanceEl =
       $("balance");
 
-    const energyElement =
+    const energyEl =
       $("energy");
 
     const energyFill =
       $("energyFill");
 
 
-    if (balanceElement) {
+    if (balanceEl) {
 
-      balanceElement.textContent =
-        Number(balance || 0)
-          .toLocaleString("en-US");
+      balanceEl.textContent =
+        Math.floor(
+          balance
+        ).toLocaleString(
+          "en-US"
+        );
 
     }
 
 
-    if (energyElement) {
+    if (energyEl) {
 
-      energyElement.textContent =
-        Math.floor(energy || 0) +
+      energyEl.textContent =
+        Math.floor(energy) +
         " / " +
-        Math.floor(maxEnergy || 1000);
+        Math.floor(maxEnergy);
 
     }
 
 
     if (energyFill) {
 
-      const percent =
-        maxEnergy > 0
-          ? (energy / maxEnergy) * 100
-          : 0;
+      let percent =
+        0;
 
-      energyFill.style.width =
+
+      if (maxEnergy > 0) {
+
+        percent =
+          (energy / maxEnergy) *
+          100;
+
+      }
+
+
+      percent =
         Math.max(
           0,
-          Math.min(100, percent)
-        ) + "%";
+          Math.min(
+            100,
+            percent
+          )
+        );
+
+
+      energyFill.style.width =
+        percent + "%";
 
     }
 
@@ -223,26 +225,7 @@
 
 
   /* =========================
-     STATUS
-  ========================= */
-
-  function setStatus(message) {
-
-    const status =
-      $("status");
-
-    if (!status) {
-      return;
-    }
-
-    status.textContent =
-      message || "";
-
-  }
-
-
-  /* =========================
-     LOCAL FALLBACK
+     LOCAL STORAGE
   ========================= */
 
   function saveLocal() {
@@ -250,22 +233,22 @@
     try {
 
       localStorage.setItem(
-        "sinaps_stage3",
+        "sinaps_v3",
         JSON.stringify({
-          balance: balance,
-          energy: energy,
-          maxEnergy: maxEnergy
+
+          balance:
+            balance,
+
+          energy:
+            energy,
+
+          maxEnergy:
+            maxEnergy
+
         })
       );
 
-    } catch (error) {
-
-      console.log(
-        "SINAPS local save error:",
-        error
-      );
-
-    }
+    } catch (e) {}
 
   }
 
@@ -276,19 +259,23 @@
 
       const raw =
         localStorage.getItem(
-          "sinaps_stage3"
+          "sinaps_v3"
         );
 
+
       if (!raw) {
-        return false;
+        return;
       }
+
 
       const data =
         JSON.parse(raw);
 
+
       if (
         data &&
-        typeof data.balance === "number"
+        typeof data.balance ===
+        "number"
       ) {
 
         balance =
@@ -296,9 +283,11 @@
 
       }
 
+
       if (
         data &&
-        typeof data.energy === "number"
+        typeof data.energy ===
+        "number"
       ) {
 
         energy =
@@ -306,9 +295,11 @@
 
       }
 
+
       if (
         data &&
-        typeof data.maxEnergy === "number"
+        typeof data.maxEnergy ===
+        "number"
       ) {
 
         maxEnergy =
@@ -316,25 +307,18 @@
 
       }
 
-      return true;
-
-    } catch (error) {
-
-      return false;
-
-    }
+    } catch (e) {}
 
   }
 
 
   /* =========================
-     LOAD USER FROM BACKEND
+     LOAD BACKEND USER
   ========================= */
 
   async function loadUser() {
 
     if (
-      loadingUser ||
       !telegramUser ||
       !telegramUser.id
     ) {
@@ -344,12 +328,20 @@
     }
 
 
-    loadingUser = true;
-
-    setStatus("");
-
-
     try {
+
+      const controller =
+        new AbortController();
+
+
+      const timeout =
+        setTimeout(
+          function () {
+            controller.abort();
+          },
+          7000
+        );
+
 
       const response =
         await fetch(
@@ -362,26 +354,34 @@
                 "application/json"
             },
 
-            body: JSON.stringify({
+            body:
+              JSON.stringify({
 
-              telegram_id:
-                telegramUser.id,
+                telegram_id:
+                  telegramUser.id,
 
-              username:
-                telegramUser.username ||
-                telegramUser.first_name ||
-                ""
+                username:
+                  telegramUser.username ||
+                  telegramUser.first_name ||
+                  ""
 
-            })
+              }),
+
+            signal:
+              controller.signal
 
           }
         );
 
 
+      clearTimeout(timeout);
+
+
       if (!response.ok) {
 
         throw new Error(
-          "HTTP " + response.status
+          "HTTP " +
+          response.status
         );
 
       }
@@ -390,11 +390,6 @@
       const data =
         await response.json();
 
-
-      /*
-       * Support the common response
-       * formats used by the backend.
-       */
 
       const user =
         data.user ||
@@ -408,14 +403,9 @@
       ) {
 
         balance =
-          Number(user.balance) || 0;
-
-      } else if (
-        data.balance !== undefined
-      ) {
-
-        balance =
-          Number(data.balance) || 0;
+          Number(
+            user.balance
+          ) || 0;
 
       }
 
@@ -426,14 +416,9 @@
       ) {
 
         energy =
-          Number(user.energy);
-
-      } else if (
-        data.energy !== undefined
-      ) {
-
-        energy =
-          Number(data.energy);
+          Number(
+            user.energy
+          );
 
       }
 
@@ -444,57 +429,47 @@
       ) {
 
         maxEnergy =
-          Number(user.max_energy) ||
-          1000;
-
-      } else if (
-        data.max_energy !== undefined
-      ) {
-
-        maxEnergy =
-          Number(data.max_energy) ||
-          1000;
+          Number(
+            user.max_energy
+          ) || 1000;
 
       }
 
 
       if (!Number.isFinite(energy)) {
-        energy = 1000;
+
+        energy =
+          1000;
+
       }
+
 
       if (!Number.isFinite(maxEnergy)) {
-        maxEnergy = 1000;
+
+        maxEnergy =
+          1000;
+
       }
 
+
+      render();
 
       saveLocal();
 
-      render();
 
-      setStatus("");
-
-
-    } catch (error) {
+    } catch (e) {
 
       console.log(
-        "SINAPS load user error:",
-        error
+        "Backend unavailable:",
+        e
       );
 
       /*
-       * Backend unavailable:
-       * continue using local state.
+       * IMPORTANT:
+       * App continues normally.
        */
 
-      loadLocal();
-
       render();
-
-      setStatus("");
-
-    } finally {
-
-      loadingUser = false;
 
     }
 
@@ -502,10 +477,10 @@
 
 
   /* =========================
-     TAP BACKEND
+     SEND TAP
   ========================= */
 
-  async function sendTap() {
+  async function syncTap() {
 
     if (
       !telegramUser ||
@@ -517,19 +492,14 @@
     }
 
 
-    if (savingTap) {
-
-      /*
-       * Do not block the user.
-       * The local balance already changed.
-       */
+    if (syncing) {
 
       return;
 
     }
 
 
-    savingTap = true;
+    syncing = true;
 
 
     try {
@@ -545,12 +515,13 @@
                 "application/json"
             },
 
-            body: JSON.stringify({
+            body:
+              JSON.stringify({
 
-              telegram_id:
-                telegramUser.id
+                telegram_id:
+                  telegramUser.id
 
-            })
+              })
 
           }
         );
@@ -559,7 +530,8 @@
       if (!response.ok) {
 
         throw new Error(
-          "HTTP " + response.status
+          "HTTP " +
+          response.status
         );
 
       }
@@ -575,26 +547,15 @@
         data;
 
 
-      /*
-       * If backend returns the
-       * authoritative balance,
-       * use it.
-       */
-
       if (
         user &&
         user.balance !== undefined
       ) {
 
         balance =
-          Number(user.balance) || balance;
-
-      } else if (
-        data.balance !== undefined
-      ) {
-
-        balance =
-          Number(data.balance) || balance;
+          Number(
+            user.balance
+          ) || balance;
 
       }
 
@@ -605,49 +566,34 @@
       ) {
 
         energy =
-          Number(user.energy);
-
-      } else if (
-        data.energy !== undefined
-      ) {
-
-        energy =
-          Number(data.energy);
+          Number(
+            user.energy
+          );
 
       }
 
-
-      if (!Number.isFinite(energy)) {
-
-        energy =
-          Math.max(0, energy);
-
-      }
-
-
-      saveLocal();
 
       render();
 
+      saveLocal();
 
-    } catch (error) {
+
+    } catch (e) {
 
       console.log(
-        "SINAPS tap sync error:",
-        error
+        "Tap sync failed:",
+        e
       );
 
       /*
-       * Do NOT undo the local tap.
-       * The app remains usable even if
-       * Render temporarily sleeps.
+       * Local tap remains.
        */
 
       saveLocal();
 
     } finally {
 
-      savingTap = false;
+      syncing = false;
 
     }
 
@@ -658,21 +604,20 @@
      TAP EFFECT
   ========================= */
 
-  function createTapEffect(
-    event,
-    amount
+  function tapEffect(
+    event
   ) {
-
-    const container =
-      $("floaters");
 
     const tapArea =
       $("tapArea");
 
+    const floaters =
+      $("floaters");
+
 
     if (
-      !container ||
-      !tapArea
+      !tapArea ||
+      !floaters
     ) {
 
       return;
@@ -680,41 +625,47 @@
     }
 
 
-    const element =
-      document.createElement("div");
-
-
-    element.className =
-      "floater";
-
-
-    element.textContent =
-      "+" + amount;
-
-
     const rect =
       tapArea.getBoundingClientRect();
 
 
-    element.style.left =
-      (event.clientX - rect.left) +
-      "px";
+    const floater =
+      document.createElement(
+        "div"
+      );
 
 
-    element.style.top =
-      (event.clientY - rect.top) +
-      "px";
+    floater.className =
+      "floater";
 
 
-    container.appendChild(
-      element
+    floater.textContent =
+      "+1";
+
+
+    floater.style.left =
+      (
+        event.clientX -
+        rect.left
+      ) + "px";
+
+
+    floater.style.top =
+      (
+        event.clientY -
+        rect.top
+      ) + "px";
+
+
+    floaters.appendChild(
+      floater
     );
 
 
     setTimeout(
       function () {
 
-        element.remove();
+        floater.remove();
 
       },
       850
@@ -724,10 +675,10 @@
 
 
   /* =========================
-     COIN ANIMATION
+     COIN MOVEMENT
   ========================= */
 
-  function animateCoin(
+  function moveCoin(
     event
   ) {
 
@@ -771,9 +722,9 @@
       );
 
 
-    let moveX = 0;
+    let x = 0;
 
-    let moveY = 0;
+    let y = 0;
 
 
     if (distance > 0) {
@@ -785,13 +736,15 @@
         );
 
 
-      moveX =
-        (dx / distance) *
+      x =
+        dx /
+        distance *
         amount;
 
 
-      moveY =
-        (dy / distance) *
+      y =
+        dy /
+        distance *
         amount;
 
     }
@@ -799,9 +752,9 @@
 
     coin.style.transform =
       "translate(" +
-      moveX +
+      x +
       "px," +
-      moveY +
+      y +
       "px) scale(.93)";
 
 
@@ -836,13 +789,7 @@
 
 
     if (!tapArea) {
-
-      console.log(
-        "SINAPS: tapArea not found"
-      );
-
       return;
-
     }
 
 
@@ -854,14 +801,9 @@
           Date.now();
 
 
-        /*
-         * Very fast duplicate clicks
-         * are ignored only within 40ms.
-         */
-
         if (
           now -
-          lastTapTime <
+          lastTap <
           40
         ) {
 
@@ -870,7 +812,7 @@
         }
 
 
-        lastTapTime =
+        lastTap =
           now;
 
 
@@ -882,7 +824,7 @@
 
 
         /*
-         * Instant local update.
+         * Instant UI update.
          */
 
         balance += 1;
@@ -895,23 +837,22 @@
         saveLocal();
 
 
-        createTapEffect(
-          event,
-          1
+        tapEffect(
+          event
         );
 
 
-        animateCoin(
+        moveCoin(
           event
         );
 
 
         /*
-         * Synchronize with backend
-         * without blocking the UI.
+         * Backend sync happens
+         * without freezing UI.
          */
 
-        sendTap();
+        syncTap();
 
       }
     );
@@ -925,13 +866,13 @@
 
   function setupNavigation() {
 
-    const navItems =
+    const buttons =
       document.querySelectorAll(
         ".nav-item"
       );
 
 
-    navItems.forEach(
+    buttons.forEach(
       function (button) {
 
         button.addEventListener(
@@ -957,22 +898,22 @@
               );
 
 
-            const target =
+            const page =
               document.getElementById(
                 pageId
               );
 
 
-            if (target) {
+            if (page) {
 
-              target.classList.add(
+              page.classList.add(
                 "active"
               );
 
             }
 
 
-            navItems.forEach(
+            buttons.forEach(
               function (item) {
 
                 item.classList.remove(
@@ -997,7 +938,7 @@
 
 
   /* =========================
-     ENERGY REGEN
+     ENERGY
   ========================= */
 
   function startEnergy() {
@@ -1031,14 +972,10 @@
 
   async function start() {
 
-    console.log(
-      "SINAPS STAGE 3 START"
-    );
-
-
     /*
-     * Load local data first so
-     * the UI never waits for Render.
+     * Local data first.
+     * This guarantees UI starts
+     * even when Render is sleeping.
      */
 
     loadLocal();
@@ -1046,7 +983,7 @@
     render();
 
 
-    setupTelegram();
+    initTelegram();
 
     setupNavigation();
 
@@ -1056,16 +993,10 @@
 
 
     /*
-     * Then load authoritative
-     * user data from backend.
+     * Backend after UI starts.
      */
 
     await loadUser();
-
-
-    console.log(
-      "SINAPS STAGE 3 READY"
-    );
 
   }
 
