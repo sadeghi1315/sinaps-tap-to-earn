@@ -9,88 +9,86 @@
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
   <style>
-    * {
-      box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
+    *{
+      box-sizing:border-box;
+      -webkit-tap-highlight-color:transparent;
     }
 
-    html,
-    body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      min-height: 100%;
-      background: #020812;
-      color: #fff;
-      font-family: Arial, Helvetica, sans-serif;
-      overflow-x: hidden;
+    html,body{
+      margin:0;
+      padding:0;
+      width:100%;
+      min-height:100%;
+      background:#020812;
+      color:#fff;
+      font-family:Arial,Helvetica,sans-serif;
+      overflow-x:hidden;
     }
 
-    body {
-      min-height: 100vh;
-      position: relative;
+    body{
+      min-height:100vh;
     }
 
-    .space {
-      position: fixed;
-      inset: 0;
-      overflow: hidden;
-      pointer-events: none;
-      z-index: 0;
+    .space{
+      position:fixed;
+      inset:0;
+      overflow:hidden;
+      pointer-events:none;
+      z-index:0;
       background:
-        radial-gradient(circle at 50% 38%, rgba(0,107,155,.22), transparent 32%),
-        radial-gradient(circle at 15% 80%, rgba(38,0,102,.18), transparent 28%),
-        radial-gradient(circle at 85% 20%, rgba(0,130,180,.12), transparent 28%),
+        radial-gradient(circle at 50% 38%,rgba(0,107,155,.22),transparent 32%),
+        radial-gradient(circle at 15% 80%,rgba(38,0,102,.18),transparent 28%),
+        radial-gradient(circle at 85% 20%,rgba(0,130,180,.12),transparent 28%),
         linear-gradient(180deg,#01050c 0%,#03111c 45%,#020711 100%);
     }
 
     .stars,
     .stars2,
-    .stars3 {
-      position: absolute;
-      inset: 0;
-      background-repeat: repeat;
-      pointer-events: none;
+    .stars3{
+      position:absolute;
+      inset:0;
+      background-repeat:repeat;
+      pointer-events:none;
     }
 
-    .stars {
-      opacity: .75;
+    .stars{
+      opacity:.75;
       background-image:
         radial-gradient(circle,rgba(255,255,255,.9) 1px,transparent 1.5px),
         radial-gradient(circle,rgba(126,220,255,.7) 1px,transparent 1.5px);
-      background-size: 91px 91px,137px 137px;
-      animation: starsMove 35s linear infinite;
+      background-size:91px 91px,137px 137px;
+      animation:starsMove 35s linear infinite;
     }
 
-    .stars2 {
-      opacity: .45;
+    .stars2{
+      opacity:.45;
       background-image:
         radial-gradient(circle,rgba(255,255,255,.9) 1px,transparent 1.5px);
-      background-size: 181px 181px;
-      animation: starsMove 60s linear infinite reverse;
+      background-size:181px 181px;
+      animation:starsMove 60s linear infinite reverse;
     }
 
-    .stars3 {
-      opacity: .3;
+    .stars3{
+      opacity:.3;
       background-image:
         radial-gradient(circle,rgba(87,211,255,.8) 1.2px,transparent 2px);
-      background-size: 257px 257px;
-      animation: starsMove 85s linear infinite;
+      background-size:257px 257px;
+      animation:starsMove 85s linear infinite;
     }
 
-    @keyframes starsMove {
-      from { transform: translate3d(0,0,0); }
-      to { transform: translate3d(-120px,80px,0); }
+    @keyframes starsMove{
+      from{transform:translate3d(0,0,0)}
+      to{transform:translate3d(-120px,80px,0)}
     }
 
-    .nebula {
-      position: absolute;
-      width: 520px;
-      height: 520px;
-      left: 50%;
-      top: 42%;
-      transform: translate(-50%,-50%);
-      border-radius: 50%;
+    .nebula{
+      position:absolute;
+      width:520px;
+      height:520px;
+      left:50%;
+      top:42%;
+      transform:translate(-50%,-50%);
+      border-radius:50%;
       background:
         radial-gradient(
           ellipse,
@@ -98,172 +96,171 @@
           rgba(0,100,180,.07) 35%,
           transparent 70%
         );
-      filter: blur(20px);
+      filter:blur(20px);
     }
 
-    .app {
-      position: relative;
-      z-index: 5;
-      width: 100%;
-      max-width: 520px;
-      min-height: 100vh;
-      margin: 0 auto;
-      padding: 14px 15px 105px;
+    .app{
+      position:relative;
+      z-index:5;
+      width:100%;
+      max-width:520px;
+      min-height:100vh;
+      margin:0 auto;
+      padding:14px 15px 105px;
     }
 
-    .topbar {
-      width: 100%;
-      min-height: 62px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
+    .topbar{
+      width:100%;
+      min-height:62px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
     }
 
-    .profile {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      min-width: 0;
+    .profile{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      min-width:0;
     }
 
-    .avatar {
-      width: 43px;
-      height: 43px;
-      flex: 0 0 43px;
-      border-radius: 50%;
-      overflow: hidden;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: linear-gradient(145deg,#36d9ff,#07527b);
-      border: 1px solid rgba(111,225,255,.65);
-      box-shadow: 0 0 18px rgba(0,207,255,.25);
-      font-size: 19px;
-      font-weight: bold;
+    .avatar{
+      width:43px;
+      height:43px;
+      flex:0 0 43px;
+      border-radius:50%;
+      overflow:hidden;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:linear-gradient(145deg,#36d9ff,#07527b);
+      border:1px solid rgba(111,225,255,.65);
+      box-shadow:0 0 18px rgba(0,207,255,.25);
+      font-size:19px;
+      font-weight:bold;
     }
 
-    #userAvatar {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: none;
+    #userAvatar{
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      display:none;
     }
 
-    .profile-info {
-      min-width: 0;
-      text-align: left;
+    .profile-info{
+      min-width:0;
+      text-align:left;
     }
 
-    .welcome {
-      color: #7894a1;
-      font-size: 10px;
-      margin-bottom: 3px;
+    .welcome{
+      color:#7894a1;
+      font-size:10px;
+      margin-bottom:3px;
     }
 
-    #username {
-      max-width: 150px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      font-size: 14px;
-      font-weight: bold;
+    #username{
+      max-width:170px;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+      font-size:14px;
+      font-weight:bold;
     }
 
-    .wallet-mini {
-      max-width: 125px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      padding: 8px 11px;
-      border: 1px solid rgba(77,190,225,.35);
-      border-radius: 12px;
-      background: rgba(8,30,44,.72);
-      color: #71dfff;
-      font-size: 10px;
+    .wallet-mini{
+      max-width:125px;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+      padding:8px 11px;
+      border:1px solid rgba(77,190,225,.35);
+      border-radius:12px;
+      background:rgba(8,30,44,.72);
+      color:#71dfff;
+      font-size:10px;
     }
 
-    .page {
-      display: none;
-      width: 100%;
+    .page{
+      display:none;
+      width:100%;
     }
 
-    .page.active {
-      display: block;
+    .page.active{
+      display:block;
     }
 
-    .home-title {
-      margin-top: 18px;
-      color: #7895a3;
-      font-size: 11px;
-      letter-spacing: 4px;
+    .home-title{
+      margin-top:18px;
+      color:#7895a3;
+      font-size:11px;
+      letter-spacing:4px;
     }
 
-    #balance {
-      margin-top: 5px;
-      font-size: 38px;
-      line-height: 1.1;
-      font-weight: 800;
-      letter-spacing: .5px;
-      text-shadow: 0 0 20px rgba(255,213,69,.18);
+    #balance{
+      margin-top:5px;
+      font-size:38px;
+      line-height:1.1;
+      font-weight:800;
+      letter-spacing:.5px;
+      text-shadow:0 0 20px rgba(255,213,69,.18);
     }
 
-    .coin-name {
-      margin-top: 5px;
-      color: #cba52f;
-      font-size: 11px;
-      letter-spacing: 2px;
+    .coin-name{
+      margin-top:5px;
+      color:#cba52f;
+      font-size:11px;
+      letter-spacing:2px;
     }
 
-    #tapArea {
-      position: relative;
-      width: 330px;
-      height: 330px;
-      max-width: 92vw;
-      margin: 22px auto 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      user-select: none;
-      -webkit-user-select: none;
-      touch-action: manipulation;
+    #tapArea{
+      position:relative;
+      width:330px;
+      height:330px;
+      max-width:92vw;
+      margin:22px auto 12px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      cursor:pointer;
+      user-select:none;
+      -webkit-user-select:none;
+      touch-action:manipulation;
     }
 
-    .coin-glow {
-      position: absolute;
-      width: 245px;
-      height: 245px;
-      border-radius: 50%;
-      background: rgba(255,191,30,.08);
-      filter: blur(25px);
-      animation: coinGlow 2.8s ease-in-out infinite;
+    .coin-glow{
+      position:absolute;
+      width:245px;
+      height:245px;
+      border-radius:50%;
+      background:rgba(255,191,30,.08);
+      filter:blur(25px);
+      animation:coinGlow 2.8s ease-in-out infinite;
     }
 
-    @keyframes coinGlow {
-      0%,100% {
-        transform: scale(.94);
-        opacity: .6;
+    @keyframes coinGlow{
+      0%,100%{
+        transform:scale(.94);
+        opacity:.6;
       }
-      50% {
-        transform: scale(1.08);
-        opacity: 1;
+      50%{
+        transform:scale(1.08);
+        opacity:1;
       }
     }
 
-    #sLogo {
-      position: relative;
-      z-index: 5;
-      width: 205px;
-      height: 205px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: Arial,Helvetica,sans-serif;
-      font-size: 108px;
-      font-weight: 900;
-      color: #fff5a5;
+    #sLogo{
+      position:relative;
+      z-index:5;
+      width:205px;
+      height:205px;
+      border-radius:50%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:108px;
+      font-weight:900;
+      color:#fff5a5;
       background:
         radial-gradient(
           circle at 32% 23%,
@@ -274,7 +271,7 @@
           #a46600 76%,
           #5a3500 100%
         );
-      border: 8px solid #d69c18;
+      border:8px solid #d69c18;
       box-shadow:
         inset 0 0 0 3px rgba(255,239,131,.9),
         inset 0 0 16px rgba(77,43,0,.7),
@@ -286,189 +283,190 @@
         2px 2px 0 #9b6000,
         4px 4px 0 #693e00,
         0 0 12px rgba(255,250,180,.7);
-      transition: transform .14s ease, filter .14s ease;
+      transition:transform .14s ease,filter .14s ease;
     }
 
-    #sLogo::before {
-      content: "";
-      position: absolute;
-      inset: 8px;
-      border-radius: 50%;
-      border: 2px solid rgba(255,239,132,.75);
-      box-shadow: inset 0 0 8px rgba(90,50,0,.35);
-      pointer-events: none;
+    #sLogo::before{
+      content:"";
+      position:absolute;
+      inset:8px;
+      border-radius:50%;
+      border:2px solid rgba(255,239,132,.75);
+      box-shadow:inset 0 0 8px rgba(90,50,0,.35);
+      pointer-events:none;
     }
 
-    #sLogo::after {
-      content: "";
-      position: absolute;
-      inset: 22px;
-      border-radius: 50%;
-      border: 1px solid rgba(255,239,132,.3);
-      pointer-events: none;
+    #sLogo::after{
+      content:"";
+      position:absolute;
+      inset:22px;
+      border-radius:50%;
+      border:1px solid rgba(255,239,132,.3);
+      pointer-events:none;
     }
 
-    #floaters {
-      position: absolute;
-      inset: 0;
-      z-index: 20;
-      pointer-events: none;
+    #floaters{
+      position:absolute;
+      inset:0;
+      z-index:20;
+      pointer-events:none;
     }
 
-    .floater {
-      position: absolute;
-      color: #ffe66b;
-      font-size: 25px;
-      font-weight: 800;
-      transform: translate(-50%,-50%);
-      text-shadow: 0 0 7px rgba(255,185,0,.8);
-      animation: floatUp .8s ease forwards;
+    .floater{
+      position:absolute;
+      color:#ffe66b;
+      font-size:25px;
+      font-weight:800;
+      transform:translate(-50%,-50%);
+      text-shadow:0 0 7px rgba(255,185,0,.8);
+      animation:floatUp .8s ease forwards;
     }
 
-    @keyframes floatUp {
-      0% {
-        opacity: 1;
-        transform: translate(-50%,-50%) scale(1);
+    @keyframes floatUp{
+      0%{
+        opacity:1;
+        transform:translate(-50%,-50%) scale(1);
       }
-      100% {
-        opacity: 0;
-        transform: translate(-50%,-105px) scale(1.12);
+      100%{
+        opacity:0;
+        transform:translate(-50%,-105px) scale(1.12);
       }
     }
 
-    .energy-box {
-      width: 100%;
-      max-width: 340px;
-      margin: 10px auto 0;
+    .energy-box{
+      width:100%;
+      max-width:340px;
+      margin:10px auto 0;
     }
 
-    .energy-head {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 7px;
-      color: #91aab6;
-      font-size: 11px;
+    .energy-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:7px;
+      color:#91aab6;
+      font-size:11px;
     }
 
-    .energy-head strong {
-      color: #d5e6ec;
+    .energy-head strong{
+      color:#d5e6ec;
     }
 
-    .energy-bar {
-      width: 100%;
-      height: 9px;
-      overflow: hidden;
-      border-radius: 20px;
-      background: rgba(255,255,255,.08);
-      border: 1px solid rgba(75,188,220,.15);
+    .energy-bar{
+      width:100%;
+      height:9px;
+      overflow:hidden;
+      border-radius:20px;
+      background:rgba(255,255,255,.08);
+      border:1px solid rgba(75,188,220,.15);
     }
 
-    #energyFill {
-      width: 100%;
-      height: 100%;
-      border-radius: inherit;
-      background: linear-gradient(90deg,#09a9df,#65eaff);
-      box-shadow: 0 0 12px rgba(42,212,255,.45);
-      transition: width .15s linear;
+    #energyFill{
+      width:100%;
+      height:100%;
+      border-radius:inherit;
+      background:linear-gradient(90deg,#09a9df,#65eaff);
+      box-shadow:0 0 12px rgba(42,212,255,.45);
+      transition:width .15s linear;
     }
 
-    .tap-hint {
-      margin-top: 10px;
-      color: #56737f;
-      font-size: 10px;
-      letter-spacing: 2px;
+    .tap-hint{
+      margin-top:10px;
+      color:#56737f;
+      font-size:10px;
+      letter-spacing:2px;
     }
 
-    .simple-card {
-      margin-top: 35px;
-      padding: 25px 18px;
-      border-radius: 20px;
-      background: rgba(7,25,37,.75);
-      border: 1px solid rgba(77,188,220,.25);
-      box-shadow: 0 15px 35px rgba(0,0,0,.25);
+    .status{
+      height:16px;
+      margin-top:6px;
+      text-align:center;
+      color:#56737f;
+      font-size:9px;
     }
 
-    .simple-card h2 {
-      margin-top: 0;
+    .simple-card{
+      margin-top:35px;
+      padding:25px 18px;
+      border-radius:20px;
+      background:rgba(7,25,37,.75);
+      border:1px solid rgba(77,188,220,.25);
+      box-shadow:0 15px 35px rgba(0,0,0,.25);
     }
 
-    .simple-card p {
-      color: #7895a3;
-      font-size: 13px;
+    .simple-card h2{
+      margin-top:0;
     }
 
-    .status {
-      margin-top: 12px;
-      color: #52717e;
-      font-size: 10px;
-      min-height: 14px;
+    .simple-card p{
+      color:#7895a3;
+      font-size:13px;
     }
 
-    .bottom-nav {
-      position: fixed;
-      left: 50%;
-      bottom: 9px;
-      transform: translateX(-50%);
-      width: calc(100% - 18px);
-      max-width: 500px;
-      height: 67px;
-      padding: 5px;
-      display: grid;
-      grid-template-columns: repeat(5,1fr);
-      align-items: center;
-      z-index: 99999;
-      border: 1px solid rgba(67,180,215,.4);
-      border-radius: 21px;
-      background: rgba(3,14,25,.94);
-      box-shadow: 0 12px 40px rgba(0,0,0,.6);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
+    .bottom-nav{
+      position:fixed;
+      left:50%;
+      bottom:9px;
+      transform:translateX(-50%);
+      width:calc(100% - 18px);
+      max-width:500px;
+      height:67px;
+      padding:5px;
+      display:grid;
+      grid-template-columns:repeat(5,1fr);
+      align-items:center;
+      z-index:99999;
+      border:1px solid rgba(67,180,215,.4);
+      border-radius:21px;
+      background:rgba(3,14,25,.94);
+      box-shadow:0 12px 40px rgba(0,0,0,.6);
+      backdrop-filter:blur(20px);
+      -webkit-backdrop-filter:blur(20px);
     }
 
-    .nav-item {
-      height: 56px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      gap: 2px;
-      border: 0;
-      border-radius: 15px;
-      background: transparent;
-      color: #587989;
-      font-size: 19px;
-      cursor: pointer;
+    .nav-item{
+      height:56px;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      align-items:center;
+      gap:2px;
+      border:0;
+      border-radius:15px;
+      background:transparent;
+      color:#587989;
+      font-size:19px;
+      cursor:pointer;
     }
 
-    .nav-item small {
-      font-size: 9px;
-      margin-top: 1px;
+    .nav-item small{
+      font-size:9px;
+      margin-top:1px;
     }
 
-    .nav-item.active {
-      color: #6be5ff;
-      background: linear-gradient(
+    .nav-item.active{
+      color:#6be5ff;
+      background:linear-gradient(
         145deg,
         rgba(20,91,120,.75),
         rgba(6,37,53,.75)
       );
     }
 
-    @media (max-height:700px) {
-      #tapArea {
-        margin-top: 10px;
+    @media(max-height:700px){
+      #tapArea{
+        margin-top:10px;
       }
 
-      #sLogo {
-        width: 180px;
-        height: 180px;
-        font-size: 95px;
+      #sLogo{
+        width:180px;
+        height:180px;
+        font-size:95px;
       }
 
-      .coin-glow {
-        width: 220px;
-        height: 220px;
+      .coin-glow{
+        width:220px;
+        height:220px;
       }
     }
   </style>
@@ -476,162 +474,143 @@
 
 <body>
 
-  <div class="space">
-    <div class="stars"></div>
-    <div class="stars2"></div>
-    <div class="stars3"></div>
-    <div class="nebula"></div>
-  </div>
+<div class="space">
+  <div class="stars"></div>
+  <div class="stars2"></div>
+  <div class="stars3"></div>
+  <div class="nebula"></div>
+</div>
 
-  <main class="app">
+<main class="app">
 
-    <header class="topbar">
+  <header class="topbar">
 
-      <div class="profile">
+    <div class="profile">
 
-        <div class="avatar">
-          <span id="avatarLetter">S</span>
-          <img id="userAvatar" alt="Avatar">
-        </div>
-
-        <div class="profile-info">
-          <div class="welcome">WELCOME</div>
-          <div id="username">SINAPS USER</div>
-        </div>
-
+      <div class="avatar">
+        <span id="avatarLetter">S</span>
+        <img id="userAvatar" alt="Avatar">
       </div>
 
-      <div class="wallet-mini">
-        Wallet
+      <div class="profile-info">
+        <div class="welcome">WELCOME</div>
+        <div id="username">SINAPS USER</div>
       </div>
 
-    </header>
+    </div>
+
+    <div class="wallet-mini">
+      Wallet
+    </div>
+
+  </header>
 
 
-    <section id="homePage" class="page active">
+  <section id="homePage" class="page active">
 
-      <div class="home-title">
-        SINAPS
+    <div class="home-title">SINAPS</div>
+
+    <div id="balance">0</div>
+
+    <div class="coin-name">SNP</div>
+
+    <div id="tapArea">
+
+      <div class="coin-glow"></div>
+
+      <div id="sLogo">S</div>
+
+      <div id="floaters"></div>
+
+    </div>
+
+    <div class="energy-box">
+
+      <div class="energy-head">
+        <span>ENERGY</span>
+        <strong id="energy">1000 / 1000</strong>
       </div>
 
-      <div id="balance">
-        0
+      <div class="energy-bar">
+        <div id="energyFill"></div>
       </div>
 
-      <div class="coin-name">
-        SNP
-      </div>
+    </div>
 
-      <div id="tapArea">
+    <div class="tap-hint">
+      TAP TO EARN
+    </div>
 
-        <div class="coin-glow"></div>
+    <div id="status" class="status"></div>
 
-        <div id="sLogo">
-          S
-        </div>
-
-        <div id="floaters"></div>
-
-      </div>
-
-      <div class="energy-box">
-
-        <div class="energy-head">
-          <span>ENERGY</span>
-
-          <strong id="energy">
-            1000 / 1000
-          </strong>
-        </div>
-
-        <div class="energy-bar">
-          <div id="energyFill"></div>
-        </div>
-
-      </div>
-
-      <div class="tap-hint">
-        TAP TO EARN
-      </div>
-
-      <div id="status" class="status"></div>
-
-    </section>
+  </section>
 
 
-    <section id="boostPage" class="page">
-
-      <div class="simple-card">
-        <h2>⚡ Boost</h2>
-        <p>Boosts will be added here.</p>
-      </div>
-
-    </section>
+  <section id="boostPage" class="page">
+    <div class="simple-card">
+      <h2>⚡ Boost</h2>
+      <p>Boosts will be added here.</p>
+    </div>
+  </section>
 
 
-    <section id="dailyPage" class="page">
-
-      <div class="simple-card">
-        <h2>🎁 Daily</h2>
-        <p>Daily rewards will be added here.</p>
-      </div>
-
-    </section>
+  <section id="dailyPage" class="page">
+    <div class="simple-card">
+      <h2>🎁 Daily</h2>
+      <p>Daily rewards will be added here.</p>
+    </div>
+  </section>
 
 
-    <section id="friendsPage" class="page">
-
-      <div class="simple-card">
-        <h2>👥 Friends</h2>
-        <p>Referral system will be added here.</p>
-      </div>
-
-    </section>
+  <section id="friendsPage" class="page">
+    <div class="simple-card">
+      <h2>👥 Friends</h2>
+      <p>Referral system will be added here.</p>
+    </div>
+  </section>
 
 
-    <section id="walletPage" class="page">
+  <section id="walletPage" class="page">
+    <div class="simple-card">
+      <h2>💎 Wallet</h2>
+      <p>Wallet connection will be added later.</p>
+    </div>
+  </section>
 
-      <div class="simple-card">
-        <h2>💎 Wallet</h2>
-        <p>Wallet connection will be added later.</p>
-      </div>
-
-    </section>
-
-  </main>
+</main>
 
 
-  <nav class="bottom-nav">
+<nav class="bottom-nav">
 
-    <button class="nav-item active" data-page="homePage">
-      <span>⌂</span>
-      <small>Home</small>
-    </button>
+  <button class="nav-item active" data-page="homePage">
+    <span>⌂</span>
+    <small>Home</small>
+  </button>
 
-    <button class="nav-item" data-page="boostPage">
-      <span>⚡</span>
-      <small>Boost</small>
-    </button>
+  <button class="nav-item" data-page="boostPage">
+    <span>⚡</span>
+    <small>Boost</small>
+  </button>
 
-    <button class="nav-item" data-page="dailyPage">
-      <span>🎁</span>
-      <small>Daily</small>
-    </button>
+  <button class="nav-item" data-page="dailyPage">
+    <span>🎁</span>
+    <small>Daily</small>
+  </button>
 
-    <button class="nav-item" data-page="friendsPage">
-      <span>👥</span>
-      <small>Friends</small>
-    </button>
+  <button class="nav-item" data-page="friendsPage">
+    <span>👥</span>
+    <small>Friends</small>
+  </button>
 
-    <button class="nav-item" data-page="walletPage">
-      <span>💎</span>
-      <small>Wallet</small>
-    </button>
+  <button class="nav-item" data-page="walletPage">
+    <span>💎</span>
+    <small>Wallet</small>
+  </button>
 
-  </nav>
+</nav>
 
 
-  <script src="app.js?v=3"></script>
+<script src="app.js?v=3"></script>
 
 </body>
 </html>
