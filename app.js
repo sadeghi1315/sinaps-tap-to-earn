@@ -2,19 +2,27 @@
 
   "use strict";
 
+
   const API =
     "https://sinaps-backend.onrender.com";
+
 
   const MANIFEST =
     "https://sadeghi1315.github.io/sinaps-tap-to-earn/tonconnect-manifest.json";
 
 
   let telegramUser = null;
+
   let balance = 0;
+
   let energy = 1000;
+
   let maxEnergy = 1000;
+
   let lastTap = 0;
+
   let syncing = false;
+
   let tonUI = null;
 
 
@@ -23,9 +31,9 @@
   }
 
 
-  /* =========================
+  /* =========================================
      TELEGRAM
-  ========================= */
+  ========================================= */
 
   function initTelegram() {
 
@@ -39,11 +47,14 @@
         const tg =
           window.Telegram.WebApp;
 
+
         tg.ready();
+
 
         try {
           tg.expand();
         } catch (e) {}
+
 
         if (
           tg.initDataUnsafe &&
@@ -52,6 +63,7 @@
 
           telegramUser =
             tg.initDataUnsafe.user;
+
 
           showTelegramUser();
 
@@ -82,13 +94,19 @@
 
     if (username) {
 
-      if (telegramUser.username) {
+      if (
+        telegramUser.username
+      ) {
 
         username.textContent =
           "@" +
           telegramUser.username;
 
-      } else if (telegramUser.first_name) {
+      }
+
+      else if (
+        telegramUser.first_name
+      ) {
 
         username.textContent =
           telegramUser.first_name;
@@ -109,28 +127,38 @@
         telegramUser.username ||
         "S";
 
+
       letter.textContent =
-        name.charAt(0).toUpperCase();
+        name
+          .charAt(0)
+          .toUpperCase();
 
     }
 
 
-    if (telegramUser.photo_url) {
+    if (
+      telegramUser.photo_url
+    ) {
 
       const avatar =
         $("userAvatar");
+
 
       if (avatar) {
 
         avatar.src =
           telegramUser.photo_url;
 
+
         avatar.style.display =
           "block";
 
+
         if (letter) {
+
           letter.style.display =
             "none";
+
         }
 
       }
@@ -140,17 +168,19 @@
   }
 
 
-  /* =========================
+  /* =========================================
      RENDER
-  ========================= */
+  ========================================= */
 
   function render() {
 
     const balanceEl =
       $("balance");
 
+
     const energyEl =
       $("energy");
+
 
     const energyFill =
       $("energyFill");
@@ -179,14 +209,22 @@
 
       let percent =
         maxEnergy > 0
-          ? (energy / maxEnergy) * 100
+          ? (
+              energy /
+              maxEnergy
+            ) * 100
           : 0;
+
 
       percent =
         Math.max(
           0,
-          Math.min(100, percent)
+          Math.min(
+            100,
+            percent
+          )
         );
+
 
       energyFill.style.width =
         percent + "%";
@@ -196,24 +234,33 @@
   }
 
 
-  /* =========================
-     LOCAL
-  ========================= */
+  /* =========================================
+     LOCAL STORAGE
+  ========================================= */
 
   function saveLocal() {
 
     try {
 
       localStorage.setItem(
-        "sinaps_v4",
+        "sinaps_v41",
         JSON.stringify({
-          balance: balance,
-          energy: energy,
-          maxEnergy: maxEnergy
+
+          balance:
+            balance,
+
+          energy:
+            energy,
+
+          maxEnergy:
+            maxEnergy
+
         })
       );
 
-    } catch (e) {}
+    }
+
+    catch (e) {}
 
   }
 
@@ -224,13 +271,16 @@
 
       const raw =
         localStorage.getItem(
-          "sinaps_v4"
+          "sinaps_v41"
         );
+
 
       if (!raw) return;
 
+
       const data =
         JSON.parse(raw);
+
 
       if (
         typeof data.balance ===
@@ -242,6 +292,7 @@
 
       }
 
+
       if (
         typeof data.energy ===
         "number"
@@ -251,6 +302,7 @@
           data.energy;
 
       }
+
 
       if (
         typeof data.maxEnergy ===
@@ -262,14 +314,16 @@
 
       }
 
-    } catch (e) {}
+    }
+
+    catch (e) {}
 
   }
 
 
-  /* =========================
-     BACKEND USER
-  ========================= */
+  /* =========================================
+     LOAD USER
+  ========================================= */
 
   async function loadUser() {
 
@@ -288,10 +342,13 @@
       const controller =
         new AbortController();
 
+
       const timeout =
         setTimeout(
           function () {
+
             controller.abort();
+
           },
           7000
         );
@@ -301,7 +358,9 @@
         await fetch(
           API + "/api/user",
           {
-            method: "POST",
+
+            method:
+              "POST",
 
             headers: {
               "Content-Type":
@@ -310,6 +369,7 @@
 
             body:
               JSON.stringify({
+
                 telegram_id:
                   telegramUser.id,
 
@@ -317,10 +377,12 @@
                   telegramUser.username ||
                   telegramUser.first_name ||
                   ""
+
               }),
 
             signal:
               controller.signal
+
           }
         );
 
@@ -329,10 +391,12 @@
 
 
       if (!response.ok) {
+
         throw new Error(
           "HTTP " +
           response.status
         );
+
       }
 
 
@@ -352,7 +416,9 @@
       ) {
 
         balance =
-          Number(user.balance) || 0;
+          Number(
+            user.balance
+          ) || 0;
 
       }
 
@@ -363,7 +429,9 @@
       ) {
 
         energy =
-          Number(user.energy);
+          Number(
+            user.energy
+          );
 
       }
 
@@ -374,16 +442,20 @@
       ) {
 
         maxEnergy =
-          Number(user.max_energy) ||
-          1000;
+          Number(
+            user.max_energy
+          ) || 1000;
 
       }
 
 
       render();
+
       saveLocal();
 
-    } catch (e) {
+    }
+
+    catch (e) {
 
       console.log(
         "Backend unavailable:",
@@ -397,9 +469,9 @@
   }
 
 
-  /* =========================
+  /* =========================================
      TAP SYNC
-  ========================= */
+  ========================================= */
 
   async function syncTap() {
 
@@ -423,7 +495,9 @@
         await fetch(
           API + "/api/tap",
           {
-            method: "POST",
+
+            method:
+              "POST",
 
             headers: {
               "Content-Type":
@@ -432,9 +506,12 @@
 
             body:
               JSON.stringify({
+
                 telegram_id:
                   telegramUser.id
+
               })
+
           }
         );
 
@@ -465,8 +542,9 @@
       ) {
 
         balance =
-          Number(user.balance) ||
-          balance;
+          Number(
+            user.balance
+          ) || balance;
 
       }
 
@@ -477,15 +555,20 @@
       ) {
 
         energy =
-          Number(user.energy);
+          Number(
+            user.energy
+          );
 
       }
 
 
       render();
+
       saveLocal();
 
-    } catch (e) {
+    }
+
+    catch (e) {
 
       console.log(
         "Tap sync error:",
@@ -494,7 +577,9 @@
 
       saveLocal();
 
-    } finally {
+    }
+
+    finally {
 
       syncing = false;
 
@@ -503,32 +588,182 @@
   }
 
 
-  /* =========================
-     TON ADDRESS FORMAT
-  ========================= */
+  /* =========================================
+     ADDRESS
+  ========================================= */
 
   function shortAddress(address) {
 
     if (!address) {
+
       return "Wallet";
+
     }
 
-    if (address.length < 18) {
+
+    if (
+      address.length < 18
+    ) {
+
       return address;
+
     }
+
 
     return (
-      address.slice(0, 7) +
+      address.substring(0, 7) +
       "..." +
-      address.slice(-7)
+      address.substring(
+        address.length - 7
+      )
     );
 
   }
 
 
-  /* =========================
-     SAVE WALLET
-  ========================= */
+  /* =========================================
+     WALLET UI
+  ========================================= */
+
+  function showWallet(address) {
+
+    const mini =
+      $("walletMini");
+
+
+    const box =
+      $("walletAddress");
+
+
+    const text =
+      $("walletAddressText");
+
+
+    const disconnect =
+      $("disconnectWallet");
+
+
+    const connect =
+      $("connectWalletBtn");
+
+
+    if (mini) {
+
+      mini.textContent =
+        shortAddress(address);
+
+    }
+
+
+    if (box) {
+
+      box.style.display =
+        "block";
+
+    }
+
+
+    if (text) {
+
+      text.textContent =
+        address;
+
+    }
+
+
+    if (disconnect) {
+
+      disconnect.style.display =
+        "block";
+
+    }
+
+
+    if (connect) {
+
+      connect.textContent =
+        "✓ Wallet Connected";
+
+      connect.classList.add(
+        "connected"
+      );
+
+    }
+
+  }
+
+
+  function clearWalletUI() {
+
+    const mini =
+      $("walletMini");
+
+
+    const box =
+      $("walletAddress");
+
+
+    const text =
+      $("walletAddressText");
+
+
+    const disconnect =
+      $("disconnectWallet");
+
+
+    const connect =
+      $("connectWalletBtn");
+
+
+    if (mini) {
+
+      mini.textContent =
+        "Wallet";
+
+    }
+
+
+    if (box) {
+
+      box.style.display =
+        "none";
+
+    }
+
+
+    if (text) {
+
+      text.textContent =
+        "";
+
+    }
+
+
+    if (disconnect) {
+
+      disconnect.style.display =
+        "none";
+
+    }
+
+
+    if (connect) {
+
+      connect.textContent =
+        "🔗 Connect TON Wallet";
+
+      connect.classList.remove(
+        "connected"
+      );
+
+    }
+
+  }
+
+
+  /* =========================================
+     SAVE WALLET TO BACKEND
+  ========================================= */
 
   async function saveWallet(address) {
 
@@ -537,6 +772,10 @@
       !telegramUser.id ||
       !address
     ) {
+
+      console.log(
+        "Cannot save wallet: Telegram user missing"
+      );
 
       return;
 
@@ -547,9 +786,12 @@
 
       const response =
         await fetch(
-          API + "/api/wallet/connect",
+          API +
+          "/api/wallet/connect",
           {
-            method: "POST",
+
+            method:
+              "POST",
 
             headers: {
               "Content-Type":
@@ -566,6 +808,7 @@
                   address
 
               })
+
           }
         );
 
@@ -581,10 +824,12 @@
 
 
       console.log(
-        "Wallet saved"
+        "Wallet saved successfully"
       );
 
-    } catch (e) {
+    }
+
+    catch (e) {
 
       console.log(
         "Wallet save error:",
@@ -596,114 +841,40 @@
   }
 
 
-  /* =========================
-     DISPLAY WALLET
-  ========================= */
-
-  function showWallet(address) {
-
-    const mini =
-      $("walletMini");
-
-    const addressBox =
-      $("walletAddress");
-
-    const disconnect =
-      $("disconnectWallet");
-
-
-    if (mini) {
-
-      mini.textContent =
-        shortAddress(address);
-
-    }
-
-
-    if (addressBox) {
-
-      addressBox.style.display =
-        "block";
-
-      addressBox.textContent =
-        address;
-
-    }
-
-
-    if (disconnect) {
-
-      disconnect.style.display =
-        "block";
-
-    }
-
-  }
-
-
-  function clearWalletUI() {
-
-    const mini =
-      $("walletMini");
-
-    const addressBox =
-      $("walletAddress");
-
-    const disconnect =
-      $("disconnectWallet");
-
-
-    if (mini) {
-      mini.textContent =
-        "Wallet";
-    }
-
-
-    if (addressBox) {
-
-      addressBox.style.display =
-        "none";
-
-      addressBox.textContent =
-        "";
-
-    }
-
-
-    if (disconnect) {
-
-      disconnect.style.display =
-        "none";
-
-    }
-
-  }
-
-
-  /* =========================
+  /* =========================================
      TON CONNECT
-  ========================= */
+  ========================================= */
 
   function setupTonConnect() {
 
+    console.log(
+      "Starting TON Connect..."
+    );
+
+
+    if (
+      !window.TON_CONNECT_UI
+    ) {
+
+      console.error(
+        "TON_CONNECT_UI not found"
+      );
+
+
+      setWalletStatus(
+        "TON Connect library failed to load."
+      );
+
+
+      return;
+
+    }
+
+
     try {
 
-      if (
-        !window.TON_CONNECT_UI ||
-        !window.TON_CONNECT_UI.TonConnectUI
-      ) {
-
-        console.log(
-          "TON Connect library unavailable"
-        );
-
-        return;
-
-      }
-
-
       tonUI =
-        new TON_CONNECT_UI.TonConnectUI({
+        new window.TON_CONNECT_UI.TonConnectUI({
 
           manifestUrl:
             MANIFEST,
@@ -714,8 +885,19 @@
         });
 
 
+      console.log(
+        "TON Connect initialized"
+      );
+
+
       tonUI.onStatusChange(
         async function (wallet) {
+
+          console.log(
+            "TON wallet status:",
+            wallet
+          );
+
 
           if (
             wallet &&
@@ -726,11 +908,22 @@
             const address =
               wallet.account.address;
 
+
             showWallet(address);
 
-            await saveWallet(address);
 
-          } else {
+            await saveWallet(
+              address
+            );
+
+
+            setWalletStatus(
+              "Wallet connected successfully."
+            );
+
+          }
+
+          else {
 
             clearWalletUI();
 
@@ -740,11 +933,77 @@
       );
 
 
-    } catch (e) {
+      /*
+       * OUR BUTTON
+       *
+       * We do NOT depend on the library
+       * rendering a visible button.
+       */
 
-      console.log(
-        "TON Connect init error:",
+      const connectButton =
+        $("connectWalletBtn");
+
+
+      if (connectButton) {
+
+        connectButton.addEventListener(
+          "click",
+          async function () {
+
+            console.log(
+              "Connect button clicked"
+            );
+
+
+            if (!tonUI) {
+
+              setWalletStatus(
+                "TON Connect is not ready."
+              );
+
+              return;
+
+            }
+
+
+            try {
+
+              await tonUI.openModal();
+
+            }
+
+            catch (e) {
+
+              console.error(
+                "TON Connect modal error:",
+                e
+              );
+
+
+              setWalletStatus(
+                "Connection error. Check TON Connect."
+              );
+
+            }
+
+          }
+        );
+
+      }
+
+
+    }
+
+    catch (e) {
+
+      console.error(
+        "TON Connect initialization error:",
         e
+      );
+
+
+      setWalletStatus(
+        "TON Connect initialization failed."
       );
 
     }
@@ -752,9 +1011,46 @@
   }
 
 
-  /* =========================
+  /* =========================================
+     STATUS
+  ========================================= */
+
+  function setWalletStatus(message) {
+
+    const status =
+      $("status");
+
+
+    if (!status) return;
+
+
+    status.textContent =
+      message;
+
+
+    setTimeout(
+      function () {
+
+        if (
+          status.textContent ===
+          message
+        ) {
+
+          status.textContent =
+            "";
+
+        }
+
+      },
+      4000
+    );
+
+  }
+
+
+  /* =========================================
      DISCONNECT
-  ========================= */
+  ========================================= */
 
   function setupDisconnect() {
 
@@ -777,9 +1073,19 @@
 
           }
 
-        } catch (e) {
 
-          console.log(
+          clearWalletUI();
+
+
+          setWalletStatus(
+            "Wallet disconnected."
+          );
+
+        }
+
+        catch (e) {
+
+          console.error(
             "Disconnect error:",
             e
           );
@@ -792,14 +1098,15 @@
   }
 
 
-  /* =========================
+  /* =========================================
      TAP EFFECT
-  ========================= */
+  ========================================= */
 
   function tapEffect(event) {
 
     const tapArea =
       $("tapArea");
+
 
     const floaters =
       $("floaters");
@@ -808,7 +1115,11 @@
     if (
       !tapArea ||
       !floaters
-    ) return;
+    ) {
+
+      return;
+
+    }
 
 
     const rect =
@@ -816,7 +1127,9 @@
 
 
     const floater =
-      document.createElement("div");
+      document.createElement(
+        "div"
+      );
 
 
     floater.className =
@@ -848,7 +1161,9 @@
 
     setTimeout(
       function () {
+
         floater.remove();
+
       },
       850
     );
@@ -856,9 +1171,9 @@
   }
 
 
-  /* =========================
+  /* =========================================
      COIN MOVE
-  ========================= */
+  ========================================= */
 
   function moveCoin(event) {
 
@@ -901,6 +1216,7 @@
 
 
     let x = 0;
+
     let y = 0;
 
 
@@ -955,9 +1271,9 @@
   }
 
 
-  /* =========================
+  /* =========================================
      TAP
-  ========================= */
+  ========================================= */
 
   function setupTap() {
 
@@ -991,20 +1307,27 @@
           now;
 
 
-        if (energy <= 0) {
+        if (
+          energy <= 0
+        ) {
+
           return;
+
         }
 
 
         balance += 1;
+
         energy -= 1;
 
 
         render();
+
         saveLocal();
 
 
         tapEffect(event);
+
         moveCoin(event);
 
 
@@ -1016,9 +1339,9 @@
   }
 
 
-  /* =========================
+  /* =========================================
      NAVIGATION
-  ========================= */
+  ========================================= */
 
   function setupNavigation() {
 
@@ -1042,7 +1365,9 @@
 
 
             document
-              .querySelectorAll(".page")
+              .querySelectorAll(
+                ".page"
+              )
               .forEach(
                 function (page) {
 
@@ -1093,9 +1418,9 @@
   }
 
 
-  /* =========================
+  /* =========================================
      ENERGY
-  ========================= */
+  ========================================= */
 
   function startEnergy() {
 
@@ -1109,7 +1434,9 @@
 
           energy += 1;
 
+
           render();
+
 
           saveLocal();
 
@@ -1122,35 +1449,47 @@
   }
 
 
-  /* =========================
+  /* =========================================
      START
-  ========================= */
+  ========================================= */
 
   async function start() {
 
+    console.log(
+      "SINAPS Stage 4.1 starting..."
+    );
+
+
     loadLocal();
+
 
     render();
 
+
     initTelegram();
+
 
     setupNavigation();
 
+
     setupTap();
+
 
     setupDisconnect();
 
+
     startEnergy();
 
+
     /*
-     * TON Connect starts independently.
-     * If it fails, the Mini App continues.
+     * TON CONNECT
      */
 
     setupTonConnect();
 
+
     /*
-     * Backend starts after UI.
+     * BACKEND
      */
 
     await loadUser();
@@ -1168,7 +1507,9 @@
       start
     );
 
-  } else {
+  }
+
+  else {
 
     start();
 
