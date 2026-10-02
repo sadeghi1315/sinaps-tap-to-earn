@@ -11,11 +11,9 @@
   <title>SINAPS — Tap to Earn</title>
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
   <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
 
   <style>
-
     * {
       box-sizing: border-box;
       -webkit-tap-highlight-color: transparent;
@@ -37,7 +35,9 @@
       position: relative;
     }
 
-    /* GALAXY */
+    /* =========================
+       GALAXY BACKGROUND
+    ========================= */
 
     .space {
       position: fixed;
@@ -45,83 +45,186 @@
       overflow: hidden;
       background:
         radial-gradient(
-          circle at 50% 25%,
-          rgba(75, 50, 150, .28),
-          transparent 35%
+          ellipse at 50% 35%,
+          rgba(83, 43, 190, .38),
+          transparent 42%
         ),
         radial-gradient(
-          circle at 20% 80%,
-          rgba(20, 90, 180, .20),
-          transparent 35%
+          ellipse at 15% 75%,
+          rgba(0, 120, 255, .25),
+          transparent 38%
         ),
         radial-gradient(
-          circle at 80% 70%,
-          rgba(130, 40, 170, .18),
-          transparent 35%
+          ellipse at 85% 70%,
+          rgba(180, 40, 210, .24),
+          transparent 38%
+        ),
+        radial-gradient(
+          ellipse at 50% 100%,
+          rgba(20, 40, 130, .30),
+          transparent 45%
         ),
         #02030a;
-      z-index: -10;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .space::before {
+      content: "";
+      position: absolute;
+      width: 720px;
+      height: 720px;
+      left: 50%;
+      top: 42%;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      background:
+        radial-gradient(
+          ellipse at center,
+          rgba(255,255,255,.07) 0%,
+          rgba(100,60,255,.10) 18%,
+          rgba(20,30,100,.04) 45%,
+          transparent 70%
+        );
+      filter: blur(15px);
+      animation: galaxyPulse 8s ease-in-out infinite;
     }
 
     .stars {
       position: absolute;
-      inset: 0;
+      inset: -100px;
       background-image:
-        radial-gradient(circle, rgba(255,255,255,.85) 1px, transparent 1px),
-        radial-gradient(circle, rgba(255,255,255,.55) 1px, transparent 1px),
-        radial-gradient(circle, rgba(255,255,255,.35) 1px, transparent 1px);
+        radial-gradient(circle, rgba(255,255,255,.95) 1px, transparent 1.5px),
+        radial-gradient(circle, rgba(150,210,255,.70) 1px, transparent 1.5px),
+        radial-gradient(circle, rgba(255,255,255,.50) .8px, transparent 1.3px);
       background-size:
-        95px 95px,
-        145px 145px,
-        210px 210px;
+        83px 83px,
+        137px 137px,
+        211px 211px;
       background-position:
-        10px 20px,
-        30px 50px,
-        70px 90px;
-      animation: starsMove 30s linear infinite;
+        5px 15px,
+        40px 70px,
+        90px 30px;
+      animation: starsMove 35s linear infinite;
     }
 
-    @keyframes starsMove {
-      from {
-        transform: translateY(0);
-      }
-
-      to {
-        transform: translateY(80px);
-      }
+    .stars::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        radial-gradient(circle, rgba(255,255,255,.9) 1px, transparent 1.5px);
+      background-size: 173px 173px;
+      background-position: 100px 120px;
+      animation: starsMoveReverse 55s linear infinite;
     }
 
     .nebula {
       position: absolute;
-      width: 500px;
-      height: 500px;
       border-radius: 50%;
-      filter: blur(90px);
-      opacity: .20;
+      filter: blur(85px);
+      pointer-events: none;
     }
 
     .nebula.one {
-      background: #5738ff;
-      top: -200px;
-      left: -200px;
+      width: 520px;
+      height: 520px;
+      background: rgba(91,48,255,.34);
+      top: -230px;
+      left: -220px;
+      animation: nebulaOne 14s ease-in-out infinite;
     }
 
     .nebula.two {
-      background: #00aaff;
-      right: -250px;
-      bottom: -220px;
+      width: 570px;
+      height: 570px;
+      background: rgba(0,130,255,.25);
+      right: -280px;
+      bottom: -250px;
+      animation: nebulaTwo 17s ease-in-out infinite;
     }
 
-    /* APP */
+    .nebula.three {
+      width: 400px;
+      height: 400px;
+      background: rgba(210,35,220,.20);
+      right: -180px;
+      top: 15%;
+      animation: nebulaThree 19s ease-in-out infinite;
+    }
+
+    @keyframes starsMove {
+      from {
+        transform: translate3d(0,0,0);
+      }
+      to {
+        transform: translate3d(-35px,100px,0);
+      }
+    }
+
+    @keyframes starsMoveReverse {
+      from {
+        transform: translate3d(0,0,0);
+      }
+      to {
+        transform: translate3d(45px,-80px,0);
+      }
+    }
+
+    @keyframes galaxyPulse {
+      0%,100% {
+        opacity: .55;
+        transform: translate(-50%,-50%) scale(1);
+      }
+      50% {
+        opacity: .85;
+        transform: translate(-50%,-50%) scale(1.08);
+      }
+    }
+
+    @keyframes nebulaOne {
+      0%,100% {
+        transform: translate(0,0) scale(1);
+      }
+      50% {
+        transform: translate(70px,80px) scale(1.15);
+      }
+    }
+
+    @keyframes nebulaTwo {
+      0%,100% {
+        transform: translate(0,0) scale(1);
+      }
+      50% {
+        transform: translate(-70px,-60px) scale(1.12);
+      }
+    }
+
+    @keyframes nebulaThree {
+      0%,100% {
+        transform: translate(0,0);
+      }
+      50% {
+        transform: translate(-50px,50px);
+      }
+    }
+
+    /* =========================
+       APP
+    ========================= */
 
     .app {
+      position: relative;
+      z-index: 1;
       width: 100%;
       height: 100%;
       display: flex;
       flex-direction: column;
     }
 
-    /* TOP */
+    /* =========================
+       TOP
+    ========================= */
 
     .top {
       padding:
@@ -150,11 +253,11 @@
       align-items: center;
       justify-content: center;
       background:
-        linear-gradient(145deg, #ffd966, #c98500);
+        linear-gradient(145deg,#fff08a,#d18a00);
       color: #17100a;
       font-weight: 900;
       box-shadow:
-        0 0 18px rgba(255,205,70,.35);
+        0 0 18px rgba(255,205,70,.45);
       overflow: hidden;
       flex-shrink: 0;
     }
@@ -198,7 +301,9 @@
       color: #bfffcf;
     }
 
-    /* MAIN */
+    /* =========================
+       CONTENT
+    ========================= */
 
     .content {
       flex: 1;
@@ -221,7 +326,9 @@
       display: block;
     }
 
-    /* HOME */
+    /* =========================
+       HOME
+    ========================= */
 
     .balance-card {
       text-align: center;
@@ -240,7 +347,8 @@
       font-weight: 900;
       color: #ffe070;
       text-shadow:
-        0 0 20px rgba(255,213,74,.25);
+        0 0 20px rgba(255,213,74,.35),
+        0 0 45px rgba(255,180,20,.15);
     }
 
     .symbol {
@@ -250,7 +358,9 @@
       margin-top: 2px;
     }
 
-    /* COIN */
+    /* =========================
+       COIN
+    ========================= */
 
     .tap-area {
       position: relative;
@@ -261,6 +371,36 @@
       justify-content: center;
       touch-action: manipulation;
       user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .tap-area::before {
+      content: "";
+      position: absolute;
+      width: 310px;
+      height: 310px;
+      border-radius: 50%;
+      background:
+        radial-gradient(
+          circle,
+          rgba(255,210,60,.13),
+          rgba(100,70,255,.08) 40%,
+          transparent 70%
+        );
+      filter: blur(8px);
+      animation: coinAura 4s ease-in-out infinite;
+      pointer-events: none;
+    }
+
+    @keyframes coinAura {
+      0%,100% {
+        transform: scale(.95);
+        opacity: .7;
+      }
+      50% {
+        transform: scale(1.08);
+        opacity: 1;
+      }
     }
 
     .coin {
@@ -268,14 +408,16 @@
       height: 205px;
       border-radius: 50%;
       position: relative;
+      z-index: 2;
 
       background:
         radial-gradient(
-          circle at 35% 30%,
-          #fff4a6 0%,
-          #ffd85a 18%,
-          #d89914 55%,
-          #80500a 100%
+          circle at 35% 28%,
+          #fff9c5 0%,
+          #ffe879 16%,
+          #ffd34b 30%,
+          #d99712 60%,
+          #744600 100%
         );
 
       border: 5px solid #ffe17a;
@@ -283,8 +425,9 @@
       box-shadow:
         inset -15px -18px 25px rgba(70,35,0,.45),
         inset 12px 10px 18px rgba(255,255,255,.35),
-        0 0 30px rgba(255,190,30,.35),
-        0 25px 60px rgba(0,0,0,.45);
+        0 0 30px rgba(255,190,30,.45),
+        0 0 75px rgba(255,180,30,.12),
+        0 25px 60px rgba(0,0,0,.55);
 
       display: flex;
       align-items: center;
@@ -296,12 +439,20 @@
       will-change: transform;
     }
 
+    .coin::before {
+      content: "";
+      position: absolute;
+      inset: 7px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,.35);
+    }
+
     .coin::after {
       content: "";
       position: absolute;
-      inset: 10px;
+      inset: 13px;
       border-radius: 50%;
-      border: 2px solid rgba(255,255,255,.28);
+      border: 2px solid rgba(255,255,255,.22);
     }
 
     .s-logo {
@@ -312,7 +463,7 @@
       text-shadow:
         3px 5px 0 #8e5b08,
         6px 9px 15px rgba(0,0,0,.5),
-        0 0 20px rgba(255,245,170,.25);
+        0 0 20px rgba(255,245,170,.35);
       transform: translateZ(0);
       transition: transform .12s ease-out;
     }
@@ -321,7 +472,9 @@
       transform: scale(.94);
     }
 
-    /* FLOAT +1 */
+    /* =========================
+       FLOAT +1
+    ========================= */
 
     .floater {
       position: absolute;
@@ -337,16 +490,18 @@
     @keyframes floatUp {
       0% {
         opacity: 1;
-        transform: translate(-50%, -50%) scale(1);
+        transform: translate(-50%,-50%) scale(1);
       }
 
       100% {
         opacity: 0;
-        transform: translate(-50%, -130px) scale(1.35);
+        transform: translate(-50%,-130px) scale(1.35);
       }
     }
 
-    /* ENERGY */
+    /* =========================
+       ENERGY
+    ========================= */
 
     .energy-wrap {
       max-width: 430px;
@@ -374,18 +529,21 @@
       width: 100%;
       border-radius: inherit;
       background:
-        linear-gradient(90deg, #ffd43d, #fff09b);
+        linear-gradient(90deg,#ffd43d,#fff09b);
       box-shadow: 0 0 12px rgba(255,210,50,.4);
       transition: width .15s linear;
     }
 
-    /* CARDS */
+    /* =========================
+       CARDS
+    ========================= */
 
     .card {
       padding: 18px;
       margin-top: 14px;
       border-radius: 20px;
       background: rgba(10,14,30,.78);
+      backdrop-filter: blur(12px);
       border: 1px solid rgba(255,255,255,.08);
       box-shadow: 0 15px 40px rgba(0,0,0,.25);
     }
@@ -402,7 +560,9 @@
       line-height: 1.6;
     }
 
-    /* WALLET */
+    /* =========================
+       WALLET
+    ========================= */
 
     .wallet-box {
       margin-top: 15px;
@@ -425,7 +585,7 @@
       font-size: 16px;
       font-weight: 900;
       background:
-        linear-gradient(135deg, #ffe27a, #f3b82e);
+        linear-gradient(135deg,#ffe27a,#f3b82e);
       color: #16100a;
       cursor: pointer;
       box-shadow: 0 8px 25px rgba(255,193,45,.2);
@@ -472,13 +632,16 @@
       line-height: 1.5;
     }
 
-    /* WITHDRAW */
+    /* =========================
+       WITHDRAW
+    ========================= */
 
     .withdraw-box {
       margin-top: 20px;
       padding: 18px;
       border-radius: 20px;
       background: rgba(10,14,30,.82);
+      backdrop-filter: blur(12px);
       border: 1px solid rgba(255,215,80,.25);
       box-shadow: 0 0 25px rgba(0,0,0,.25);
     }
@@ -529,7 +692,8 @@
       font-size: 16px;
       font-weight: 900;
       color: #111;
-      background: linear-gradient(135deg,#ffe27a,#f5b927);
+      background:
+        linear-gradient(135deg,#ffe27a,#f5b927);
     }
 
     .withdraw-btn:disabled {
@@ -543,7 +707,9 @@
       line-height: 1.5;
     }
 
-    /* BOTTOM NAV */
+    /* =========================
+       BOTTOM NAV
+    ========================= */
 
     .bottom {
       position: fixed;
@@ -580,7 +746,6 @@
     .nav-btn.active {
       color: #ffe064;
     }
-
   </style>
 </head>
 
@@ -590,11 +755,10 @@
     <div class="stars"></div>
     <div class="nebula one"></div>
     <div class="nebula two"></div>
+    <div class="nebula three"></div>
   </div>
 
   <div class="app">
-
-    <!-- TOP -->
 
     <header class="top">
 
@@ -606,6 +770,7 @@
         </div>
 
         <div class="profile-info">
+
           <div id="username" class="username">
             SINAPS User
           </div>
@@ -613,6 +778,7 @@
           <div id="wallet-mini" class="wallet-mini">
             Wallet not connected
           </div>
+
         </div>
 
       </div>
@@ -623,11 +789,7 @@
 
     </header>
 
-    <!-- CONTENT -->
-
     <main class="content">
-
-      <!-- HOME -->
 
       <section id="home" class="page active">
 
@@ -664,22 +826,25 @@
         <div class="energy-wrap">
 
           <div class="energy-line">
+
             <span>⚡ Energy</span>
+
             <span id="energy">
               1000 / 1000
             </span>
+
           </div>
 
           <div class="energy-bar">
-            <div id="energyFill" class="energy-fill"></div>
+            <div
+              id="energyFill"
+              class="energy-fill"
+            ></div>
           </div>
 
         </div>
 
       </section>
-
-
-      <!-- BOOST -->
 
       <section id="boost" class="page">
 
@@ -709,9 +874,6 @@
 
       </section>
 
-
-      <!-- DAILY -->
-
       <section id="daily" class="page">
 
         <div class="card">
@@ -728,9 +890,6 @@
 
       </section>
 
-
-      <!-- FRIENDS -->
-
       <section id="friends" class="page">
 
         <div class="card">
@@ -746,9 +905,6 @@
         </div>
 
       </section>
-
-
-      <!-- WALLET -->
 
       <section id="wallet" class="page">
 
@@ -800,9 +956,6 @@
 
         </div>
 
-
-        <!-- WITHDRAW -->
-
         <div class="withdraw-box">
 
           <div class="withdraw-title">
@@ -848,9 +1001,6 @@
       </section>
 
     </main>
-
-
-    <!-- NAV -->
 
     <nav class="bottom">
 
@@ -898,8 +1048,7 @@
 
   </div>
 
-
-  <script src="app.js?v=42"></script>
+  <script src="app.js?v=43"></script>
 
 </body>
 </html>
