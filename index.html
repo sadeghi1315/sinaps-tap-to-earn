@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SINAPS TEST</title>
+  <title>SINAPS</title>
 
   <style>
     * {
@@ -13,11 +13,13 @@
     body {
       margin: 0;
       min-height: 100vh;
-      background: #06111b;
+      background:
+        radial-gradient(circle at 50% 35%, #102f42 0%, #06131e 45%, #02070c 100%);
       color: white;
       font-family: Arial, sans-serif;
       display: flex;
       justify-content: center;
+      overflow-x: hidden;
     }
 
     .app {
@@ -30,22 +32,25 @@
 
     h1 {
       margin-top: 20px;
+      letter-spacing: 3px;
     }
 
     #balance {
       font-size: 32px;
       font-weight: bold;
-      margin: 20px 0;
+      margin: 20px 0 8px;
     }
 
     #energy {
+      color: #8ca8b5;
       margin-bottom: 15px;
     }
 
     #tapArea {
       position: relative;
-      width: 300px;
-      height: 300px;
+      width: 320px;
+      height: 320px;
+      max-width: 90vw;
       margin: 30px auto;
       display: flex;
       align-items: center;
@@ -56,47 +61,116 @@
       touch-action: manipulation;
     }
 
+    /* GOLD COIN */
+
     #sLogo {
-      width: 180px;
-      height: 180px;
+      width: 205px;
+      height: 205px;
       border-radius: 50%;
-      background: radial-gradient(circle at 35% 30%, #8ff3ff, #087da8 45%, #031923 75%);
+
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 90px;
-      font-weight: bold;
-      color: white;
+
+      position: relative;
+
+      font-size: 105px;
+      font-weight: 900;
+      font-family: Arial, sans-serif;
+
+      color: #fff7b0;
+
+      background:
+        radial-gradient(
+          circle at 35% 25%,
+          #fff8bd 0%,
+          #ffe76a 12%,
+          #f7c928 35%,
+          #d99b08 60%,
+          #8d5700 82%,
+          #5b3500 100%
+        );
+
+      border: 8px solid #d69b16;
+
       box-shadow:
-        0 0 25px #00cfff,
-        0 0 70px rgba(0,207,255,.45);
-      transition: transform .15s ease;
+        inset 0 0 0 4px #ffe77a,
+        inset 0 0 18px rgba(83, 48, 0, .8),
+        inset 8px 8px 18px rgba(255,255,255,.45),
+        inset -10px -12px 20px rgba(60,30,0,.55),
+        0 0 20px rgba(255,196,35,.55),
+        0 0 55px rgba(255,174,0,.25),
+        0 18px 30px rgba(0,0,0,.65);
+
+      text-shadow:
+        2px 2px 0 #8d5700,
+        3px 3px 0 #6a3e00,
+        0 0 12px rgba(255,245,160,.7);
+
+      transition:
+        transform .15s ease,
+        filter .15s ease;
+    }
+
+    /* Outer coin rim */
+
+    #sLogo::before {
+      content: "";
+      position: absolute;
+      inset: 7px;
+      border-radius: 50%;
+      border: 3px solid rgba(255,240,130,.8);
+      pointer-events: none;
+    }
+
+    /* Inner embossed circle */
+
+    #sLogo::after {
+      content: "S";
+      position: absolute;
+      inset: 25px;
+      border-radius: 50%;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      border: 2px solid rgba(255,240,140,.28);
+
+      color: transparent;
+
+      box-shadow:
+        inset 0 0 12px rgba(70,40,0,.35);
+
+      pointer-events: none;
     }
 
     #floaters {
       position: absolute;
       inset: 0;
       pointer-events: none;
+      z-index: 20;
     }
 
     .floater {
       position: absolute;
       font-size: 25px;
       font-weight: bold;
-      color: #6be5ff;
+      color: #ffe66b;
       transform: translate(-50%, -50%);
       animation: floatUp .8s ease forwards;
+      text-shadow: 0 0 8px rgba(255,190,0,.7);
     }
 
     @keyframes floatUp {
       from {
         opacity: 1;
-        transform: translate(-50%, -50%);
+        transform: translate(-50%, -50%) scale(1);
       }
 
       to {
         opacity: 0;
-        transform: translate(-50%, -100px);
+        transform: translate(-50%, -100px) scale(1.15);
       }
     }
 
@@ -105,14 +179,21 @@
       bottom: 10px;
       left: 50%;
       transform: translateX(-50%);
+
       width: calc(100% - 20px);
       max-width: 500px;
       height: 65px;
+
       display: flex;
-      background: #0b1d2a;
+
+      background: rgba(11,29,42,.96);
+
       border: 1px solid #17465c;
       border-radius: 18px;
+
       z-index: 9999;
+
+      box-shadow: 0 10px 30px rgba(0,0,0,.5);
     }
 
     .nav-item {
@@ -121,6 +202,7 @@
       background: transparent;
       color: #7593a0;
       font-size: 12px;
+      cursor: pointer;
     }
 
     .nav-item.active {
@@ -135,8 +217,9 @@
       display: block;
     }
 
-    button {
-      cursor: pointer;
+    .hint {
+      color: #7795a2;
+      font-size: 13px;
     }
   </style>
 </head>
@@ -145,7 +228,10 @@
 
 <div class="app">
 
+  <!-- HOME -->
+
   <div id="homePage" class="page active">
+
     <h1>SINAPS</h1>
 
     <div id="balance">0</div>
@@ -153,34 +239,67 @@
     <div id="energy">1000 / 1000</div>
 
     <div id="tapArea">
+
       <div id="sLogo">S</div>
+
       <div id="floaters"></div>
+
     </div>
 
-    <div>Tap the SINAPS logo</div>
+    <div class="hint">
+      TAP TO EARN
+    </div>
+
   </div>
+
+
+  <!-- BOOST -->
 
   <div id="boostPage" class="page">
+
     <h1>⚡ Boost</h1>
+
     <p>Boost page works.</p>
+
   </div>
+
+
+  <!-- DAILY -->
 
   <div id="dailyPage" class="page">
+
     <h1>🎁 Daily</h1>
+
     <p>Daily page works.</p>
+
   </div>
+
+
+  <!-- FRIENDS -->
 
   <div id="friendsPage" class="page">
+
     <h1>👥 Friends</h1>
+
     <p>Friends page works.</p>
+
   </div>
 
+
+  <!-- WALLET -->
+
   <div id="walletPage" class="page">
+
     <h1>💎 Wallet</h1>
+
     <p>Wallet page works.</p>
+
   </div>
 
 </div>
+
+
+<!-- BOTTOM NAV -->
 
 <nav class="bottom-nav">
 
@@ -206,91 +325,176 @@
 
 </nav>
 
+
 <script>
+
 (function () {
+
+  "use strict";
 
   let balance = 0;
   let energy = 1000;
+
   const maxEnergy = 1000;
 
+
   function render() {
-    document.getElementById("balance").textContent = balance;
+
+    document.getElementById("balance").textContent =
+      balance.toLocaleString("en-US");
+
     document.getElementById("energy").textContent =
       energy + " / " + maxEnergy;
+
   }
 
-  document.getElementById("tapArea").addEventListener("click", function (event) {
 
-    if (energy <= 0) return;
+  /* TAP */
 
-    balance++;
-    energy--;
+  document.getElementById("tapArea").addEventListener(
+    "click",
+    function (event) {
 
-    render();
+      if (energy <= 0) return;
 
-    const floater = document.createElement("div");
 
-    floater.className = "floater";
-    floater.textContent = "+1";
+      balance++;
+      energy--;
 
-    const rect = document.getElementById("tapArea").getBoundingClientRect();
 
-    floater.style.left =
-      (event.clientX - rect.left) + "px";
+      render();
 
-    floater.style.top =
-      (event.clientY - rect.top) + "px";
 
-    document.getElementById("floaters").appendChild(floater);
+      /* +1 AT TOUCH POSITION */
 
-    const logo = document.getElementById("sLogo");
+      const floater =
+        document.createElement("div");
 
-    logo.style.transform = "scale(0.92)";
+      floater.className = "floater";
 
-    setTimeout(function () {
-      logo.style.transform = "scale(1)";
-    }, 120);
+      floater.textContent = "+1";
 
-    setTimeout(function () {
-      floater.remove();
-    }, 800);
 
-  });
+      const rect =
+        document.getElementById("tapArea")
+        .getBoundingClientRect();
 
-  document.querySelectorAll(".nav-item").forEach(function (button) {
 
-    button.addEventListener("click", function () {
+      floater.style.left =
+        (event.clientX - rect.left) + "px";
 
-      const pageId = button.getAttribute("data-page");
+      floater.style.top =
+        (event.clientY - rect.top) + "px";
 
-      document.querySelectorAll(".page").forEach(function (page) {
-        page.classList.remove("active");
-      });
 
-      document.getElementById(pageId).classList.add("active");
+      document
+        .getElementById("floaters")
+        .appendChild(floater);
 
-      document.querySelectorAll(".nav-item").forEach(function (item) {
-        item.classList.remove("active");
-      });
 
-      button.classList.add("active");
+      /* COIN TAP ANIMATION */
+
+      const coin =
+        document.getElementById("sLogo");
+
+
+      coin.style.transform =
+        "scale(.90) rotate(-4deg)";
+
+
+      coin.style.filter =
+        "brightness(1.25)";
+
+
+      setTimeout(function () {
+
+        coin.style.transform =
+          "scale(1) rotate(0deg)";
+
+        coin.style.filter =
+          "brightness(1)";
+
+      }, 130);
+
+
+      setTimeout(function () {
+
+        floater.remove();
+
+      }, 800);
+
+    }
+  );
+
+
+  /* NAVIGATION */
+
+  document
+    .querySelectorAll(".nav-item")
+    .forEach(function (button) {
+
+      button.addEventListener(
+        "click",
+        function () {
+
+          const pageId =
+            button.getAttribute("data-page");
+
+
+          document
+            .querySelectorAll(".page")
+            .forEach(function (page) {
+
+              page.classList.remove("active");
+
+            });
+
+
+          const page =
+            document.getElementById(pageId);
+
+
+          if (page) {
+            page.classList.add("active");
+          }
+
+
+          document
+            .querySelectorAll(".nav-item")
+            .forEach(function (item) {
+
+              item.classList.remove("active");
+
+            });
+
+
+          button.classList.add("active");
+
+        }
+      );
 
     });
 
-  });
+
+  /* ENERGY REGEN */
 
   setInterval(function () {
 
     if (energy < maxEnergy) {
+
       energy++;
+
       render();
+
     }
 
   }, 3000);
 
+
   render();
 
 })();
+
 </script>
 
 </body>
