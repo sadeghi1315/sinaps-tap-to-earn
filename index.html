@@ -6,6 +6,8 @@
   <meta name="theme-color" content="#020812">
   <title>SINAPS — Tap to Earn</title>
 
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
   <style>
     * {
       box-sizing: border-box;
@@ -29,10 +31,6 @@
       position: relative;
     }
 
-    /* =========================
-       GALAXY BACKGROUND
-    ========================= */
-
     .space {
       position: fixed;
       inset: 0;
@@ -40,27 +38,10 @@
       pointer-events: none;
       z-index: 0;
       background:
-        radial-gradient(
-          circle at 50% 38%,
-          rgba(0, 107, 155, .22),
-          transparent 32%
-        ),
-        radial-gradient(
-          circle at 15% 80%,
-          rgba(38, 0, 102, .18),
-          transparent 28%
-        ),
-        radial-gradient(
-          circle at 85% 20%,
-          rgba(0, 130, 180, .12),
-          transparent 28%
-        ),
-        linear-gradient(
-          180deg,
-          #01050c 0%,
-          #03111c 45%,
-          #020711 100%
-        );
+        radial-gradient(circle at 50% 38%, rgba(0,107,155,.22), transparent 32%),
+        radial-gradient(circle at 15% 80%, rgba(38,0,102,.18), transparent 28%),
+        radial-gradient(circle at 85% 20%, rgba(0,130,180,.12), transparent 28%),
+        linear-gradient(180deg,#01050c 0%,#03111c 45%,#020711 100%);
     }
 
     .stars,
@@ -75,16 +56,16 @@
     .stars {
       opacity: .75;
       background-image:
-        radial-gradient(circle, rgba(255,255,255,.9) 1px, transparent 1.5px),
-        radial-gradient(circle, rgba(126,220,255,.7) 1px, transparent 1.5px);
-      background-size: 91px 91px, 137px 137px;
+        radial-gradient(circle,rgba(255,255,255,.9) 1px,transparent 1.5px),
+        radial-gradient(circle,rgba(126,220,255,.7) 1px,transparent 1.5px);
+      background-size: 91px 91px,137px 137px;
       animation: starsMove 35s linear infinite;
     }
 
     .stars2 {
       opacity: .45;
       background-image:
-        radial-gradient(circle, rgba(255,255,255,.9) 1px, transparent 1.5px);
+        radial-gradient(circle,rgba(255,255,255,.9) 1px,transparent 1.5px);
       background-size: 181px 181px;
       animation: starsMove 60s linear infinite reverse;
     }
@@ -92,19 +73,14 @@
     .stars3 {
       opacity: .3;
       background-image:
-        radial-gradient(circle, rgba(87,211,255,.8) 1.2px, transparent 2px);
+        radial-gradient(circle,rgba(87,211,255,.8) 1.2px,transparent 2px);
       background-size: 257px 257px;
       animation: starsMove 85s linear infinite;
     }
 
     @keyframes starsMove {
-      from {
-        transform: translate3d(0,0,0);
-      }
-
-      to {
-        transform: translate3d(-120px,80px,0);
-      }
+      from { transform: translate3d(0,0,0); }
+      to { transform: translate3d(-120px,80px,0); }
     }
 
     .nebula {
@@ -113,21 +89,17 @@
       height: 520px;
       left: 50%;
       top: 42%;
-      transform: translate(-50%, -50%);
+      transform: translate(-50%,-50%);
       border-radius: 50%;
       background:
         radial-gradient(
           ellipse,
-          rgba(0, 179, 255, .12) 0%,
-          rgba(0, 100, 180, .07) 35%,
+          rgba(0,179,255,.12) 0%,
+          rgba(0,100,180,.07) 35%,
           transparent 70%
         );
       filter: blur(20px);
     }
-
-    /* =========================
-       APP
-    ========================= */
 
     .app {
       position: relative;
@@ -138,10 +110,6 @@
       margin: 0 auto;
       padding: 14px 15px 105px;
     }
-
-    /* =========================
-       TOP PROFILE
-    ========================= */
 
     .topbar {
       width: 100%;
@@ -164,20 +132,22 @@
       height: 43px;
       flex: 0 0 43px;
       border-radius: 50%;
+      overflow: hidden;
       display: flex;
       align-items: center;
       justify-content: center;
-      background:
-        linear-gradient(
-          145deg,
-          #36d9ff,
-          #07527b
-        );
+      background: linear-gradient(145deg,#36d9ff,#07527b);
       border: 1px solid rgba(111,225,255,.65);
-      box-shadow:
-        0 0 18px rgba(0,207,255,.25);
+      box-shadow: 0 0 18px rgba(0,207,255,.25);
       font-size: 19px;
       font-weight: bold;
+    }
+
+    #userAvatar {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: none;
     }
 
     .profile-info {
@@ -213,10 +183,6 @@
       font-size: 10px;
     }
 
-    /* =========================
-       PAGES
-    ========================= */
-
     .page {
       display: none;
       width: 100%;
@@ -225,10 +191,6 @@
     .page.active {
       display: block;
     }
-
-    /* =========================
-       HOME
-    ========================= */
 
     .home-title {
       margin-top: 18px;
@@ -243,8 +205,7 @@
       line-height: 1.1;
       font-weight: 800;
       letter-spacing: .5px;
-      text-shadow:
-        0 0 20px rgba(255,213,69,.18);
+      text-shadow: 0 0 20px rgba(255,213,69,.18);
     }
 
     .coin-name {
@@ -254,21 +215,15 @@
       letter-spacing: 2px;
     }
 
-    /* =========================
-       TAP AREA
-    ========================= */
-
     #tapArea {
       position: relative;
       width: 330px;
       height: 330px;
       max-width: 92vw;
       margin: 22px auto 12px;
-
       display: flex;
       align-items: center;
       justify-content: center;
-
       cursor: pointer;
       user-select: none;
       -webkit-user-select: none;
@@ -286,40 +241,29 @@
     }
 
     @keyframes coinGlow {
-      0%, 100% {
+      0%,100% {
         transform: scale(.94);
         opacity: .6;
       }
-
       50% {
         transform: scale(1.08);
         opacity: 1;
       }
     }
 
-    /* =========================
-       GOLD COIN
-    ========================= */
-
     #sLogo {
       position: relative;
       z-index: 5;
-
       width: 205px;
       height: 205px;
-
       border-radius: 50%;
-
       display: flex;
       align-items: center;
       justify-content: center;
-
-      font-family: Arial, Helvetica, sans-serif;
+      font-family: Arial,Helvetica,sans-serif;
       font-size: 108px;
       font-weight: 900;
-
       color: #fff5a5;
-
       background:
         radial-gradient(
           circle at 32% 23%,
@@ -330,9 +274,7 @@
           #a46600 76%,
           #5a3500 100%
         );
-
       border: 8px solid #d69c18;
-
       box-shadow:
         inset 0 0 0 3px rgba(255,239,131,.9),
         inset 0 0 16px rgba(77,43,0,.7),
@@ -340,15 +282,11 @@
         inset -12px -14px 20px rgba(57,30,0,.55),
         0 0 25px rgba(255,194,30,.5),
         0 18px 35px rgba(0,0,0,.65);
-
       text-shadow:
         2px 2px 0 #9b6000,
         4px 4px 0 #693e00,
         0 0 12px rgba(255,250,180,.7);
-
-      transition:
-        transform .14s ease,
-        filter .14s ease;
+      transition: transform .14s ease, filter .14s ease;
     }
 
     #sLogo::before {
@@ -357,8 +295,7 @@
       inset: 8px;
       border-radius: 50%;
       border: 2px solid rgba(255,239,132,.75);
-      box-shadow:
-        inset 0 0 8px rgba(90,50,0,.35);
+      box-shadow: inset 0 0 8px rgba(90,50,0,.35);
       pointer-events: none;
     }
 
@@ -370,10 +307,6 @@
       border: 1px solid rgba(255,239,132,.3);
       pointer-events: none;
     }
-
-    /* =========================
-       FLOATING +1
-    ========================= */
 
     #floaters {
       position: absolute;
@@ -387,27 +320,21 @@
       color: #ffe66b;
       font-size: 25px;
       font-weight: 800;
-      transform: translate(-50%, -50%);
-      text-shadow:
-        0 0 7px rgba(255,185,0,.8);
+      transform: translate(-50%,-50%);
+      text-shadow: 0 0 7px rgba(255,185,0,.8);
       animation: floatUp .8s ease forwards;
     }
 
     @keyframes floatUp {
       0% {
         opacity: 1;
-        transform: translate(-50%, -50%) scale(1);
+        transform: translate(-50%,-50%) scale(1);
       }
-
       100% {
         opacity: 0;
-        transform: translate(-50%, -105px) scale(1.12);
+        transform: translate(-50%,-105px) scale(1.12);
       }
     }
-
-    /* =========================
-       ENERGY
-    ========================= */
 
     .energy-box {
       width: 100%;
@@ -441,14 +368,8 @@
       width: 100%;
       height: 100%;
       border-radius: inherit;
-      background:
-        linear-gradient(
-          90deg,
-          #09a9df,
-          #65eaff
-        );
-      box-shadow:
-        0 0 12px rgba(42,212,255,.45);
+      background: linear-gradient(90deg,#09a9df,#65eaff);
+      box-shadow: 0 0 12px rgba(42,212,255,.45);
       transition: width .15s linear;
     }
 
@@ -458,10 +379,6 @@
       font-size: 10px;
       letter-spacing: 2px;
     }
-
-    /* =========================
-       OTHER PAGES
-    ========================= */
 
     .simple-card {
       margin-top: 35px;
@@ -481,56 +398,45 @@
       font-size: 13px;
     }
 
-    /* =========================
-       BOTTOM NAV
-    ========================= */
+    .status {
+      margin-top: 12px;
+      color: #52717e;
+      font-size: 10px;
+      min-height: 14px;
+    }
 
     .bottom-nav {
       position: fixed;
       left: 50%;
       bottom: 9px;
       transform: translateX(-50%);
-
       width: calc(100% - 18px);
       max-width: 500px;
       height: 67px;
-
       padding: 5px;
-
       display: grid;
-      grid-template-columns: repeat(5, 1fr);
+      grid-template-columns: repeat(5,1fr);
       align-items: center;
-
       z-index: 99999;
-
       border: 1px solid rgba(67,180,215,.4);
       border-radius: 21px;
-
       background: rgba(3,14,25,.94);
-
-      box-shadow:
-        0 12px 40px rgba(0,0,0,.6);
-
+      box-shadow: 0 12px 40px rgba(0,0,0,.6);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
     }
 
     .nav-item {
       height: 56px;
-
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
-
       gap: 2px;
-
       border: 0;
       border-radius: 15px;
-
       background: transparent;
       color: #587989;
-
       font-size: 19px;
       cursor: pointer;
     }
@@ -542,20 +448,14 @@
 
     .nav-item.active {
       color: #6be5ff;
-      background:
-        linear-gradient(
-          145deg,
-          rgba(20,91,120,.75),
-          rgba(6,37,53,.75)
-        );
+      background: linear-gradient(
+        145deg,
+        rgba(20,91,120,.75),
+        rgba(6,37,53,.75)
+      );
     }
 
-    /* =========================
-       MOBILE
-    ========================= */
-
-    @media (max-height: 700px) {
-
+    @media (max-height:700px) {
       #tapArea {
         margin-top: 10px;
       }
@@ -570,14 +470,11 @@
         width: 220px;
         height: 220px;
       }
-
     }
   </style>
 </head>
 
 <body>
-
-  <!-- SPACE BACKGROUND -->
 
   <div class="space">
     <div class="stars"></div>
@@ -586,29 +483,20 @@
     <div class="nebula"></div>
   </div>
 
-
   <main class="app">
-
-    <!-- TOP BAR -->
 
     <header class="topbar">
 
       <div class="profile">
 
         <div class="avatar">
-          S
+          <span id="avatarLetter">S</span>
+          <img id="userAvatar" alt="Avatar">
         </div>
 
         <div class="profile-info">
-
-          <div class="welcome">
-            WELCOME
-          </div>
-
-          <div id="username">
-            SINAPS USER
-          </div>
-
+          <div class="welcome">WELCOME</div>
+          <div id="username">SINAPS USER</div>
         </div>
 
       </div>
@@ -620,12 +508,7 @@
     </header>
 
 
-    <!-- HOME -->
-
-    <section
-      id="homePage"
-      class="page active"
-    >
+    <section id="homePage" class="page active">
 
       <div class="home-title">
         SINAPS
@@ -639,9 +522,6 @@
         SNP
       </div>
 
-
-      <!-- TAP -->
-
       <div id="tapArea">
 
         <div class="coin-glow"></div>
@@ -654,25 +534,18 @@
 
       </div>
 
-
-      <!-- ENERGY -->
-
       <div class="energy-box">
 
         <div class="energy-head">
-
           <span>ENERGY</span>
 
           <strong id="energy">
             1000 / 1000
           </strong>
-
         </div>
 
         <div class="energy-bar">
-
           <div id="energyFill"></div>
-
         </div>
 
       </div>
@@ -681,84 +554,46 @@
         TAP TO EARN
       </div>
 
+      <div id="status" class="status"></div>
+
     </section>
 
 
-    <!-- BOOST -->
-
-    <section
-      id="boostPage"
-      class="page"
-    >
+    <section id="boostPage" class="page">
 
       <div class="simple-card">
-
         <h2>⚡ Boost</h2>
-
-        <p>
-          Boosts will be added here.
-        </p>
-
+        <p>Boosts will be added here.</p>
       </div>
 
     </section>
 
 
-    <!-- DAILY -->
-
-    <section
-      id="dailyPage"
-      class="page"
-    >
+    <section id="dailyPage" class="page">
 
       <div class="simple-card">
-
         <h2>🎁 Daily</h2>
-
-        <p>
-          Daily rewards will be added here.
-        </p>
-
+        <p>Daily rewards will be added here.</p>
       </div>
 
     </section>
 
 
-    <!-- FRIENDS -->
-
-    <section
-      id="friendsPage"
-      class="page"
-    >
+    <section id="friendsPage" class="page">
 
       <div class="simple-card">
-
         <h2>👥 Friends</h2>
-
-        <p>
-          Referral system will be added here.
-        </p>
-
+        <p>Referral system will be added here.</p>
       </div>
 
     </section>
 
 
-    <!-- WALLET -->
-
-    <section
-      id="walletPage"
-      class="page"
-    >
+    <section id="walletPage" class="page">
 
       <div class="simple-card">
-
         <h2>💎 Wallet</h2>
-
-        <p>
-          Wallet connection will be added here.
-        </p>
-
+        <p>Wallet connection will be added later.</p>
       </div>
 
     </section>
@@ -766,46 +601,29 @@
   </main>
 
 
-  <!-- BOTTOM NAV -->
-
   <nav class="bottom-nav">
 
-    <button
-      class="nav-item active"
-      data-page="homePage"
-    >
+    <button class="nav-item active" data-page="homePage">
       <span>⌂</span>
       <small>Home</small>
     </button>
 
-    <button
-      class="nav-item"
-      data-page="boostPage"
-    >
+    <button class="nav-item" data-page="boostPage">
       <span>⚡</span>
       <small>Boost</small>
     </button>
 
-    <button
-      class="nav-item"
-      data-page="dailyPage"
-    >
+    <button class="nav-item" data-page="dailyPage">
       <span>🎁</span>
       <small>Daily</small>
     </button>
 
-    <button
-      class="nav-item"
-      data-page="friendsPage"
-    >
+    <button class="nav-item" data-page="friendsPage">
       <span>👥</span>
       <small>Friends</small>
     </button>
 
-    <button
-      class="nav-item"
-      data-page="walletPage"
-    >
+    <button class="nav-item" data-page="walletPage">
       <span>💎</span>
       <small>Wallet</small>
     </button>
@@ -813,265 +631,7 @@
   </nav>
 
 
-  <!-- SAFE JAVASCRIPT -->
-
-  <script>
-
-    (function () {
-
-      "use strict";
-
-      let balance = 0;
-
-      let energy = 1000;
-
-      const maxEnergy = 1000;
-
-
-      function render() {
-
-        const balanceElement =
-          document.getElementById("balance");
-
-        const energyElement =
-          document.getElementById("energy");
-
-        const energyFill =
-          document.getElementById("energyFill");
-
-
-        if (balanceElement) {
-
-          balanceElement.textContent =
-            balance.toLocaleString("en-US");
-
-        }
-
-
-        if (energyElement) {
-
-          energyElement.textContent =
-            energy + " / " + maxEnergy;
-
-        }
-
-
-        if (energyFill) {
-
-          const percent =
-            (energy / maxEnergy) * 100;
-
-          energyFill.style.width =
-            percent + "%";
-
-        }
-
-      }
-
-
-      /* =========================
-         TAP
-      ========================= */
-
-      const tapArea =
-        document.getElementById("tapArea");
-
-
-      if (tapArea) {
-
-        tapArea.addEventListener(
-          "click",
-          function (event) {
-
-            if (energy <= 0) {
-              return;
-            }
-
-
-            balance += 1;
-
-            energy -= 1;
-
-
-            render();
-
-
-            /* +1 */
-
-            const floater =
-              document.createElement("div");
-
-            floater.className =
-              "floater";
-
-            floater.textContent =
-              "+1";
-
-
-            const rect =
-              tapArea.getBoundingClientRect();
-
-
-            floater.style.left =
-              (event.clientX - rect.left) + "px";
-
-            floater.style.top =
-              (event.clientY - rect.top) + "px";
-
-
-            const floaters =
-              document.getElementById("floaters");
-
-
-            if (floaters) {
-
-              floaters.appendChild(
-                floater
-              );
-
-            }
-
-
-            /* COIN ANIMATION */
-
-            const coin =
-              document.getElementById("sLogo");
-
-
-            if (coin) {
-
-              coin.style.transform =
-                "scale(.91) rotate(-4deg)";
-
-              coin.style.filter =
-                "brightness(1.25)";
-
-
-              setTimeout(function () {
-
-                coin.style.transform =
-                  "scale(1) rotate(0deg)";
-
-                coin.style.filter =
-                  "brightness(1)";
-
-              }, 130);
-
-            }
-
-
-            setTimeout(function () {
-
-              if (floater) {
-                floater.remove();
-              }
-
-            }, 800);
-
-          }
-        );
-
-      }
-
-
-      /* =========================
-         NAVIGATION
-      ========================= */
-
-      const navItems =
-        document.querySelectorAll(
-          ".nav-item"
-        );
-
-
-      navItems.forEach(
-        function (button) {
-
-          button.addEventListener(
-            "click",
-            function () {
-
-              const pageId =
-                button.getAttribute(
-                  "data-page"
-                );
-
-
-              document
-                .querySelectorAll(".page")
-                .forEach(
-                  function (page) {
-
-                    page.classList.remove(
-                      "active"
-                    );
-
-                  }
-                );
-
-
-              const target =
-                document.getElementById(
-                  pageId
-                );
-
-
-              if (target) {
-
-                target.classList.add(
-                  "active"
-                );
-
-              }
-
-
-              navItems.forEach(
-                function (item) {
-
-                  item.classList.remove(
-                    "active"
-                  );
-
-                }
-              );
-
-
-              button.classList.add(
-                "active"
-              );
-
-            }
-          );
-
-        }
-      );
-
-
-      /* =========================
-         ENERGY REGENERATION
-      ========================= */
-
-      setInterval(
-        function () {
-
-          if (energy < maxEnergy) {
-
-            energy += 1;
-
-            render();
-
-          }
-
-        },
-        3000
-      );
-
-
-      render();
-
-    })();
-
-  </script>
+  <script src="app.js?v=3"></script>
 
 </body>
 </html>
