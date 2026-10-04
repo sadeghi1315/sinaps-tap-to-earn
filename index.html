@@ -1,613 +1,121 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-
   <meta charset="UTF-8">
-
-  <meta
-    name="viewport"
-    content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"
-  >
-
-  <meta name="theme-color" content="#030714">
-
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+  <meta name="theme-color" content="#02030d">
   <title>SINAPS — Tap to Earn</title>
-
-  <link
-    rel="stylesheet"
-    href="style.css?v=100"
-  >
-
-  <!-- Telegram -->
+  <link rel="stylesheet" href="style.css?v=110">
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
-  <!-- TON Connect -->
   <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
-
 </head>
-
 <body>
-
 <div id="app">
-
-  <!-- ======================================================
-       TOP BAR
-       ====================================================== -->
-
   <header class="topbar">
-
     <div class="brand">
-
-      <div class="brand-logo">
-        S
-      </div>
-
-      <div class="brand-text">
-        <div class="brand-name">
-          SINAPS
-        </div>
-
-        <div
-          class="brand-user"
-          id="username"
-        >
-          @user
-        </div>
-      </div>
-
+      <div class="brand-logo">S</div>
+      <div class="brand-text"><div class="brand-name">SINAPS</div><div class="brand-user" id="username">@user</div></div>
     </div>
-
-
-    <div class="top-actions">
-
-      <!-- BALANCE -->
-      <div class="top-balance">
-
-        <span>
-          SNP
-        </span>
-
-        <strong id="balance">
-          0
-        </strong>
-
-      </div>
-
-
-      <!-- WALLET -->
-      <button
-        id="walletTop"
-        class="wallet-top"
-        type="button"
-      >
-        CONNECT
-      </button>
-
-    </div>
-
+    <button id="walletTop" class="wallet-top" type="button">CONNECT WALLET</button>
   </header>
 
-
-  <!-- ======================================================
-       HOME
-       ====================================================== -->
-
-  <main
-    id="homePage"
-    class="page active"
-    data-page="home"
-  >
-
+  <main id="homePage" class="page active" data-page="home">
     <section class="home">
-
-      <!-- TITLE -->
-
+      <div class="galaxy" aria-hidden="true"><div class="stars stars-a"></div><div class="stars stars-b"></div><div class="galaxy-orb orb-a"></div><div class="galaxy-orb orb-b"></div><div class="galaxy-core"></div></div>
       <div class="hero">
-
-        <div class="hero-title">
-          TAP & EARN
-        </div>
-
-        <div class="hero-subtitle">
-          Collect SINAPS tokens and grow your balance.
-        </div>
-
+        <div class="hero-title">TAP &amp; EARN</div>
+        <div class="hero-subtitle">Collect SINAPS tokens and grow your balance.</div>
       </div>
 
+      <button id="dailyGift" class="daily-gift" type="button" aria-label="Daily Reward"><span class="gift-emoji">🎁</span><span id="dailyDot" class="daily-dot"></span></button>
 
-      <!-- DAILY GIFT -->
+      <div class="home-balance">
+        <span>YOUR BALANCE</span>
+        <strong id="balance">0</strong>
+        <small>SNP</small>
+      </div>
 
-      <button
-        id="dailyGift"
-        class="daily-gift"
-        type="button"
-        aria-label="Daily Reward"
-      >
-
-        <span class="gift-emoji">
-          🎁
-        </span>
-
-        <span
-          id="dailyDot"
-          class="daily-dot"
-        ></span>
-
-      </button>
-
-
-      <!-- TAP AREA -->
-
-      <section
-        id="tapArea"
-        class="tap-area"
-      >
-
-        <div
-          id="floaters"
-          class="floaters"
-        ></div>
-
-
-        <div class="tap-rings ring-one"></div>
-        <div class="tap-rings ring-two"></div>
-        <div class="tap-rings ring-three"></div>
-
-
-        <button
-          id="sCoin"
-          class="s-coin"
-          type="button"
-          aria-label="Tap SINAPS"
-        >
-
-          <img
-            src="sinaps-coin.png"
-            alt="SINAPS"
-          >
-
-        </button>
-
-
-        <div class="tap-label">
-          TAP
-        </div>
-
+      <section id="tapArea" class="tap-area">
+        <div id="floaters" class="floaters"></div>
+        <div class="tap-rings ring-one"></div><div class="tap-rings ring-two"></div><div class="tap-rings ring-three"></div>
+        <button id="sCoin" class="s-coin" type="button" aria-label="Tap SINAPS"><img src="sinaps-coin.png" alt="SINAPS"></button>
+        <div class="tap-label">TAP</div>
       </section>
-
-
-      <!-- ENERGY -->
 
       <section class="energy-section">
-
-        <div class="energy-header">
-
-          <div class="energy-name">
-            <span>⚡</span>
-            Energy
-          </div>
-
-          <div
-            id="energy"
-            class="energy-value"
-          >
-            1000 / 1000
-          </div>
-
-        </div>
-
-
-        <div class="energy-bar">
-
-          <div
-            id="energyFill"
-            class="energy-fill"
-          ></div>
-
-        </div>
-
+        <div class="energy-header"><div class="energy-name"><span>⚡</span> Energy</div><div id="energy" class="energy-value">1000 / 1000</div></div>
+        <div class="energy-bar"><div id="energyFill" class="energy-fill"></div></div>
       </section>
-
     </section>
-
   </main>
 
-
-  <!-- ======================================================
-       BOOST
-       ====================================================== -->
-
-  <section
-    class="page inner-page"
-    data-page="boost"
-  >
-
-    <div class="page-title">
-      Boost
-    </div>
-
-    <div class="page-subtitle">
-      Spend SNP to increase your power.
-    </div>
-
-
-    <div class="boost-balance">
-
-      <div class="boost-balance-s">
-        S
-      </div>
-
-      <div>
-
-        <span>
-          Your balance
-        </span>
-
-        <strong>
-          <span id="boostBalance">
-            0
-          </span>
-          SNP
-        </strong>
-
-      </div>
-
-    </div>
-
-
-    <div
-      id="boostsList"
-      class="boosts-list"
-    ></div>
-
+  <section class="page inner-page" data-page="boost">
+    <div class="page-title">Boost</div>
+    <div class="page-subtitle">Spend SNP to upgrade your mining power.</div>
+    <div class="boost-balance"><div class="boost-balance-coin">S</div><div><span>Your balance</span><strong><span id="boostBalance">0</span> SNP</strong></div></div>
+    <div id="boostsList" class="boosts-list"></div>
   </section>
 
-
-  <!-- ======================================================
-       TASKS
-       ====================================================== -->
-
-  <section
-    class="page inner-page"
-    data-page="tasks"
-  >
-
-    <div class="page-title">
-      Tasks
-    </div>
-
-    <div class="page-subtitle">
-      Complete tasks and earn SNP.
-    </div>
-
-    <div
-      id="tasksList"
-      class="tasks-list"
-    ></div>
-
+  <section class="page inner-page" data-page="tasks">
+    <div class="page-title">Tasks</div>
+    <div class="page-subtitle">Complete verified tasks and earn SNP.</div>
+    <div id="tasksList" class="tasks-list"></div>
   </section>
 
+  <section class="page inner-page" data-page="friends">
+    <div class="page-title">Friends</div>
+    <div class="page-subtitle">Invite friends and grow your SINAPS rewards.</div>
 
-  <!-- ======================================================
-       FRIENDS
-       ====================================================== -->
-
-  <section
-    class="page inner-page"
-    data-page="friends"
-  >
-
-    <div class="page-title">
-      Friends
-    </div>
-
-    <div class="page-subtitle">
-      Invite friends and earn together.
-    </div>
-
-
-    <div class="referral-card">
-
-      <div class="referral-title">
-        Your referral link
+    <div class="referral-hero-card">
+      <div class="referral-topline"><div><span>My balance</span><strong id="referralFriends">0</strong><small>friends</small></div><div class="referral-profile">S</div><div class="referral-profile-label">Profile</div></div>
+      <div class="referral-actions"><button type="button">Partners</button><button type="button">Invite &amp; Earn</button></div>
+      <div class="referral-panel">
+        <div class="referral-earn-row"><div class="referral-mini-icon">S</div><strong id="referralIncome">0 SNP</strong><span>Total income</span></div>
+        <div class="referral-link-row"><span>🔗</span><input id="referralLink" readonly value=""><button id="copyReferral" type="button">COPY</button></div>
+        <button id="shareReferral" class="share-referral" type="button">SHARE INVITE LINK</button>
+        <div class="referral-cards">
+          <div><b>👤 <span id="referralRate">15%</span></b><p>Get 15% from your friends' eligible rewards.</p></div>
+          <div><b>⚡ <span id="inviteReward">+100 SNP</span></b><p>Get 100 SNP when a new friend joins.</p></div>
+          <div><b>👥 <span id="referralCode">—</span></b><p>Your unique referral code.</p></div>
+        </div>
+        <div class="referral-note">* Multi-accounts are not paid.</div>
       </div>
-
-      <div class="referral-row">
-
-        <input
-          id="referralLink"
-          readonly
-          value=""
-        >
-
-        <button
-          id="copyReferral"
-          type="button"
-        >
-          COPY
-        </button>
-
-      </div>
-
-      <div class="referral-reward">
-        +100 SNP for a new referral
-      </div>
-
     </div>
-
-
-    <div
-      id="friendsList"
-      class="friends-list"
-    ></div>
-
+    <div class="friends-table-head"><span>Friends</span><span>Joined</span><span>Reward</span></div>
+    <div id="friendsList" class="friends-list"></div>
   </section>
 
-
-  <!-- ======================================================
-       WALLET
-       ====================================================== -->
-
-  <section
-    class="page inner-page"
-    data-page="wallet"
-  >
-
-    <div class="page-title">
-      Wallet
-    </div>
-
-    <div class="page-subtitle">
-      Connect your TON wallet.
-    </div>
-
-
+  <section class="page inner-page" data-page="wallet">
+    <div class="page-title">Wallet</div>
+    <div class="page-subtitle">Connect your TON wallet to verify ownership and withdraw.</div>
     <div class="wallet-card">
-
-      <div class="wallet-card-icon">
-        ◇
-      </div>
-
-      <div class="wallet-card-info">
-
-        <span>
-          Connected wallet
-        </span>
-
-        <strong id="walletAddress">
-          Not connected
-        </strong>
-
-      </div>
-
+      <div class="wallet-card-icon">◇</div><div class="wallet-card-info"><span id="walletStatus">Connect your TON wallet</span><strong id="walletAddress">Not connected</strong></div>
     </div>
-
-
-    <div
-      id="ton-connect"
-      class="ton-connect-box"
-    ></div>
-
-
-    <div class="withdraw-card">
-
-      <div class="withdraw-title">
-        Withdraw SNP
-      </div>
-
-      <div class="withdraw-subtitle">
-        Your SNP balance will be reserved when you request a withdrawal.
-      </div>
-
-
-      <div class="withdraw-input-row">
-
-        <input
-          id="withdrawAmount"
-          type="number"
-          inputmode="numeric"
-          placeholder="SNP amount"
-          min="1"
-        >
-
-        <button
-          id="withdrawButton"
-          type="button"
-        >
-          WITHDRAW
-        </button>
-
-      </div>
-
-
-      <div class="withdraw-fee">
-        Processing fee: 0.1 TON
-      </div>
-
-    </div>
-
-
-    <div class="history-title">
-      Transaction History
-    </div>
-
-    <div
-      id="historyList"
-      class="history-list"
-    ></div>
-
+    <div class="wallet-buttons"><button id="connectWalletButton" class="primary-wallet-button" type="button">CONNECT WALLET</button><button id="disconnectWallet" class="secondary-wallet-button" type="button" style="display:none">DISCONNECT</button></div>
+    <div id="ton-connect" class="ton-connect-box"></div>
+    <div class="withdraw-card"><div class="withdraw-title">Withdraw SNP</div><div class="withdraw-subtitle">Your SNP is reserved when a withdrawal is created. A 0.1 TON processing fee is paid from your connected wallet.</div><div class="withdraw-input-row"><input id="withdrawAmount" type="number" inputmode="numeric" placeholder="SNP amount" min="1"><button id="withdrawButton" type="button">WITHDRAW</button></div><div class="withdraw-fee">Fee: 0.1 TON · SNP payout is processed by the treasury.</div></div>
+    <div class="history-title">Transaction History</div><div id="historyList" class="history-list"></div>
   </section>
 
-
-  <!-- ======================================================
-       GAME
-       ====================================================== -->
-
-  <section
-    class="page inner-page"
-    data-page="game"
-  >
-
-    <div class="page-title">
-      Game
-    </div>
-
-    <div class="page-subtitle">
-      Simple SINAPS demo game.
-    </div>
-
-
-    <div class="game-card">
-
-      <div class="game-icon">
-        🎮
-      </div>
-
-      <div
-        id="gameResult"
-        class="game-result"
-      >
-        Try your luck.
-      </div>
-
-      <button
-        id="playGame"
-        class="game-button"
-        type="button"
-      >
-        PLAY
-      </button>
-
-    </div>
-
+  <section class="page inner-page" data-page="game">
+    <div class="page-title">Game</div><div class="page-subtitle">Simple SINAPS demo game.</div>
+    <div class="game-card"><div class="game-icon">🎮</div><div id="gameResult" class="game-result">Try your luck.</div><button id="playGame" class="game-button" type="button">PLAY</button></div>
   </section>
 
-
-  <!-- ======================================================
-       DAILY MODAL
-       ====================================================== -->
-
-  <div
-    id="dailyModal"
-    class="modal"
-  >
-
-    <div class="modal-backdrop"></div>
-
-    <div class="daily-modal-card">
-
-      <button
-        id="dailyClose"
-        class="modal-close"
-        type="button"
-      >
-        ×
-      </button>
-
-
-      <div class="daily-modal-icon">
-        🎁
-      </div>
-
-      <div class="daily-modal-title">
-        Daily Reward
-      </div>
-
-      <div class="daily-modal-subtitle">
-        Claim one reward every day
-      </div>
-
-
-      <div
-        id="dailyGrid"
-        class="daily-grid"
-      ></div>
-
-    </div>
-
-  </div>
-
-
-  <!-- ======================================================
-       BOTTOM NAV
-       ====================================================== -->
+  <div id="dailyModal" class="modal"><div class="modal-backdrop"></div><div class="daily-modal-card">
+    <button id="dailyClose" class="modal-close" type="button">×</button><div class="daily-modal-icon">🎁</div><div class="daily-modal-title">Daily Rewards</div><div class="daily-modal-subtitle">Day 1 = 10 SNP · Day 30 = 300 SNP</div><div id="dailyGrid" class="daily-grid"></div>
+  </div></div>
 
   <nav class="bottom-nav">
-
-    <button
-      class="nav-btn active"
-      data-page="home"
-      type="button"
-    >
-      <span>⌂</span>
-      <small>Home</small>
-    </button>
-
-
-    <button
-      class="nav-btn"
-      data-page="boost"
-      type="button"
-    >
-      <span>⚡</span>
-      <small>Boost</small>
-    </button>
-
-
-    <button
-      class="nav-btn"
-      data-page="tasks"
-      type="button"
-    >
-      <span>✓</span>
-      <small>Task</small>
-    </button>
-
-
-    <button
-      class="nav-btn"
-      data-page="friends"
-      type="button"
-    >
-      <span>♟</span>
-      <small>Friends</small>
-    </button>
-
-
-    <button
-      class="nav-btn"
-      data-page="wallet"
-      type="button"
-    >
-      <span>◇</span>
-      <small>Wallet</small>
-    </button>
-
-
-    <button
-      class="nav-btn"
-      data-page="game"
-      type="button"
-    >
-      <span>🎮</span>
-      <small>Game</small>
-    </button>
-
+    <button class="nav-btn active" data-page="home" type="button"><span>⌂</span><small>Home</small></button>
+    <button class="nav-btn" data-page="boost" type="button"><span>⚡</span><small>Boost</small></button>
+    <button class="nav-btn" data-page="tasks" type="button"><span>✓</span><small>Task</small></button>
+    <button class="nav-btn" data-page="friends" type="button"><span>♟</span><small>Friends</small></button>
+    <button class="nav-btn" data-page="wallet" type="button"><span>◇</span><small>Wallet</small></button>
+    <button class="nav-btn" data-page="game" type="button"><span>🎮</span><small>Game</small></button>
   </nav>
-
-
-  <!-- TOAST -->
-
-  <div
-    id="toast"
-    class="toast"
-  ></div>
-
+  <div id="toast" class="toast"></div>
 </div>
-
-
-<script src="app.js?v=100"></script>
-
+<script src="app.js?v=110"></script>
 </body>
 </html>
