@@ -1,43 +1,774 @@
 (function(){
 'use strict';
+
 const API='https://sinaps-backend.onrender.com';
 const MANIFEST='https://sadeghi1315.github.io/sinaps-tap-to-earn/tonconnect-manifest.json';
 const TREASURY='UQDMsJu14wu-EHSjaRpufQdPb73pKVRkQvHNezgA2zF69sJX';
-const FEE='100000000', MAINNET='-239';
-let tg=null, user=null, initData='', tonUI=null, balance=0, energy=1000, maxEnergy=1000, queue=0, pending=0, processing=false, energyTimer=null, withdrawing=false;
+const FEE='100000000';
+const MAINNET='-239';
+
+let tg=null,user=null,initData='',tonUI=null;
+let balance=0,energy=1000,maxEnergy=1000;
+let queue=0,pending=0,processing=false,energyTimer=null,withdrawing=false;
+
 const $=id=>document.getElementById(id);
-function notify(msg,ok=false){let x=$('sinapsToast');if(!x){x=document.createElement('div');x.id='sinapsToast';document.body.appendChild(x)}x.textContent=msg;x.className=ok?'ok':'';x.style.display='block';clearTimeout(x._t);x._t=setTimeout(()=>x.style.display='none',2800)}
-function esc(s){return String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
-async function api(path,options={}){options.headers=Object.assign({'Content-Type':'application/json','X-Telegram-Init-Data':initData},options.headers||{});if(options.body&&typeof options.body==='string'){try{const b=JSON.parse(options.body);b.init_data=initData;options.body=JSON.stringify(b)}catch{}}const r=await fetch(API+path,options);let d={};try{d=await r.json()}catch{}if(!r.ok)throw new Error(d.error||d.message||('HTTP '+r.status));return d;}
-function render(){if($('balance'))$('balance').textContent=Math.max(0,Math.floor(balance)).toLocaleString();if($('energy'))$('energy').textContent=Math.max(0,Math.floor(energy))+' / '+Math.floor(maxEnergy);if($('energyFill'))$('energyFill').style.width=Math.max(0,Math.min(100,energy/maxEnergy*100))+'%';if($('withdrawBalance'))$('withdrawBalance').textContent=Math.floor(balance).toLocaleString()+' SNP';}
-function save(){try{localStorage.setItem('sinaps_v7',JSON.stringify({balance,energy,maxEnergy}))}catch{}}
-function load(){try{const x=JSON.parse(localStorage.getItem('sinaps_v7')||'{}');if(Number.isFinite(+x.balance))balance=+x.balance;if(Number.isFinite(+x.energy))energy=+x.energy;if(Number.isFinite(+x.maxEnergy))maxEnergy=+x.maxEnergy}catch{}}
-function telegram(){if(window.Telegram?.WebApp){tg=window.Telegram.WebApp;tg.ready();try{tg.expand()}catch{};user=tg.initDataUnsafe?.user||null;initData=tg.initData||'';if(user){if($('username'))$('username').textContent=user.username?'@'+user.username:(user.first_name||'SINAPS User');if($('avatarLetter'))$('avatarLetter').textContent=(user.first_name||user.username||'S').charAt(0).toUpperCase();if(user.photo_url&&$('userAvatar')){$('userAvatar').src=user.photo_url;$('userAvatar').style.display='block';if($('avatarLetter'))$('avatarLetter').style.display='none'}}}}
-async function loadUser(){if(!user?.id)return;try{const d=await api('/api/user',{method:'POST',body:JSON.stringify({telegram_id:user.id,username:user.username||user.first_name||'',start_param:tg?.initDataUnsafe?.start_param||''})});const u=d.user||{};if(!pending){balance=+u.balance||0;energy=+u.energy||0;maxEnergy=+u.max_energy||1000;render();save()} }catch(e){notify(e.message)}}
-async function sendTap(){return api('/api/tap',{method:'POST',body:JSON.stringify({telegram_id:user.id})})}
-async function processTaps(){if(processing||!queue)return;processing=true;while(queue){try{const d=await sendTap();queue--;pending--;if(!pending&&!queue){const u=d.user||{};balance=+u.balance||balance;energy=+u.energy||energy;maxEnergy=+u.max_energy||maxEnergy;render();save()}}catch(e){console.log(e);break}}processing=false;if(queue)setTimeout(processTaps,500)}
-function tap(){const a=$('tapArea');if(!a)return;a.addEventListener('pointerdown',e=>{e.preventDefault();if(!user?.id||energy<=0)return;balance++;energy--;queue++;pending++;render();save();const r=a.getBoundingClientRect(),f=document.createElement('div');f.className='floater';f.textContent='+1';f.style.left=(e.clientX-r.left)+'px';f.style.top=(e.clientY-r.top)+'px';$('floaters')?.appendChild(f);setTimeout(()=>f.remove(),700);$('sCoin')?.classList.add('hit');setTimeout(()=>$('sCoin')?.classList.remove('hit'),120);processTaps()},{passive:false})}
-function startEnergy(){clearInterval(energyTimer);energyTimer=setInterval(()=>{if(energy<maxEnergy){energy++;render();save()}},3000)}
-function nav(){document.querySelectorAll('.nav-btn').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));$(b.dataset.page)?.classList.add('active');document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');if(b.dataset.page==='tasks')loadTasks();if(b.dataset.page==='friends')loadFriends();if(b.dataset.page==='wallet')loadHistory()}))}
-function injectUI(){
- const daily=$('daily');if(daily){daily.id='tasks';daily.innerHTML=`<div class="section-head"><div><small>SINAPS REWARDS</small><h2>Tasks</h2></div><span class="pill">VERIFY</span></div><div id="tasksList"></div>`}
- const friends=$('friends');if(friends)friends.innerHTML=`<div class="section-head"><div><small>COMMUNITY</small><h2>Friends</h2></div><span class="pill">15%</span></div><div class="ref-card"><div class="muted">Your invite code</div><div class="ref-code" id="refCode">Loading...</div><button class="glow-btn" id="copyRef">Copy invite link</button><div class="ref-stats"><div><b id="refCount">0</b><small>Friends</small></div><div><b>100 SNP</b><small>Join bonus</small></div><div><b>15%</b><small>Commission</small></div></div></div><div class="info-card">Invite a friend with your code and receive <b>100 SNP</b>. You also receive <b>15%</b> of the SNP your invited users earn.</div><div id="friendsList"></div>`;
- let game=document.getElementById('game');if(!game){game=document.createElement('section');game.id='game';game.className='page';game.innerHTML=`<div class="section-head"><div><small>SINAPS ARCADE</small><h2>Game</h2></div><span class="pill">DEMO</span></div><div class="game-card"><div class="game-icon">🚀</div><h3>Crash</h3><p>Rocket crash demo. No real-money betting.</p><button class="glow-btn" data-demo="Crash">Play Demo</button></div><div class="game-card"><div class="game-icon">🟣</div><h3>Plinko</h3><p>Plinko demo using points only.</p><button class="glow-btn" data-demo="Plinko">Play Demo</button></div>`;$('home')?.parentElement?.appendChild(game)}
- const gift=document.createElement('button');gift.id='dailyGift';gift.innerHTML='<span>🎁</span><b>Daily</b>';gift.onclick=openDaily;$('home')?.appendChild(gift);
- const wallet=$('wallet');if(wallet&&!$('historyBox')){const h=document.createElement('div');h.id='historyBox';h.className='history-card';h.innerHTML='<div class="section-head"><div><small>ACTIVITY</small><h2>History</h2></div></div><div id="historyList">Loading...</div>';wallet.appendChild(h)}
- const navbox=document.querySelector('.bottom');if(navbox){const dailyBtn=[...navbox.querySelectorAll('.nav-btn')].find(x=>x.dataset.page==='daily');if(dailyBtn){dailyBtn.dataset.page='tasks';dailyBtn.innerHTML='<span class="nav-icon">✓</span><span>Tasks</span>'}if(![...navbox.querySelectorAll('.nav-btn')].some(x=>x.dataset.page==='game')){const b=document.createElement('button');b.className='nav-btn';b.dataset.page='game';b.type='button';b.innerHTML='<span class="nav-icon">🎮</span><span>Game</span>';navbox.appendChild(b)}navbox.style.gridTemplateColumns='repeat(6,1fr)';}
- document.querySelectorAll('[data-demo]').forEach(b=>b.onclick=()=>notify(b.dataset.demo+' demo uses points only. Real SNP betting is disabled.'));
- $('copyRef')?.addEventListener('click',async()=>{const code=$('refCode')?.dataset.code;if(code){const link='https://t.me/SNPCOINBot?start='+code;try{await navigator.clipboard.writeText(link);notify('Invite link copied',true)}catch{notify(link)}}});
+
+function notify(msg,ok=false){
+  let x=$('sinapsToast');
+  if(!x){
+    x=document.createElement('div');
+    x.id='sinapsToast';
+    document.body.appendChild(x);
+  }
+  x.textContent=msg;
+  x.className=ok?'ok':'';
+  x.style.display='block';
+  clearTimeout(x._t);
+  x._t=setTimeout(()=>x.style.display='none',2800);
 }
-async function loadTasks(){const box=$('tasksList');if(!box)return;box.innerHTML='<div class="loading">Checking tasks...</div>';try{const d=await api('/api/tasks');const done=new Set();const list=d.tasks||[];box.innerHTML=list.map(t=>`<div class="task-card"><div class="task-icon">${t.id==='channel'?'📢':t.id==='group'?'👥':t.id==='twitter'?'𝕏':'💎'}</div><div class="task-main"><b>${esc(t.title)}</b><small>+${t.reward.toLocaleString()} SNP</small></div><button class="task-btn" data-task="${t.id}" data-url="${esc(t.url||'')}">Check</button></div>`).join('');box.querySelectorAll('.task-btn').forEach(b=>b.onclick=()=>claimTask(b));}catch(e){box.innerHTML='<div class="error-card">'+esc(e.message)+'</div>'}}
-async function claimTask(btn){const id=btn.dataset.task;btn.disabled=true;try{if(btn.dataset.url)window.open(btn.dataset.url,'_blank');if(id==='twitter'){notify('X follow verification is not active yet.');btn.disabled=false;return}btn.textContent='Checking...';const d=await api('/api/tasks/claim',{method:'POST',body:JSON.stringify({telegram_id:user.id,task_id:id})});balance=+d.user.balance;render();save();btn.textContent='✓ Done';btn.classList.add('done');notify('Task completed +'+d.reward+' SNP',true)}catch(e){btn.disabled=false;btn.textContent='Try again';notify(e.message)}}
-async function openDaily(){let modal=$('dailyModal');if(!modal){modal=document.createElement('div');modal.id='dailyModal';modal.className='modalx';modal.innerHTML='<div class="modalx-box"><button class="closex" id="closeDaily">×</button><div class="section-head"><div><small>DAILY STREAK</small><h2>Daily Reward</h2></div></div><div id="daysGrid" class="days-grid"></div><div id="dailyMsg" class="muted"></div></div>';document.body.appendChild(modal);$('closeDaily').onclick=()=>modal.classList.remove('show');modal.onclick=e=>{if(e.target===modal)modal.classList.remove('show')}}modal.classList.add('show');try{const d=await api('/api/daily?telegram_id='+user.id,{headers:{}});const streak=Number(d.daily?.streak||0),last=d.daily?.last_claim_date;const today=new Date().toISOString().slice(0,10);$('daysGrid').innerHTML=Array.from({length:30},(_,i)=>{const day=i+1,claimed=day<=streak&&last===today?'✓':'';return `<button class="day ${day===streak+1?'current':''}" data-day="${day}" ${day===streak+1?'':'disabled'}><b>${day}</b><small>${day*10}</small><span>${claimed}</span></button>`}).join('');$('daysGrid').querySelectorAll('.day.current').forEach(b=>b.onclick=claimDaily);$('dailyMsg').textContent=last===today?'Today claimed. Come back tomorrow.':'Claim the highlighted day.'}catch(e){$('dailyMsg').textContent=e.message}}
-async function claimDaily(e){const b=e.currentTarget;b.disabled=true;try{const d=await api('/api/daily/claim',{method:'POST',body:JSON.stringify({telegram_id:user.id})});balance=+d.user.balance;render();save();notify('Day '+d.day+' claimed: +'+d.reward+' SNP',true);openDaily()}catch(x){b.disabled=false;notify(x.message)}}
-async function loadFriends(){try{const d=await api('/api/friends?telegram_id='+user.id,{headers:{}});$('refCode').textContent=d.referral_code||'-';$('refCode').dataset.code=d.referral_code||'';$('refCount').textContent=d.referral_count||0;const list=d.friends||[];$('friendsList').innerHTML=list.length?list.map(f=>`<div class="friend-row"><span>${esc(f.username||'User')}</span><b>${Number(f.balance||0).toLocaleString()} SNP</b></div>`).join(''):'<div class="empty">No invited users yet.</div>'}catch(e){notify(e.message)}}
-async function loadHistory(){const box=$('historyList');if(!box||!user)return;try{const d=await api('/api/history?telegram_id='+user.id,{headers:{}});const rows=d.transactions||[];box.innerHTML=rows.length?rows.map(x=>`<div class="history-row"><div><b>${esc(x.type.replaceAll('_',' '))}</b><small>${esc(x.description)}</small></div><strong class="${Number(x.amount)<0?'neg':'pos'}">${Number(x.amount)>0?'+':''}${Number(x.amount).toLocaleString()} SNP</strong><span>${esc(x.status)}</span></div>`).join(''):'<div class="empty">No transactions yet.</div>'}catch(e){box.textContent=e.message}}
-function setupWallet(){if(!window.TON_CONNECT_UI)return;try{tonUI=new window.TON_CONNECT_UI.TonConnectUI({manifestUrl:MANIFEST,buttonRootId:'ton-connect'});tonUI.onStatusChange(async w=>{if(w?.account?.address){const a=w.account.address;if($('walletAddress'))$('walletAddress').style.display='block';if($('walletAddressText'))$('walletAddressText').textContent=a;if($('connectWalletBtn'))$('connectWalletBtn').style.display='none';if($('disconnectWallet'))$('disconnectWallet').style.display='block';if($('wallet-mini'))$('wallet-mini').textContent=a.slice(0,6)+'...'+a.slice(-6);await api('/api/wallet/connect',{method:'POST',body:JSON.stringify({telegram_id:user.id,wallet_address:a})});notify('Wallet connected',true)}else{if($('walletAddress'))$('walletAddress').style.display='none';if($('connectWalletBtn'))$('connectWalletBtn').style.display='block';if($('disconnectWallet'))$('disconnectWallet').style.display='none';if($('wallet-mini'))$('wallet-mini').textContent='Wallet not connected'}});$('connectWalletBtn')?.addEventListener('click',()=>tonUI.openModal());$('disconnectWallet')?.addEventListener('click',async()=>{await tonUI.disconnect();await api('/api/wallet/disconnect',{method:'POST',body:JSON.stringify({telegram_id:user.id})});loadHistory()})}catch(e){console.log(e)}}
-async function setupWithdraw(){const b=$('withdrawBtn');if(!b)return;b.onclick=async()=>{if(withdrawing)return;withdrawing=true;b.disabled=true;try{if(queue)await processTaps();if(!tonUI?.wallet)throw new Error('First connect your TON wallet.');const a=Number($('withdrawAmount')?.value);if(!Number.isInteger(a)||a<=0||a>balance)throw new Error('Invalid SNP amount.');const wa=tonUI.wallet.account.address;const d=await api('/api/withdraw/create',{method:'POST',body:JSON.stringify({telegram_id:user.id,wallet_address:wa,amount:a})});await tonUI.sendTransaction({validUntil:Math.floor(Date.now()/1000)+300,network:MAINNET,messages:[{address:TREASURY,amount:FEE}]});const v=await api('/api/withdraw/verify',{method:'POST',body:JSON.stringify({telegram_id:user.id,withdrawal_id:d.withdrawal_id,wallet_address:wa})});if($('withdrawStatus'))$('withdrawStatus').textContent=v.status==='verified'?'Payment verified. Processing.':'Payment sent. Under review.';$('withdrawAmount').value='';loadHistory();notify('Withdrawal request created',true)}catch(e){if($('withdrawStatus'))$('withdrawStatus').textContent=e.message;notify(e.message)}finally{withdrawing=false;b.disabled=false}}}
-function css(){const s=document.createElement('style');s.textContent=`.bottom{grid-template-columns:repeat(6,1fr)!important}.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}.section-head small{color:#6de5ff;letter-spacing:1.5px}.section-head h2{margin:3px 0;font-size:25px}.pill{padding:6px 10px;border:1px solid #2de2ff;border-radius:99px;color:#74eaff;font-size:10px}.task-card,.ref-card,.info-card,.game-card,.history-card{background:linear-gradient(145deg,rgba(14,33,59,.88),rgba(5,10,24,.94));border:1px solid rgba(74,220,255,.18);box-shadow:0 10px 30px #0005;border-radius:20px;padding:15px;margin:10px 0}.task-card{display:flex;align-items:center;gap:11px}.task-icon,.game-icon{font-size:28px}.task-main{flex:1;display:flex;flex-direction:column;gap:3px}.task-main small{color:#7cff9b}.task-btn,.glow-btn{border:1px solid #40dfff;background:rgba(20,160,210,.12);color:#dffaff;border-radius:12px;padding:9px 12px;font-weight:800}.task-btn.done{border-color:#7cff9b;color:#7cff9b}.ref-code{font-size:25px;font-weight:900;letter-spacing:2px;margin:9px 0 12px;color:#fff}.ref-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:14px}.ref-stats div{background:#ffffff08;border-radius:14px;padding:10px;text-align:center}.ref-stats b,.ref-stats small{display:block}.ref-stats small,.muted,.empty{color:#8da7b9;font-size:11px}.info-card{font-size:12px;color:#b9cfda}.friend-row,.history-row{display:flex;align-items:center;gap:8px;padding:12px 4px;border-bottom:1px solid #ffffff0b}.friend-row span,.history-row div{flex:1}.history-row{font-size:11px}.history-row div{display:flex;flex-direction:column}.history-row small{color:#8197a7}.history-row .pos{color:#7cff9b}.history-row .neg{color:#ffd86b}.game-card{text-align:center;padding:22px}.game-icon{font-size:48px}.game-card h3{margin:7px}.game-card p{color:#91a8b6;font-size:12px}.modalx{position:fixed;inset:0;background:#0009;z-index:9999;display:none;align-items:flex-end;justify-content:center;padding:12px}.modalx.show{display:flex}.modalx-box{width:100%;max-width:500px;background:linear-gradient(145deg,#0d2039,#050914);border:1px solid #35dfff55;border-radius:24px;padding:20px;max-height:80vh;overflow:auto;position:relative}.closex{position:absolute;right:14px;top:10px;border:0;background:none;color:#fff;font-size:28px}.days-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}.day{min-height:64px;border:1px solid #ffffff12;border-radius:14px;background:#ffffff06;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center}.day:disabled{opacity:.55}.day.current{border-color:#36e5ff;box-shadow:0 0 18px #21dfff33}.day small{color:#7cff9b}.day span{height:15px;color:#7cff9b;font-weight:900}#dailyGift{position:absolute;left:8px;bottom:78px;z-index:20;width:62px;height:62px;border-radius:20px;border:1px solid #45e8ff55;background:linear-gradient(145deg,#102f4d,#07101e);color:#fff;box-shadow:0 0 25px #20dfff22;display:flex;flex-direction:column;align-items:center;justify-content:center}#dailyGift span{font-size:25px}#dailyGift b{font-size:9px}.loading{text-align:center;padding:30px;color:#8da7b9}.error-card{padding:15px;border:1px solid #ff6b6b55;border-radius:16px;color:#ffd2d2}#sinapsToast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);z-index:10000;background:#091729;border:1px solid #36dcff55;border-radius:14px;padding:11px 15px;color:#fff;display:none;box-shadow:0 10px 35px #0008;font-size:12px;max-width:90%}#sinapsToast.ok{border-color:#7cff9b77}`;document.head.appendChild(s)}
-function start(){load();telegram();css();injectUI();nav();tap();startEnergy();setupWallet();setupWithdraw();render();loadUser();}
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
+
+function esc(s){
+  return String(s??'').replace(/[&<>'"]/g,c=>({
+    '&':'&amp;',
+    '<':'&lt;',
+    '>':'&gt;',
+    "'":'&#39;',
+    '"':'&quot;'
+  }[c]));
+}
+
+async function api(path,options={}){
+  options.headers=Object.assign({
+    'Content-Type':'application/json',
+    'X-Telegram-Init-Data':initData
+  },options.headers||{});
+
+  if(options.body&&typeof options.body==='string'){
+    try{
+      const b=JSON.parse(options.body);
+      b.init_data=initData;
+      options.body=JSON.stringify(b);
+    }catch{}
+  }
+
+  const r=await fetch(API+path,options);
+  let d={};
+  try{d=await r.json()}catch{}
+
+  if(!r.ok)throw new Error(d.error||d.message||('HTTP '+r.status));
+  return d;
+}
+
+function render(){
+  if($('balance'))
+    $('balance').textContent=Math.max(0,Math.floor(balance)).toLocaleString();
+
+  if($('energy'))
+    $('energy').textContent=Math.max(0,Math.floor(energy))+' / '+Math.floor(maxEnergy);
+
+  if($('energyFill'))
+    $('energyFill').style.width=
+      Math.max(0,Math.min(100,energy/maxEnergy*100))+'%';
+
+  if($('withdrawBalance'))
+    $('withdrawBalance').textContent=
+      Math.floor(balance).toLocaleString()+' SNP';
+}
+
+function save(){
+  try{
+    localStorage.setItem('sinaps_v7',
+      JSON.stringify({balance,energy,maxEnergy})
+    );
+  }catch{}
+}
+
+function load(){
+  try{
+    const x=JSON.parse(
+      localStorage.getItem('sinaps_v7')||'{}'
+    );
+
+    if(Number.isFinite(+x.balance))balance=+x.balance;
+    if(Number.isFinite(+x.energy))energy=+x.energy;
+    if(Number.isFinite(+x.maxEnergy))maxEnergy=+x.maxEnergy;
+  }catch{}
+}
+
+function telegram(){
+  if(!window.Telegram?.WebApp)return;
+
+  tg=window.Telegram.WebApp;
+  tg.ready();
+
+  try{tg.expand()}catch{}
+
+  user=tg.initDataUnsafe?.user||null;
+  initData=tg.initData||'';
+
+  if(user){
+    if($('username'))
+      $('username').textContent=
+        user.username?'@'+user.username:
+        (user.first_name||'SINAPS User');
+
+    if($('avatarLetter'))
+      $('avatarLetter').textContent=
+        (user.first_name||user.username||'S')
+        .charAt(0).toUpperCase();
+
+    if(user.photo_url&&$('userAvatar')){
+      $('userAvatar').src=user.photo_url;
+      $('userAvatar').style.display='block';
+
+      if($('avatarLetter'))
+        $('avatarLetter').style.display='none';
+    }
+  }
+}
+
+async function loadUser(){
+  if(!user?.id)return;
+
+  try{
+    const d=await api('/api/user',{
+      method:'POST',
+      body:JSON.stringify({
+        telegram_id:user.id,
+        username:user.username||user.first_name||'',
+        start_param:tg?.initDataUnsafe?.start_param||''
+      })
+    });
+
+    const u=d.user||{};
+
+    if(!pending){
+      balance=+u.balance||0;
+      energy=+u.energy||0;
+      maxEnergy=+u.max_energy||1000;
+
+      render();
+      save();
+    }
+  }catch(e){
+    notify(e.message);
+  }
+}
+
+async function sendTap(){
+  return api('/api/tap',{
+    method:'POST',
+    body:JSON.stringify({
+      telegram_id:user.id
+    })
+  });
+}
+
+async function processTaps(){
+  if(processing||!queue)return;
+
+  processing=true;
+
+  while(queue){
+    try{
+      const d=await sendTap();
+
+      queue--;
+      pending--;
+
+      if(!pending&&!queue){
+        const u=d.user||{};
+
+        balance=+u.balance||balance;
+        energy=+u.energy||energy;
+        maxEnergy=+u.max_energy||maxEnergy;
+
+        render();
+        save();
+      }
+    }catch(e){
+      console.log(e);
+      break;
+    }
+  }
+
+  processing=false;
+
+  if(queue)
+    setTimeout(processTaps,500);
+}
+
+function tap(){
+  const a=$('tapArea');
+  if(!a)return;
+
+  a.addEventListener('pointerdown',e=>{
+    e.preventDefault();
+
+    if(!user?.id||energy<=0)return;
+
+    balance++;
+    energy--;
+
+    queue++;
+    pending++;
+
+    render();
+    save();
+
+    const r=a.getBoundingClientRect();
+
+    const f=document.createElement('div');
+    f.className='floater';
+    f.textContent='+1';
+    f.style.left=(e.clientX-r.left)+'px';
+    f.style.top=(e.clientY-r.top)+'px';
+
+    $('floaters')?.appendChild(f);
+
+    setTimeout(()=>f.remove(),700);
+
+    $('sCoin')?.classList.add('hit');
+
+    setTimeout(
+      ()=>$('sCoin')?.classList.remove('hit'),
+      120
+    );
+
+    processTaps();
+
+  },{passive:false});
+}
+
+function startEnergy(){
+  clearInterval(energyTimer);
+
+  energyTimer=setInterval(()=>{
+    if(energy<maxEnergy){
+      energy++;
+      render();
+      save();
+    }
+  },3000);
+}
+
+/* =========================================================
+   TASKS
+========================================================= */
+
+async function loadTasks(){
+  try{
+    const d=await api(
+      '/api/tasks?telegram_id='+encodeURIComponent(user.id)
+    );
+
+    const tasks=d.tasks||[];
+
+    let box=$('tasksList');
+
+    if(!box)return;
+
+    box.innerHTML=tasks.map(t=>`
+      <div class="task-card">
+        <div class="task-icon">${esc(t.icon||'✓')}</div>
+        <div class="task-info">
+          <b>${esc(t.title)}</b>
+          <span>+${Number(t.reward).toLocaleString()} SNP</span>
+        </div>
+
+        ${
+          t.completed
+          ? `<button class="task-btn done">✓ Done</button>`
+          : `<button class="task-btn"
+              onclick="window.sinapsClaimTask('${esc(t.id)}')">
+              ${t.action||'Verify'}
+            </button>`
+        }
+      </div>
+    `).join('');
+
+  }catch(e){
+    console.log(e);
+  }
+}
+
+window.sinapsClaimTask=async function(taskId){
+
+  try{
+    const d=await api('/api/tasks/claim',{
+      method:'POST',
+      body:JSON.stringify({
+        telegram_id:user.id,
+        task_id:taskId
+      })
+    });
+
+    if(d.ok){
+      balance=Number(d.balance??balance);
+      render();
+      save();
+
+      notify(
+        `+${Number(d.reward).toLocaleString()} SNP received`,
+        true
+      );
+
+      loadTasks();
+      loadHistory();
+    }
+
+  }catch(e){
+    notify(e.message||'Please try again');
+  }
+};
+
+/* =========================================================
+   DAILY
+========================================================= */
+
+async function loadDaily(){
+  try{
+    const d=await api(
+      '/api/daily/status?telegram_id='+encodeURIComponent(user.id)
+    );
+
+    renderDaily(d);
+
+  }catch(e){
+    console.log(e);
+  }
+}
+
+function renderDaily(d){
+  let box=$('dailyModal');
+
+  if(!box){
+    box=document.createElement('div');
+    box.id='dailyModal';
+    box.className='sinaps-modal';
+    document.body.appendChild(box);
+  }
+
+  const day=Number(d.current_day||1);
+  const claimed=Boolean(d.claimed);
+
+  box.innerHTML=`
+    <div class="modal-card daily-card">
+      <button class="modal-close"
+        onclick="document.getElementById('dailyModal').remove()">×</button>
+
+      <h2>🎁 Daily Rewards</h2>
+      <p>Keep your streak and collect SNP every day.</p>
+
+      <div class="daily-grid">
+        ${Array.from({length:30},(_,i)=>{
+          const n=i+1;
+          const reward=n*10;
+
+          let cls='';
+
+          if(n<day)cls='past';
+          if(n===day)cls='today';
+          if(n>day)cls='locked';
+
+          return `
+            <button class="daily-day ${cls}"
+              ${n===day&&!claimed?'onclick="window.sinapsClaimDaily()"':''}>
+              <strong>Day ${n}</strong>
+              <span>${reward} SNP</span>
+              ${n<day||n===day&&claimed?'<em>✓</em>':''}
+            </button>
+          `;
+        }).join('')}
+      </div>
+    </div>
+  `;
+}
+
+window.sinapsOpenDaily=async function(){
+  await loadDaily();
+
+  const m=$('dailyModal');
+
+  if(m)m.style.display='flex';
+};
+
+window.sinapsClaimDaily=async function(){
+  try{
+    const d=await api('/api/daily/claim',{
+      method:'POST',
+      body:JSON.stringify({
+        telegram_id:user.id
+      })
+    });
+
+    balance=Number(d.balance??balance);
+
+    render();
+    save();
+
+    notify(
+      `+${Number(d.reward).toLocaleString()} SNP`,
+      true
+    );
+
+    loadDaily();
+    loadHistory();
+
+  }catch(e){
+    notify(e.message);
+  }
+};
+
+/* =========================================================
+   FRIENDS
+========================================================= */
+
+async function loadFriends(){
+  try{
+    const d=await api(
+      '/api/friends?telegram_id='+encodeURIComponent(user.id)
+    );
+
+    const code=$('inviteCode');
+
+    if(code)
+      code.textContent=d.referral_code||'';
+
+    if($('friendsCount'))
+      $('friendsCount').textContent=
+        Number(d.count||0).toLocaleString();
+
+    const list=$('friendsList');
+
+    if(list){
+      list.innerHTML=(d.friends||[]).map(f=>`
+        <div class="friend-row">
+          <span>${esc(f.username||'User')}</span>
+          <strong>${Number(f.balance||0).toLocaleString()} SNP</strong>
+        </div>
+      `).join('')||'<div class="empty">No friends yet</div>';
+    }
+
+  }catch(e){
+    console.log(e);
+  }
+}
+
+window.sinapsCopyInvite=async function(){
+
+  const code=$('inviteCode')?.textContent||'';
+
+  if(!code)return;
+
+  const link=
+    'https://t.me/SNPCOINBot?start='+encodeURIComponent(code);
+
+  try{
+    await navigator.clipboard.writeText(link);
+    notify('Invite link copied',true);
+  }catch{
+    notify(link);
+  }
+};
+
+/* =========================================================
+   HISTORY
+========================================================= */
+
+async function loadHistory(){
+  try{
+    const d=await api(
+      '/api/history?telegram_id='+encodeURIComponent(user.id)
+    );
+
+    const box=$('historyList');
+
+    if(!box)return;
+
+    box.innerHTML=(d.transactions||[]).map(x=>`
+      <div class="history-row">
+        <div>
+          <b>${esc(x.type||'Transaction')}</b>
+          <small>${esc(x.created_at||'')}</small>
+        </div>
+
+        <strong class="${Number(x.amount)>=0?'plus':'minus'}">
+          ${Number(x.amount)>=0?'+':''}${Number(x.amount).toLocaleString()} SNP
+        </strong>
+
+        <span class="status">
+          ${esc(x.status||'Completed')}
+        </span>
+      </div>
+    `).join('')||'<div class="empty">No transactions yet</div>';
+
+  }catch(e){
+    console.log(e);
+  }
+}
+
+/* =========================================================
+   NAVIGATION
+========================================================= */
+
+function setupNavigation(){
+
+  document.addEventListener('click',e=>{
+
+    const nav=e.target.closest('[data-page]');
+
+    if(!nav)return;
+
+    const page=nav.dataset.page;
+
+    document.querySelectorAll('[data-page]')
+      .forEach(x=>x.classList.remove('active'));
+
+    nav.classList.add('active');
+
+    document.querySelectorAll('.page')
+      .forEach(x=>x.style.display='none');
+
+    const target=$('page-'+page);
+
+    if(target)
+      target.style.display='block';
+
+    if(page==='tasks')
+      loadTasks();
+
+    if(page==='friends')
+      loadFriends();
+
+    if(page==='wallet')
+      loadHistory();
+
+    if(page==='home')
+      render();
+  });
+}
+
+/* =========================================================
+   WALLET
+========================================================= */
+
+async function connectWallet(){
+
+  try{
+
+    if(!window.TON_CONNECT_UI){
+
+      notify('TON Connect is loading...');
+      return;
+    }
+
+    tonUI=new TON_CONNECT_UI.TonConnectUI({
+      manifestUrl:MANIFEST,
+      buttonRootId:'ton-connect'
+    });
+
+    tonUI.onStatusChange(async wallet=>{
+
+      if(!wallet)return;
+
+      const address=wallet.account.address;
+
+      try{
+        await api('/api/wallet/connect',{
+          method:'POST',
+          body:JSON.stringify({
+            telegram_id:user.id,
+            wallet_address:address
+          })
+        });
+
+        if($('walletAddress'))
+          $('walletAddress').textContent=
+            address.slice(0,6)+'...'+address.slice(-6);
+
+        notify('Wallet connected',true);
+
+      }catch(e){
+        notify(e.message);
+      }
+
+    });
+
+  }catch(e){
+    notify(e.message);
+  }
+}
+
+/* =========================================================
+   WITHDRAW
+========================================================= */
+
+window.sinapsWithdraw=async function(){
+
+  if(withdrawing)return;
+
+  const input=$('withdrawAmount');
+
+  const amount=Number(input?.value||0);
+
+  if(!amount||amount<=0){
+    notify('Enter SNP amount');
+    return;
+  }
+
+  if(amount>balance){
+    notify('Insufficient SNP balance');
+    return;
+  }
+
+  withdrawing=true;
+
+  try{
+
+    const wallet=$('walletAddress')?.dataset?.address||'';
+
+    if(!wallet){
+      notify('Connect wallet first');
+      withdrawing=false;
+      return;
+    }
+
+    const d=await api('/api/withdraw/create',{
+      method:'POST',
+      body:JSON.stringify({
+        telegram_id:user.id,
+        wallet_address:wallet,
+        amount
+      })
+    });
+
+    if(!tonUI){
+      notify('Connect TON wallet first');
+      withdrawing=false;
+      return;
+    }
+
+    const tx={
+      validUntil:Math.floor(Date.now()/1000)+600,
+      messages:[{
+        address:TREASURY,
+        amount:FEE
+      }]
+    };
+
+    await tonUI.sendTransaction(tx);
+
+    await api('/api/withdraw/verify',{
+      method:'POST',
+      body:JSON.stringify({
+        telegram_id:user.id,
+        withdrawal_id:d.withdrawal_id,
+        wallet_address:wallet
+      })
+    });
+
+    notify('Payment submitted. Withdrawal is being reviewed.',true);
+
+    loadHistory();
+
+  }catch(e){
+
+    notify(e.message);
+
+  }finally{
+    withdrawing=false;
+  }
+};
+
+/* =========================================================
+   GAME DEMO
+========================================================= */
+
+window.sinapsCrashDemo=function(){
+
+  const result=$('gameResult');
+
+  if(!result)return;
+
+  result.textContent='🚀 Launching...';
+
+  let x=1;
+
+  const timer=setInterval(()=>{
+
+    x+=Math.random()*0.15;
+
+    result.textContent=
+      '🚀 '+x.toFixed(2)+'x';
+
+    if(Math.random()<0.025){
+
+      clearInterval(timer);
+
+      result.textContent=
+        '💥 CRASHED at '+x.toFixed(2)+'x';
+
+    }
+
+  },120);
+};
+
+window.sinapsPlinkoDemo=function(){
+
+  const result=$('gameResult');
+
+  if(!result)return;
+
+  const values=[
+    '0.2x',
+    '0.5x',
+    '1x',
+    '2x',
+    '5x',
+    '10x'
+  ];
+
+  result.textContent=
+    '🎯 '+values[Math.floor(Math.random()*values.length)];
+
+};
+
+/* =========================================================
+   INIT
+========================================================= */
+
+function init(){
+
+  load();
+  telegram();
+
+  setupNavigation();
+  tap();
+  startEnergy();
+
+  loadUser();
+
+  setTimeout(()=>{
+    loadTasks();
+    loadDaily();
+    loadFriends();
+    loadHistory();
+  },1200);
+
+  const gift=$('dailyGift');
+
+  if(gift)
+    gift.addEventListener('click',window.sinapsOpenDaily);
+
+  connectWallet();
+
+  render();
+}
+
+if(document.readyState==='loading')
+  document.addEventListener('DOMContentLoaded',init);
+else
+  init();
+
 })();
