@@ -14,3 +14,83 @@
 .bottom-nav{position:fixed;left:0;right:0;bottom:0;height:78px;padding:6px 6px max(7px,env(safe-area-inset-bottom));display:grid;grid-template-columns:repeat(6,1fr);z-index:100;background:rgba(2,8,21,.96);border-top:1px solid rgba(96,188,255,.1);backdrop-filter:blur(15px)}.nav-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border-radius:16px;color:rgba(187,203,235,.62);background:transparent}.nav-btn span{font-size:22px;line-height:1}.nav-btn small{font-size:9px}.nav-btn.active{color:#67ddff;background:rgba(39,111,183,.17)}.toast{position:fixed;left:50%;bottom:92px;z-index:999;transform:translate(-50%,20px);opacity:0;pointer-events:none;padding:11px 17px;border-radius:14px;background:rgba(10,20,40,.96);border:1px solid rgba(96,207,255,.2);color:#fff;font-size:12px;font-weight:700;transition:.2s ease;box-shadow:0 10px 35px rgba(0,0,0,.4)}.toast.show{opacity:1;transform:translate(-50%,0)}
 @media(max-width:390px){.hero-title{font-size:31px}.tap-area{height:410px}.s-coin{width:220px;height:220px}.ring-one{width:250px;height:250px}.ring-two{width:305px;height:305px}.ring-three{width:360px;height:360px}.referral-cards{gap:5px}.referral-cards p{font-size:9px}.bottom-nav{grid-template-columns:repeat(6,1fr)}.nav-btn span{font-size:20px}.nav-btn small{font-size:8px}}
 @media(max-height:700px){.hero-title{font-size:32px}.tap-area{height:390px}.s-coin{width:220px;height:220px}.daily-gift{top:86px}}
+
+/* ============================================================
+   SINAPS 4.1 VISUAL POLISH
+   ============================================================ */
+.topbar{height:78px;padding:10px 12px 8px 14px;background:rgba(1,3,11,.94)}
+.brand-logo{background:linear-gradient(145deg,#ffe86c,#d89500);color:#fff}
+.ton-connect-top{width:154px;min-width:154px;display:flex;justify-content:flex-end;align-items:center;min-height:44px;overflow:visible}
+.ton-connect-top button{min-width:145px!important;height:44px!important;border-radius:14px!important;font-weight:900!important;font-size:12px!important}
+.ton-connect-top [class*="button"]{border-radius:14px!important}
+.ton-connect-top [class*="connect"]{max-width:154px}
+
+.home{min-height:calc(100vh - 78px);padding-top:4px}
+.home-head{position:relative;z-index:15;text-align:center;padding-top:8px}
+.hero-title{font-size:35px;letter-spacing:4px}
+.home-balance{margin-top:22px}
+.home-balance span{font-size:9px;letter-spacing:3px;color:rgba(255,255,255,.44)}
+.home-balance strong{font-size:42px;line-height:1.02}
+.home-balance small{font-size:11px}
+.tap-area{margin-top:0;height:430px}
+.s-coin{border:0!important;background:transparent!important;overflow:visible}
+.s-coin img{width:100%;height:100%;object-fit:contain;border-radius:50%;display:block;filter:drop-shadow(0 0 28px rgba(255,198,50,.35));transition:transform .12s ease,filter .12s ease}
+.s-coin:active img{transform:scale(.95) rotate(-2deg);filter:drop-shadow(0 0 38px rgba(255,218,70,.58))}
+.galaxy{background:radial-gradient(circle at 50% 54%,rgba(29,100,210,.43),transparent 24%),radial-gradient(circle at 17% 77%,rgba(0,190,255,.14),transparent 27%),radial-gradient(circle at 83% 73%,rgba(50,90,255,.13),transparent 30%),linear-gradient(180deg,#01030b 0%,#020817 50%,#01030b 100%)}
+.galaxy-grid{position:absolute;left:-30%;right:-30%;bottom:3%;height:38%;opacity:.22;background:linear-gradient(rgba(80,190,255,.18) 1px,transparent 1px),linear-gradient(90deg,rgba(80,190,255,.18) 1px,transparent 1px);background-size:44px 44px;transform:perspective(320px) rotateX(62deg) rotateZ(0deg);transform-origin:center bottom;mask-image:linear-gradient(to top,black,transparent)}
+.galaxy-core{width:260px;height:260px;left:50%;top:55%;transform:translate(-50%,-50%);position:absolute;border-radius:50%;background:radial-gradient(circle,rgba(70,175,255,.2),rgba(30,100,255,.08) 35%,transparent 70%);filter:blur(3px);animation:corePulse 4s ease-in-out infinite}
+@keyframes corePulse{50%{transform:translate(-50%,-50%) scale(1.18);opacity:.72}}
+
+/* Official TON Connect UI placement */
+[data-tc-root]{z-index:200}
+
+/* Referral page: inspired by the supplied Refer & Earn screenshot */
+.referral-page{padding:24px 14px 112px;background:linear-gradient(180deg,#010206,#030812 48%,#010206)}
+.referral-heading{padding:3px 10px 14px}
+.referral-heading .page-title{font-size:38px;letter-spacing:-1px}
+.referral-heading .page-subtitle{font-size:15px;color:rgba(255,255,255,.5)}
+.referral-reward-banner,.referral-main-card,.referral-stats{border:1px solid rgba(68,190,255,.52);background:linear-gradient(145deg,rgba(10,23,34,.96),rgba(4,9,17,.98));box-shadow:0 0 30px rgba(36,159,232,.07);border-radius:25px}
+.referral-reward-banner{margin:0 10px 12px;padding:23px 25px;display:flex;align-items:center;justify-content:space-between;min-height:125px}
+.referral-reward-banner span{display:block;font-size:16px;color:#fff;font-weight:800;letter-spacing:.2px}
+.referral-reward-banner strong{display:block;margin-top:7px;font-size:42px;line-height:1;color:#fff}
+.referral-reward-banner em{font-style:normal;color:#55c9ff}
+.referral-reward-icon{width:62px;height:62px;border-radius:18px;display:grid;place-items:center;background:linear-gradient(145deg,#65d9ff,#1678e7);font-size:32px;font-weight:950;box-shadow:0 0 28px rgba(49,180,255,.25)}
+.referral-main-card{margin:0 10px 12px;padding:20px 17px}
+.referral-section-label{font-size:13px;font-weight:900;letter-spacing:1.4px;color:rgba(255,255,255,.48);margin:1px 2px 12px}
+.referral-link-box{display:grid;grid-template-columns:28px 1fr 48px;align-items:center;gap:8px;height:58px;padding:7px 8px 7px 13px;border-radius:16px;background:#101114;border:1px solid rgba(255,255,255,.11)}
+.referral-link-box input{min-width:0;width:100%;border:0;outline:0;background:transparent;color:#aaa;font-size:12px;text-overflow:ellipsis}
+.referral-link-icon{font-size:23px}
+.referral-link-box button{height:42px;border-radius:12px;background:#24252a;color:#fff;font-size:22px}
+.referral-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0 0}
+.referral-actions button{height:58px;border-radius:15px;font-size:15px;font-weight:900;background:#292737;color:#fff}
+.referral-actions button:last-child{background:linear-gradient(135deg,#48bdf4,#4b9cff);box-shadow:0 8px 25px rgba(55,171,255,.22)}
+.referral-rule{display:flex;gap:10px;align-items:flex-start;margin-top:13px;padding:11px 12px;border-radius:14px;background:rgba(73,207,255,.07);border:1px solid rgba(73,207,255,.13)}
+.referral-rule>span{font-size:19px}.referral-rule strong{display:block;font-size:11px;color:#68d8ff}.referral-rule small{display:block;margin-top:3px;color:rgba(255,255,255,.46);font-size:9px;line-height:1.45}
+.referral-stats{margin:0 10px 12px;padding:15px 9px;display:grid;grid-template-columns:repeat(3,1fr)}
+.ref-stat{text-align:center;min-width:0;padding:0 7px;border-right:1px solid rgba(255,255,255,.09)}.ref-stat:last-child{border-right:0}
+.ref-stat-icon{width:44px;height:44px;margin:0 auto 7px;border-radius:14px;display:grid;place-items:center;background:rgba(41,91,119,.26);font-size:22px}
+.ref-stat strong{display:block;font-size:23px;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ref-stat span{display:block;margin-top:7px;font-size:9px;color:rgba(255,255,255,.46);white-space:nowrap}
+.referral-benefits{margin:0 10px 14px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.referral-benefits>div{min-height:96px;padding:13px 8px;text-align:center;border-radius:15px;background:linear-gradient(145deg,#f7f7f2,#d8ddd7);color:#222;box-shadow:0 5px 0 rgba(0,0,0,.25)}
+.referral-benefits b{display:block;font-size:15px;color:#222}.referral-benefits span{display:block;margin-top:7px;font-size:9px;line-height:1.35;color:#555b58}
+.friends-table-title{margin:0 10px 7px;display:grid;grid-template-columns:1fr auto;gap:10px;color:#7ddfff;font-size:10px;font-weight:900;letter-spacing:1px}
+.friends-list{margin:0 10px;gap:8px}
+.friend-row{display:grid;grid-template-columns:42px 1fr auto;align-items:center;gap:10px;padding:12px 11px;border-radius:17px;background:rgba(12,22,35,.94);border:1px solid rgba(80,188,245,.16);color:#fff}
+.friend-avatar{width:40px;height:40px;border-radius:13px;display:grid;place-items:center;background:rgba(58,154,201,.17);color:#6cddff;font-weight:900}
+.friend-main{min-width:0}.friend-main strong{display:block;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.friend-main small{display:block;margin-top:4px;color:rgba(255,255,255,.48);font-size:9px}.friend-status{display:inline-block;margin-top:5px;padding:3px 7px;border-radius:8px;font-size:7px;font-weight:900;letter-spacing:.4px}.friend-active{background:rgba(65,218,151,.12);color:#5fe5a5}.friend-pending{background:rgba(255,190,64,.1);color:#ffc95f}.friend-row>b{font-size:9px;color:#6fe3ff;white-space:nowrap}
+
+/* Wallet page */
+.wallet-card{margin-top:8px}.primary-wallet-button{min-height:48px}.ton-connect-box{display:none!important}
+
+/* Daily */
+.daily-gift{width:68px;height:68px;border-radius:21px;background:rgba(6,19,38,.82);border:1px solid rgba(93,207,255,.32);box-shadow:0 0 32px rgba(31,170,255,.14)}
+.gift-emoji{font-size:38px}.daily-dot{width:10px;height:10px}
+.daily-modal-card{max-width:410px}
+
+@media(max-width:390px){
+  .ton-connect-top{width:145px;min-width:145px}
+  .referral-heading .page-title{font-size:34px}
+  .referral-reward-banner{padding:20px}.referral-reward-banner strong{font-size:36px}
+  .referral-benefits{gap:5px}.referral-benefits span{font-size:8px}
+  .ref-stat strong{font-size:19px}.ref-stat span{font-size:8px}
+}

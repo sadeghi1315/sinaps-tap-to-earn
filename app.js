@@ -224,7 +224,7 @@ function renderDaily(data) {
     const cell = document.createElement("button");
     cell.type = "button";
     cell.className = "daily-day";
-    const isClaimed = claimed.has(day) && day !== next;
+    const isClaimed = claimed.has(day);
     const isToday = day === next && !data.claimedToday;
     if (isClaimed) cell.classList.add("claimed");
     if (isToday) cell.classList.add("current");
@@ -252,47 +252,79 @@ function closeDaily() { $("dailyModal")?.classList.remove("show"); }
 // WALLET
 // ============================================================
 function renderWallet() {
-  const top = $("walletTop"), address = $("walletAddress"), disconnect = $("disconnectWallet"), walletStatus = $("walletStatus");
+  const address = $("walletAddress"), disconnect = $("disconnectWallet"), walletStatus = $("walletStatus"),
+        connectButton = $("connectWalletButton");
   if (state.walletAddress) {
-    if (top) { top.textContent = shortAddress(state.walletAddress); top.classList.add("connected"); }
     if (address) address.textContent = state.walletAddress;
-    if (walletStatus) walletStatus.textContent = "Wallet connected";
+    if (walletStatus) walletStatus.textContent = "TON wallet connected";
     if (disconnect) disconnect.style.display = "block";
+    if (connectButton) connectButton.style.display = "none";
   } else {
-    if (top) { top.textContent = "CONNECT WALLET"; top.classList.remove("connected"); }
     if (address) address.textContent = "Not connected";
     if (walletStatus) walletStatus.textContent = "Connect your TON wallet";
     if (disconnect) disconnect.style.display = "none";
+    if (connectButton) connectButton.style.display = "block";
   }
 }
 
 async function initWallet() {
   try {
-    if (!window.TON_CONNECT_UI?.TonConnectUI) return console.error("TON Connect UI missing");
-    tonUI = new TON_CONNECT_UI.TonConnectUI({ manifestUrl: TON_MANIFEST });
+    if (!window.TON_CONNECT_UI?.TonConnectUI) {
+      console.error("TON Connect UI missing");
+      return;
+    }
+    // Official TON Connect button is rendered directly in the top-right header.
+    tonUI = new TON_CONNECT_UI.TonConnectUI({
+      manifestUrl: TON_MANIFEST,
+      buttonRootId: "ton-connect-top"
+    });
+
     tonUI.onStatusChange(async wallet => {
       walletInitialized = true;
-      if (wallet?.account?.address) {
-        state.walletAddress = wallet.account.address;
-        renderWallet();
+      const address = wallet?.account?.address || null;
+      state.walletAddress = address;
+      renderWallet();
+
+      if (address) {
         try {
-          await api("/api/wallet/connect", { method: "POST", body: JSON.stringify({ wallet_address: state.walletAddress }) });
-        } catch (e) { toast("Wallet connected locally, but could not be saved"); }
-      } else if (walletInitialized) {
-        state.walletAddress = null;
-        renderWallet();
+          const data = await api("/api/wallet/connect", {
+            method: "POST",
+            body: JSON.stringify({ wallet_address: address })
+          });
+          applyUser(data.user);
+          if (Number(data.referral_reward || 0) > 0) {
+            toast(`Referral activated: +${formatNumber(data.referral_reward)} SNP`);
+          }
+          await loadFriends();
+        } catch (e) {
+          toast("Wallet connected, but could not be saved");
+        }
+      } else {
         try { await api("/api/wallet/disconnect", { method: "POST", body: "{}" }); } catch (_) {}
-        if (!disconnectRequested) toast("Wallet disconnected");
-        disconnectRequested = false;
+        await loadFriends();
+        if (disconnectRequested) disconnectRequested = false;
       }
     });
-  } catch (e) { console.error("TON Connect", e); }
+
+    // Wait for TON Connect to restore any existing session. If there is no
+    // active connection, do not display an old wallet stored in the database.
+    if (tonUI.connectionRestored) {
+      await tonUI.connectionRestored;
+    }
+    if (!state.walletAddress) {
+      try { await api("/api/wallet/disconnect", { method: "POST", body: "{}" }); } catch (_) {}
+    }
+    renderWallet();
+  } catch (e) {
+    console.error("TON Connect", e);
+  }
 }
 
 async function connectWallet() {
-  if (!tonUI) return toast("Wallet is not ready");
+  if (!tonUI) return toast("TON Connect is not ready");
   try { await tonUI.openModal(); } catch (e) { console.error(e); toast("Could not open wallet"); }
 }
+
 async function disconnectWallet() {
   disconnectRequested = true;
   try {
@@ -301,14 +333,13 @@ async function disconnectWallet() {
   state.walletAddress = null;
   renderWallet();
   try { await api("/api/wallet/disconnect", { method: "POST", body: "{}" }); } catch (_) {}
+  await loadFriends();
   toast("Wallet disconnected");
+  disconnectRequested = false;
 }
+
 async function loadWallet() {
-  try {
-    const data = await api("/api/wallet/get", { method: "POST", body: "{}" });
-    // The real TON Connect status is authoritative. Stored wallet is only a fallback before status arrives.
-    if (!walletInitialized && data.wallet_address) state.walletAddress = data.wallet_address;
-  } catch (_) {}
+  // Do not restore an old database address. The active TON Connect session is authoritative.
   renderWallet();
 }
 
@@ -380,22 +411,46 @@ async function claimTask(taskId, url) {
 async function loadFriends() {
   try {
     const data = await api("/api/friends");
-    const input = $("referralLink"); if (input) input.value = data.referral_link || "";
+    const input = $("referralLink");
+    if (input) input.value = data.referral_link || "";
     if ($("referralCode")) $("referralCode").textContent = data.referral_code || "—";
     if ($("referralFriends")) $("referralFriends").textContent = formatNumber(data.total_friends || 0);
+    if ($("activeReferrals")) $("activeReferrals").textContent = formatNumber(data.active_referrals || 0);
     if ($("referralIncome")) $("referralIncome").textContent = `${formatNumber(data.total_earnings || 0)} SNP`;
     if ($("inviteReward")) $("inviteReward").textContent = `+${formatNumber(data.invite_reward || 100)} SNP`;
     if ($("referralRate")) $("referralRate").textContent = `${Math.round(Number(data.referral_rate || 0.15) * 100)}%`;
-    const list = $("friendsList"); if (!list) return;
+
+    const list = $("friendsList");
+    if (!list) return;
     list.innerHTML = "";
-    if (!data.friends?.length) { list.innerHTML = `<div class="empty-state">No invited friends yet.</div>`; return; }
+    if (!data.friends?.length) {
+      list.innerHTML = `<div class="empty-state">No invited friends yet.</div>`;
+      return;
+    }
     data.friends.forEach(friend => {
-      const row = document.createElement("div"); row.className = "friend-row";
-      row.innerHTML = `<span class="friend-avatar">👤</span><div><strong>${friend.username ? `@${friend.username}` : "SINAPS user"}</strong><small>${new Date(friend.created_at).toLocaleDateString("en-US")}</small></div><b>+100</b>`;
+      const row = document.createElement("div");
+      row.className = "friend-row";
+      const balance = formatNumber(friend.balance || 0);
+      const statusClass = friend.wallet_connected ? "friend-active" : "friend-pending";
+      const status = friend.wallet_connected ? "WALLET CONNECTED" : "CONNECT WALLET";
+      const reward = friend.referral_rewarded ? "REWARDED" : friend.wallet_connected ? "+100 SNP" : "LOCKED";
+      row.innerHTML = `
+        <div class="friend-avatar">${friend.wallet_connected ? "✓" : "👤"}</div>
+        <div class="friend-main">
+          <strong>${friend.username ? `@${friend.username}` : "SINAPS user"}</strong>
+          <small>${new Date(friend.created_at).toLocaleDateString("en-US")} · Balance: ${balance} SNP</small>
+          <span class="friend-status ${statusClass}">${status}</span>
+        </div>
+        <b>${reward}</b>`;
       list.appendChild(row);
     });
-  } catch (e) { console.error("friends", e); }
+  } catch (e) {
+    console.error("friends", e);
+    const list = $("friendsList");
+    if (list) list.innerHTML = `<div class="empty-state">Referral data unavailable.</div>`;
+  }
 }
+
 async function copyReferral() {
   const input = $("referralLink"); if (!input?.value) return;
   try { await navigator.clipboard.writeText(input.value); toast("Referral link copied"); }
@@ -450,11 +505,11 @@ function setupEvents() {
   $("dailyClose")?.addEventListener("click", closeDaily);
   $("dailyModal")?.querySelector(".modal-backdrop")?.addEventListener("click", closeDaily);
   document.querySelectorAll(".nav-btn").forEach(btn => btn.addEventListener("click", () => showPage(btn.dataset.page)));
-  $("walletTop")?.addEventListener("click", () => state.walletAddress ? showPage("wallet") : connectWallet());
   $("connectWalletButton")?.addEventListener("click", connectWallet);
   $("disconnectWallet")?.addEventListener("click", disconnectWallet);
   $("withdrawButton")?.addEventListener("click", withdraw);
   $("copyReferral")?.addEventListener("click", copyReferral);
+  $("copyReferralLarge")?.addEventListener("click", copyReferral);
   $("shareReferral")?.addEventListener("click", shareReferral);
   $("playGame")?.addEventListener("click", playGame);
 }
