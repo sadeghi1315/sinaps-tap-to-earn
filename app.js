@@ -23,8 +23,8 @@ let processing = false;
 let energyTimer = null;
 let withdrawing = false;
 
-const WALLET_OWNER_KEY = 'sinaps_wallet_owner_v2';
-const LOCAL_STATE_KEY = 'sinaps_v8';
+const WALLET_OWNER_KEY = 'sinaps_wallet_owner_v3';
+const LOCAL_STATE_KEY = 'sinaps_v9';
 
 const $ = id => document.getElementById(id);
 
@@ -34,34 +34,45 @@ const $ = id => document.getElementById(id);
 ========================================================= */
 
 function notify(msg, ok = false) {
+
     let x = $('sinapsToast');
 
     if (!x) {
+
         x = document.createElement('div');
         x.id = 'sinapsToast';
+
         document.body.appendChild(x);
     }
 
     x.textContent = msg;
+
     x.className = ok ? 'ok' : '';
+
     x.style.display = 'block';
 
     clearTimeout(x._t);
 
     x._t = setTimeout(() => {
+
         x.style.display = 'none';
+
     }, 2800);
 }
 
 
 function esc(s) {
-    return String(s ?? '').replace(/[&<>'"]/g, c => ({
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        "'": '&#39;',
-        '"': '&quot;'
-    }[c]));
+
+    return String(s ?? '').replace(
+        /[&<>'"]/g,
+        c => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            "'": '&#39;',
+            '"': '&quot;'
+        }[c])
+    );
 }
 
 
@@ -79,8 +90,13 @@ async function api(path, options = {}) {
         options.headers || {}
     );
 
-    if (options.body && typeof options.body === 'string') {
+    if (
+        options.body &&
+        typeof options.body === 'string'
+    ) {
+
         try {
+
             const b = JSON.parse(options.body);
 
             b.init_data = initData;
@@ -90,15 +106,21 @@ async function api(path, options = {}) {
         } catch {}
     }
 
-    const r = await fetch(API + path, options);
+    const r = await fetch(
+        API + path,
+        options
+    );
 
     let d = {};
 
     try {
+
         d = await r.json();
+
     } catch {}
 
     if (!r.ok) {
+
         throw new Error(
             d.error ||
             d.message ||
@@ -128,35 +150,54 @@ function telegram() {
         tg.expand();
     } catch {}
 
-    user = tg.initDataUnsafe?.user || null;
-    initData = tg.initData || '';
+    user =
+        tg.initDataUnsafe?.user ||
+        null;
+
+    initData =
+        tg.initData ||
+        '';
 
     if (!user) {
         return;
     }
 
     if ($('username')) {
+
         $('username').textContent =
             user.username
                 ? '@' + user.username
-                : (user.first_name || 'SINAPS User');
+                : (
+                    user.first_name ||
+                    'SINAPS User'
+                );
     }
 
     if ($('avatarLetter')) {
+
         $('avatarLetter').textContent =
-            (user.first_name ||
-             user.username ||
-             'S').charAt(0).toUpperCase();
+            (
+                user.first_name ||
+                user.username ||
+                'S'
+            ).charAt(0).toUpperCase();
     }
 
-    if (user.photo_url && $('userAvatar')) {
+    if (
+        user.photo_url &&
+        $('userAvatar')
+    ) {
 
-        $('userAvatar').src = user.photo_url;
+        $('userAvatar').src =
+            user.photo_url;
 
-        $('userAvatar').style.display = 'block';
+        $('userAvatar').style.display =
+            'block';
 
         if ($('avatarLetter')) {
-            $('avatarLetter').style.display = 'none';
+
+            $('avatarLetter').style.display =
+                'none';
         }
     }
 }
@@ -188,18 +229,26 @@ function load() {
     try {
 
         const x = JSON.parse(
-            localStorage.getItem(LOCAL_STATE_KEY) || '{}'
+            localStorage.getItem(
+                LOCAL_STATE_KEY
+            ) || '{}'
         );
 
-        if (Number.isFinite(+x.balance)) {
+        if (
+            Number.isFinite(+x.balance)
+        ) {
             balance = +x.balance;
         }
 
-        if (Number.isFinite(+x.energy)) {
+        if (
+            Number.isFinite(+x.energy)
+        ) {
             energy = +x.energy;
         }
 
-        if (Number.isFinite(+x.maxEnergy)) {
+        if (
+            Number.isFinite(+x.maxEnergy)
+        ) {
             maxEnergy = +x.maxEnergy;
         }
 
@@ -214,14 +263,21 @@ function load() {
 function render() {
 
     if ($('balance')) {
+
         $('balance').textContent =
-            Math.max(0, Math.floor(balance))
-            .toLocaleString();
+            Math.max(
+                0,
+                Math.floor(balance)
+            ).toLocaleString();
     }
 
     if ($('energy')) {
+
         $('energy').textContent =
-            Math.max(0, Math.floor(energy)) +
+            Math.max(
+                0,
+                Math.floor(energy)
+            ) +
             ' / ' +
             Math.floor(maxEnergy);
     }
@@ -242,7 +298,7 @@ function render() {
 
         $('withdrawBalance').textContent =
             Math.floor(balance)
-            .toLocaleString() +
+                .toLocaleString() +
             ' SNP';
     }
 }
@@ -260,37 +316,51 @@ async function loadUser() {
 
     try {
 
-        const d = await api(
-            '/api/user',
-            {
-                method: 'POST',
-                body: JSON.stringify({
-                    telegram_id: user.id,
-                    username:
-                        user.username ||
-                        user.first_name ||
-                        '',
-                    start_param:
-                        tg?.initDataUnsafe?.start_param ||
-                        ''
-                })
-            }
-        );
+        const d =
+            await api(
+                '/api/user',
+                {
+                    method: 'POST',
 
-        const u = d.user || {};
+                    body: JSON.stringify({
+                        telegram_id:
+                            user.id,
+
+                        username:
+                            user.username ||
+                            user.first_name ||
+                            '',
+
+                        start_param:
+                            tg?.initDataUnsafe
+                                ?.start_param ||
+                            ''
+                    })
+                }
+            );
+
+        const u =
+            d.user || {};
 
         if (!pending) {
 
             balance =
-                Number(u.balance || 0);
+                Number(
+                    u.balance || 0
+                );
 
             energy =
-                Number(u.energy || 0);
+                Number(
+                    u.energy || 0
+                );
 
             maxEnergy =
-                Number(u.max_energy || 1000);
+                Number(
+                    u.max_energy || 1000
+                );
 
             render();
+
             save();
         }
 
@@ -311,8 +381,10 @@ async function sendTap() {
         '/api/tap',
         {
             method: 'POST',
+
             body: JSON.stringify({
-                telegram_id: user.id
+                telegram_id:
+                    user.id
             })
         }
     );
@@ -321,7 +393,10 @@ async function sendTap() {
 
 async function processTaps() {
 
-    if (processing || !queue) {
+    if (
+        processing ||
+        !queue
+    ) {
         return;
     }
 
@@ -331,23 +406,37 @@ async function processTaps() {
 
         try {
 
-            const d = await sendTap();
+            const d =
+                await sendTap();
 
             queue--;
             pending--;
 
-            if (!pending && !queue) {
+            if (
+                !pending &&
+                !queue
+            ) {
 
-                const u = d.user || {};
+                const u =
+                    d.user || {};
 
                 balance =
-                    Number(u.balance ?? balance);
+                    Number(
+                        u.balance ??
+                        balance
+                    );
 
                 energy =
-                    Number(u.energy ?? energy);
+                    Number(
+                        u.energy ??
+                        energy
+                    );
 
                 maxEnergy =
-                    Number(u.max_energy ?? maxEnergy);
+                    Number(
+                        u.max_energy ??
+                        maxEnergy
+                    );
 
                 render();
                 save();
@@ -356,6 +445,7 @@ async function processTaps() {
         } catch (e) {
 
             console.log(e);
+
             break;
         }
     }
@@ -363,14 +453,19 @@ async function processTaps() {
     processing = false;
 
     if (queue) {
-        setTimeout(processTaps, 500);
+
+        setTimeout(
+            processTaps,
+            500
+        );
     }
 }
 
 
 function tap() {
 
-    const a = $('tapArea');
+    const a =
+        $('tapArea');
 
     if (!a) {
         return;
@@ -382,7 +477,10 @@ function tap() {
 
             e.preventDefault();
 
-            if (!user?.id || energy <= 0) {
+            if (
+                !user?.id ||
+                energy <= 0
+            ) {
                 return;
             }
 
@@ -399,29 +497,50 @@ function tap() {
                 a.getBoundingClientRect();
 
             const f =
-                document.createElement('div');
+                document.createElement(
+                    'div'
+                );
 
-            f.className = 'floater';
+            f.className =
+                'floater';
 
-            f.textContent = '+1';
+            f.textContent =
+                '+1';
 
             f.style.left =
-                (e.clientX - r.left) + 'px';
+                (
+                    e.clientX -
+                    r.left
+                ) + 'px';
 
             f.style.top =
-                (e.clientY - r.top) + 'px';
+                (
+                    e.clientY -
+                    r.top
+                ) + 'px';
 
-            $('floaters')?.appendChild(f);
+            $('floaters')
+                ?.appendChild(f);
 
-            setTimeout(() => {
-                f.remove();
-            }, 700);
+            setTimeout(
+                () => f.remove(),
+                700
+            );
 
-            $('sCoin')?.classList.add('hit');
+            $('sCoin')
+                ?.classList.add(
+                    'hit'
+                );
 
-            setTimeout(() => {
-                $('sCoin')?.classList.remove('hit');
-            }, 120);
+            setTimeout(
+                () => {
+                    $('sCoin')
+                        ?.classList.remove(
+                            'hit'
+                        );
+                },
+                120
+            );
 
             processTaps();
 
@@ -439,20 +558,28 @@ function tap() {
 
 function startEnergy() {
 
-    clearInterval(energyTimer);
+    clearInterval(
+        energyTimer
+    );
 
     energyTimer =
-        setInterval(() => {
+        setInterval(
+            () => {
 
-            if (energy < maxEnergy) {
+                if (
+                    energy <
+                    maxEnergy
+                ) {
 
-                energy++;
+                    energy++;
 
-                render();
-                save();
-            }
+                    render();
+                    save();
+                }
 
-        }, 3000);
+            },
+            3000
+        );
 }
 
 
@@ -464,9 +591,13 @@ function showPage(page) {
 
     document
         .querySelectorAll('.page')
-        .forEach(p => {
-            p.classList.remove('active');
-        });
+        .forEach(
+            p => {
+                p.classList.remove(
+                    'active'
+                );
+            }
+        );
 
     const target =
         document.getElementById(
@@ -474,28 +605,42 @@ function showPage(page) {
         );
 
     if (target) {
-        target.classList.add('active');
+
+        target.classList.add(
+            'active'
+        );
     }
 
     document
-        .querySelectorAll('.bottom-nav button')
-        .forEach(b => {
+        .querySelectorAll(
+            '.bottom-nav button'
+        )
+        .forEach(
+            b => {
 
-            b.classList.toggle(
-                'active',
-                b.dataset.page === page
-            );
-        });
+                b.classList.toggle(
+                    'active',
+                    b.dataset.page ===
+                    page
+                );
+            }
+        );
 
-    if (page === 'tasks') {
+    if (
+        page === 'tasks'
+    ) {
         loadTasks();
     }
 
-    if (page === 'friends') {
+    if (
+        page === 'friends'
+    ) {
         loadFriends();
     }
 
-    if (page === 'wallet') {
+    if (
+        page === 'wallet'
+    ) {
         loadHistory();
     }
 }
@@ -507,43 +652,215 @@ function nav() {
         .querySelectorAll(
             '.bottom-nav button, [data-page]'
         )
-        .forEach(b => {
+        .forEach(
+            b => {
 
-            if (b.dataset.boundNav) {
-                return;
-            }
-
-            b.dataset.boundNav = '1';
-
-            b.addEventListener(
-                'click',
-                () => {
-
-                    const page =
-                        b.dataset.page;
-
-                    if (page) {
-                        showPage(page);
-                    }
+                if (
+                    b.dataset.boundNav
+                ) {
+                    return;
                 }
-            );
-        });
+
+                b.dataset.boundNav =
+                    '1';
+
+                b.addEventListener(
+                    'click',
+                    () => {
+
+                        const page =
+                            b.dataset.page;
+
+                        if (page) {
+
+                            showPage(
+                                page
+                            );
+                        }
+                    }
+                );
+            }
+        );
 }
 
 
 /* =========================================================
-   DAILY
+   DAILY REWARD
 ========================================================= */
+
+/*
+ * گرفتن اطلاعات Daily
+ *
+ * اول /api/daily را امتحان می‌کند.
+ * اگر بک‌اند نسخه جدید status داشته باشد
+ * /api/daily/status را امتحان می‌کند.
+ */
+
+async function getDailyStatus() {
+
+    if (!user?.id) {
+
+        throw new Error(
+            'Telegram user not found.'
+        );
+    }
+
+    try {
+
+        return await api(
+            '/api/daily?telegram_id=' +
+            encodeURIComponent(
+                user.id
+            ),
+            {
+                headers: {}
+            }
+        );
+
+    } catch (firstError) {
+
+        console.log(
+            'Old daily endpoint failed:',
+            firstError
+        );
+
+        try {
+
+            return await api(
+                '/api/daily/status?telegram_id=' +
+                encodeURIComponent(
+                    user.id
+                ),
+                {
+                    headers: {}
+                }
+            );
+
+        } catch {
+
+            throw firstError;
+        }
+    }
+}
+
+
+/*
+ * تبدیل پاسخ API به ساختار استاندارد
+ */
+
+function normalizeDaily(data) {
+
+    const daily =
+        data?.daily ||
+        {};
+
+    let streak =
+        Number(
+            data?.streak ??
+            daily?.streak ??
+            data?.currentDay ??
+            0
+        );
+
+    let lastClaim =
+        data?.last_claim_date ??
+        daily?.last_claim_date ??
+        null;
+
+    const today =
+        new Date()
+            .toISOString()
+            .slice(0, 10);
+
+    const claimedToday =
+        Boolean(
+            data?.claimedToday ??
+            data?.claimed_today ??
+            (
+                lastClaim ===
+                today
+            )
+        );
+
+    /*
+     * اگر API جدید claimedDays داشته باشد
+     */
+
+    let claimedDays =
+        Array.isArray(
+            data?.claimedDays
+        )
+            ? data.claimedDays.map(
+                Number
+            )
+            : [];
+
+    /*
+     * اگر API فعلی فقط streak دارد،
+     * روزهای قبل را هم به عنوان دریافت‌شده
+     * در نظر می‌گیریم.
+     */
+
+    if (
+        !claimedDays.length &&
+        streak > 0
+    ) {
+
+        for (
+            let i = 1;
+            i < streak;
+            i++
+        ) {
+            claimedDays.push(i);
+        }
+    }
+
+    if (
+        claimedToday &&
+        streak > 0
+    ) {
+
+        if (
+            !claimedDays.includes(
+                streak
+            )
+        ) {
+
+            claimedDays.push(
+                streak
+            );
+        }
+    }
+
+    return {
+        streak,
+        lastClaim,
+        claimedToday,
+        claimedDays
+    };
+}
+
+
+/*
+ * باز کردن Daily
+ */
 
 async function openDaily() {
 
     let modal =
         $('dailyModal');
 
+    /*
+     * اگر Modal وجود ندارد،
+     * کامل ساخته می‌شود.
+     */
+
     if (!modal) {
 
         modal =
-            document.createElement('div');
+            document.createElement(
+                'div'
+            );
 
         modal.id =
             'dailyModal';
@@ -552,6 +869,7 @@ async function openDaily() {
             'modalx';
 
         modal.innerHTML = `
+
             <div class="modalx-box daily-modal-box">
 
                 <button
@@ -561,8 +879,27 @@ async function openDaily() {
                 </button>
 
                 <div class="daily-title">
-                    <small>DAILY STREAK</small>
-                    <h2>Daily Reward</h2>
+
+                    <div class="daily-icon">
+                        🎁
+                    </div>
+
+                    <div>
+
+                        <small>
+                            DAILY REWARD
+                        </small>
+
+                        <h2>
+                            Daily Gifts
+                        </h2>
+
+                        <p>
+                            Claim your daily SNP
+                        </p>
+
+                    </div>
+
                 </div>
 
                 <div
@@ -572,142 +909,278 @@ async function openDaily() {
 
                 <div
                     id="dailyMsg"
-                    class="muted">
+                    class="daily-message">
+                    Loading...
                 </div>
 
             </div>
         `;
 
-        document.body.appendChild(modal);
+        document.body.appendChild(
+            modal
+        );
 
         $('closeDaily').onclick =
-            () => modal.classList.remove('show');
+            () => {
 
-        modal.onclick = e => {
+                modal.classList.remove(
+                    'show'
+                );
+            };
 
-            if (e.target === modal) {
-                modal.classList.remove('show');
-            }
-        };
+        modal.onclick =
+            e => {
+
+                if (
+                    e.target ===
+                    modal
+                ) {
+
+                    modal.classList.remove(
+                        'show'
+                    );
+                }
+            };
     }
 
-    modal.classList.add('show');
+    modal.classList.add(
+        'show'
+    );
+
+    const grid =
+        $('daysGrid');
+
+    const msg =
+        $('dailyMsg');
+
+    if (!grid || !msg) {
+        return;
+    }
+
+    /*
+     * Loading state
+     */
+
+    grid.innerHTML = `
+        <div class="daily-loading">
+            Loading daily rewards...
+        </div>
+    `;
+
+    msg.textContent =
+        'Checking your daily reward...';
 
     try {
 
+        const raw =
+            await getDailyStatus();
+
         const d =
-            await api(
-                '/api/daily?telegram_id=' +
-                user.id,
-                {
-                    headers: {}
-                }
+            normalizeDaily(
+                raw
             );
 
-        const daily =
-            d.daily || {};
-
         const streak =
-            Number(daily.streak || 0);
-
-        const last =
-            daily.last_claim_date || null;
-
-        const today =
-            new Date()
-                .toISOString()
-                .slice(0, 10);
+            Math.max(
+                0,
+                Math.min(
+                    30,
+                    d.streak
+                )
+            );
 
         const claimedToday =
-            last === today;
+            d.claimedToday;
+
+        const claimedDays =
+            d.claimedDays || [];
+
+        /*
+         * روز بعدی
+         */
+
+        const nextDay =
+            claimedToday
+                ? Math.min(
+                    streak + 1,
+                    30
+                )
+                : Math.min(
+                    streak + 1,
+                    30
+                );
 
         let html = '';
 
-        for (let i = 1; i <= 30; i++) {
+        for (
+            let i = 1;
+            i <= 30;
+            i++
+        ) {
 
-            /*
-             * فقط روزی که امروز واقعاً دریافت شده
-             * تیک سبز می‌گیرد.
-             */
+            const reward =
+                i * 10;
+
             const claimed =
-                claimedToday &&
-                i === streak;
+                claimedDays.includes(
+                    i
+                );
 
-            /*
-             * روز بعدی که باید دریافت شود
-             */
             const current =
                 !claimedToday &&
-                i === Math.min(streak + 1, 30);
+                i === nextDay;
 
             /*
-             * روزهای قبلی
+             * اگر روز 30 دریافت شده،
+             * دیگر روزی برای Claim نیست.
              */
-            const previous =
-                i < streak;
+
+            const finished =
+                streak >= 30 &&
+                claimedToday;
 
             html += `
+
                 <button
-                    class="day
-                        ${current ? 'current' : ''}
+                    type="button"
+                    class="
+                        day
                         ${claimed ? 'claimed' : ''}
-                        ${previous ? 'previous' : ''}"
+                        ${current && !finished ? 'current' : ''}
+                        ${i < nextDay && !claimed ? 'previous' : ''}
+                    "
                     data-day="${i}"
-                    ${current ? '' : 'disabled'}>
+                    ${
+                        current && !finished
+                            ? ''
+                            : 'disabled'
+                    }
+                >
 
-                    <b>Day ${i}</b>
+                    <b>
+                        DAY ${i}
+                    </b>
 
-                    <small>
-                        ${i * 10} SNP
-                    </small>
+                    <strong>
+                        ${reward}
+                        <small>
+                            SNP
+                        </small>
+                    </strong>
 
-                    <span class="day-check">
-                        ${claimed ? '✓' : ''}
+                    <span
+                        class="day-check">
+                        ${
+                            claimed
+                                ? '✓'
+                                : ''
+                        }
                     </span>
 
                 </button>
             `;
         }
 
-        $('daysGrid').innerHTML = html;
+        grid.innerHTML =
+            html;
+
+        /*
+         * فقط روز قابل دریافت
+         * قابل کلیک است.
+         */
 
         const currentButton =
-            $('daysGrid')
-                .querySelector('.day.current');
+            grid.querySelector(
+                '.day.current'
+            );
 
         if (currentButton) {
+
             currentButton.onclick =
                 claimDaily;
         }
 
-        if (claimedToday) {
+        /*
+         * پیام پایین
+         */
 
-            $('dailyMsg').textContent =
-                `Day ${streak} received ✓ — Come back tomorrow.`;
+        if (
+            streak >= 30 &&
+            claimedToday
+        ) {
+
+            msg.innerHTML =
+                '🏆 <b>30 days completed!</b> Come back tomorrow.';
+
+        } else if (
+            claimedToday
+        ) {
+
+            msg.innerHTML =
+                `✅ <b>Day ${streak}</b> received today. Come back tomorrow.`;
 
         } else {
 
-            const nextDay =
-                Math.min(streak + 1, 30);
-
-            $('dailyMsg').textContent =
-                `Day ${nextDay} is ready to claim.`;
+            msg.innerHTML =
+                `🎁 <b>Day ${nextDay}</b> is ready — claim ${nextDay * 10} SNP.`;
         }
 
     } catch (e) {
 
-        $('dailyMsg').textContent =
-            e.message;
+        console.error(
+            'Daily error:',
+            e
+        );
+
+        grid.innerHTML = `
+
+            <div class="daily-error">
+
+                🎁
+
+                <br><br>
+
+                Unable to load daily rewards.
+
+                <br>
+
+                <small>
+                    ${esc(
+                        e.message ||
+                        'Daily service unavailable'
+                    )}
+                </small>
+
+            </div>
+        `;
+
+        msg.textContent =
+            'Please try again.';
     }
 }
 
 
+/*
+ * Claim Daily
+ */
+
 async function claimDaily(e) {
 
-    const b =
+    const button =
         e.currentTarget;
 
-    b.disabled = true;
+    if (
+        !button ||
+        button.disabled
+    ) {
+        return;
+    }
+
+    button.disabled =
+        true;
+
+    button.textContent =
+        '...';
 
     try {
 
@@ -716,34 +1189,88 @@ async function claimDaily(e) {
                 '/api/daily/claim',
                 {
                     method: 'POST',
+
                     body: JSON.stringify({
-                        telegram_id: user.id
+                        telegram_id:
+                            user.id
                     })
                 }
             );
 
-        balance =
-            Number(d.user.balance);
+        /*
+         * پاسخ فعلی بک‌اند:
+         * d.user.balance
+         */
+
+        if (
+            d.user &&
+            d.user.balance !== undefined
+        ) {
+
+            balance =
+                Number(
+                    d.user.balance
+                );
+
+        } else if (
+            d.balance !== undefined
+        ) {
+
+            balance =
+                Number(
+                    d.balance
+                );
+        }
 
         render();
         save();
 
         notify(
             'Day ' +
-            d.day +
+            (
+                d.day ||
+                'reward'
+            ) +
             ' claimed: +' +
-            d.reward +
+            (
+                d.reward ||
+                0
+            ) +
             ' SNP',
             true
         );
 
+        /*
+         * دوباره Daily را بازسازی می‌کنیم
+         * تا ✓ سبز روی روز دریافت‌شده بیاید.
+         */
+
         await openDaily();
 
-    } catch (x) {
+    } catch (e) {
 
-        b.disabled = false;
+        button.disabled =
+            false;
 
-        notify(x.message);
+        button.innerHTML = `
+            <b>
+                DAY ${button.dataset.day || ''}
+            </b>
+            <strong>
+                ${
+                    Number(
+                        button.dataset.day ||
+                        1
+                    ) * 10
+                }
+                <small>SNP</small>
+            </strong>
+        `;
+
+        notify(
+            e.message ||
+            'Daily reward failed'
+        );
     }
 }
 
@@ -767,65 +1294,97 @@ async function loadTasks() {
     try {
 
         const d =
-            await api('/api/tasks');
+            await api(
+                '/api/tasks'
+            );
 
         const list =
             d.tasks || [];
 
         box.innerHTML =
-            list.map(t => {
+            list.map(
+                t => {
 
-                let icon = '💎';
+                    let icon =
+                        '💎';
 
-                if (t.id === 'channel') {
-                    icon = '📢';
-                }
+                    if (
+                        t.id ===
+                        'channel'
+                    ) {
+                        icon = '📢';
+                    }
 
-                if (t.id === 'group') {
-                    icon = '👥';
-                }
+                    if (
+                        t.id ===
+                        'group'
+                    ) {
+                        icon = '👥';
+                    }
 
-                if (t.id === 'twitter') {
-                    icon = '𝕏';
-                }
+                    if (
+                        t.id ===
+                        'twitter'
+                    ) {
+                        icon = '𝕏';
+                    }
 
-                return `
-                    <div class="task-card">
+                    return `
 
-                        <div class="task-icon">
-                            ${icon}
+                        <div
+                            class="task-card">
+
+                            <div
+                                class="task-icon">
+                                ${icon}
+                            </div>
+
+                            <div
+                                class="task-main">
+
+                                <b>
+                                    ${esc(
+                                        t.title
+                                    )}
+                                </b>
+
+                                <small>
+                                    +${Number(
+                                        t.reward
+                                    ).toLocaleString()}
+                                    SNP
+                                </small>
+
+                            </div>
+
+                            <button
+                                class="task-btn"
+                                data-task="${esc(
+                                    t.id
+                                )}"
+                                data-url="${esc(
+                                    t.url || ''
+                                )}">
+                                Check
+                            </button>
+
                         </div>
-
-                        <div class="task-main">
-
-                            <b>${esc(t.title)}</b>
-
-                            <small>
-                                +${Number(t.reward).toLocaleString()}
-                                SNP
-                            </small>
-
-                        </div>
-
-                        <button
-                            class="task-btn"
-                            data-task="${esc(t.id)}"
-                            data-url="${esc(t.url || '')}">
-                            Check
-                        </button>
-
-                    </div>
-                `;
-
-            }).join('');
+                    `;
+                }
+            ).join('');
 
         box
-            .querySelectorAll('.task-btn')
-            .forEach(b => {
+            .querySelectorAll(
+                '.task-btn'
+            )
+            .forEach(
+                b => {
 
-                b.onclick =
-                    () => claimTask(b);
-            });
+                    b.onclick =
+                        () =>
+                            claimTask(b);
+                }
+            );
 
     } catch (e) {
 
@@ -842,11 +1401,15 @@ async function claimTask(btn) {
     const id =
         btn.dataset.task;
 
-    btn.disabled = true;
+    btn.disabled =
+        true;
 
     try {
 
-        if (btn.dataset.url) {
+        if (
+            btn.dataset.url
+        ) {
+
             window.open(
                 btn.dataset.url,
                 '_blank'
@@ -861,15 +1424,27 @@ async function claimTask(btn) {
                 '/api/tasks/claim',
                 {
                     method: 'POST',
+
                     body: JSON.stringify({
-                        telegram_id: user.id,
-                        task_id: id
+                        telegram_id:
+                            user.id,
+
+                        task_id:
+                            id
                     })
                 }
             );
 
-        balance =
-            Number(d.user.balance);
+        if (
+            d.user &&
+            d.user.balance !== undefined
+        ) {
+
+            balance =
+                Number(
+                    d.user.balance
+                );
+        }
 
         render();
         save();
@@ -877,23 +1452,31 @@ async function claimTask(btn) {
         btn.textContent =
             '✓ Done';
 
-        btn.classList.add('done');
+        btn.classList.add(
+            'done'
+        );
 
         notify(
             'Task completed +' +
-            d.reward +
+            (
+                d.reward ||
+                0
+            ) +
             ' SNP',
             true
         );
 
     } catch (e) {
 
-        btn.disabled = false;
+        btn.disabled =
+            false;
 
         btn.textContent =
             'Try again';
 
-        notify(e.message);
+        notify(
+            e.message
+        );
     }
 }
 
@@ -909,61 +1492,82 @@ async function loadFriends() {
         const d =
             await api(
                 '/api/friends?telegram_id=' +
-                user.id,
+                encodeURIComponent(
+                    user.id
+                ),
                 {
                     headers: {}
                 }
             );
 
-        if ($('inviteCode')) {
+        if (
+            $('inviteCode')
+        ) {
 
             $('inviteCode').textContent =
-                d.referral_code || '-';
+                d.referral_code ||
+                '-';
 
             $('inviteCode').dataset.code =
-                d.referral_code || '';
+                d.referral_code ||
+                '';
         }
 
-        if ($('friendsCount')) {
+        if (
+            $('friendsCount')
+        ) {
 
             $('friendsCount').textContent =
-                d.referral_count || 0;
+                d.referral_count ||
+                0;
         }
 
         const list =
-            d.friends || [];
+            d.friends ||
+            [];
 
-        if ($('friendsList')) {
+        if (
+            $('friendsList')
+        ) {
 
             $('friendsList').innerHTML =
                 list.length
 
-                ? list.map(f => `
-                    <div class="friend-row">
-                        <span>
-                            ${esc(
-                                f.username ||
-                                'User'
-                            )}
-                        </span>
+                    ? list.map(
+                        f => `
 
-                        <b>
-                            ${Number(
-                                f.balance || 0
-                            ).toLocaleString()}
-                            SNP
-                        </b>
-                    </div>
-                `).join('')
+                            <div
+                                class="friend-row">
 
-                : '<div class="empty">' +
-                  'No invited users yet.' +
-                  '</div>';
+                                <span>
+                                    ${esc(
+                                        f.username ||
+                                        'User'
+                                    )}
+                                </span>
+
+                                <b>
+                                    ${Number(
+                                        f.balance ||
+                                        0
+                                    ).toLocaleString()}
+                                    SNP
+                                </b>
+
+                            </div>
+                        `
+                    ).join('')
+
+                    : '<div class="empty">' +
+                      'No invited users yet.' +
+                      '</div>';
         }
 
     } catch (e) {
 
-        notify(e.message);
+        notify(
+            e.message
+        );
     }
 }
 
@@ -974,10 +1578,12 @@ window.sinapsCopyInvite =
         try {
 
             const code =
-                $('inviteCode')?.dataset.code ||
+                $('inviteCode')
+                    ?.dataset.code ||
                 '';
 
             if (!code) {
+
                 throw new Error(
                     'Referral code not ready.'
                 );
@@ -985,9 +1591,13 @@ window.sinapsCopyInvite =
 
             const link =
                 'https://t.me/SNPCOINBot?start=' +
-                encodeURIComponent(code);
+                encodeURIComponent(
+                    code
+                );
 
-            await navigator.clipboard.writeText(link);
+            await navigator.clipboard.writeText(
+                link
+            );
 
             notify(
                 'Invite link copied',
@@ -996,7 +1606,9 @@ window.sinapsCopyInvite =
 
         } catch (e) {
 
-            notify(e.message);
+            notify(
+                e.message
+            );
         }
     };
 
@@ -1010,7 +1622,10 @@ async function loadHistory() {
     const box =
         $('historyList');
 
-    if (!box || !user) {
+    if (
+        !box ||
+        !user
+    ) {
         return;
     }
 
@@ -1019,79 +1634,90 @@ async function loadHistory() {
         const d =
             await api(
                 '/api/history?telegram_id=' +
-                user.id,
+                encodeURIComponent(
+                    user.id
+                ),
                 {
                     headers: {}
                 }
             );
 
         const rows =
-            d.transactions || [];
+            d.transactions ||
+            [];
 
         box.innerHTML =
             rows.length
 
-            ? rows.map(x => {
+                ? rows.map(
+                    x => {
 
-                const amount =
-                    Number(x.amount);
+                        const amount =
+                            Number(
+                                x.amount
+                            );
 
-                return `
-                    <div class="history-row">
+                        return `
 
-                        <div>
+                            <div
+                                class="history-row">
 
-                            <b>
-                                ${esc(
-                                    String(
-                                        x.type || ''
-                                    ).replaceAll(
-                                        '_',
-                                        ' '
-                                    )
-                                )}
-                            </b>
+                                <div>
 
-                            <small>
-                                ${esc(
-                                    x.description || ''
-                                )}
-                            </small>
+                                    <b>
+                                        ${esc(
+                                            String(
+                                                x.type ||
+                                                ''
+                                            ).replaceAll(
+                                                '_',
+                                                ' '
+                                            )
+                                        )}
+                                    </b>
 
-                        </div>
+                                    <small>
+                                        ${esc(
+                                            x.description ||
+                                            ''
+                                        )}
+                                    </small>
 
-                        <strong
-                            class="${
-                                amount < 0
-                                    ? 'neg'
-                                    : 'pos'
-                            }">
+                                </div>
 
-                            ${
-                                amount > 0
-                                    ? '+'
-                                    : ''
-                            }
+                                <strong
+                                    class="${
+                                        amount < 0
+                                            ? 'neg'
+                                            : 'pos'
+                                    }">
 
-                            ${amount.toLocaleString()}
-                            SNP
+                                    ${
+                                        amount > 0
+                                            ? '+'
+                                            : ''
+                                    }
 
-                        </strong>
+                                    ${amount.toLocaleString()}
+                                    SNP
 
-                        <span>
-                            ${esc(
-                                x.status || ''
-                            )}
-                        </span>
+                                </strong>
 
-                    </div>
-                `;
+                                <span>
+                                    ${esc(
+                                        x.status ||
+                                        ''
+                                    )}
+                                </span>
 
-            }).join('')
+                            </div>
+                        `;
+                    }
+                ).join('')
 
-            : '<div class="empty">' +
-              'No transactions yet.' +
-              '</div>';
+                : '<div class="empty">' +
+                  'No transactions yet.' +
+                  '</div>';
 
     } catch (e) {
 
@@ -1102,8 +1728,7 @@ async function loadHistory() {
 
 
 /* =========================================================
-   WALLET — IMPORTANT FIX
-   Telegram account and wallet are now bound together.
+   WALLET
 ========================================================= */
 
 function walletOwnerKey() {
@@ -1117,10 +1742,13 @@ function walletOwnerKey() {
 function getSavedWalletOwner() {
 
     try {
+
         return localStorage.getItem(
             WALLET_OWNER_KEY
         );
+
     } catch {
+
         return null;
     }
 }
@@ -1150,7 +1778,9 @@ function setSavedWalletOwner(id) {
 
 function clearWalletUI() {
 
-    if ($('walletAddress')) {
+    if (
+        $('walletAddress')
+    ) {
 
         $('walletAddress').textContent =
             'Not connected';
@@ -1166,6 +1796,7 @@ function clearWalletUI() {
         $('wallet-mini');
 
     if (mini) {
+
         mini.textContent =
             'Wallet not connected';
     }
@@ -1174,6 +1805,7 @@ function clearWalletUI() {
         $('connectWalletBtn');
 
     if (connect) {
+
         connect.style.display =
             'block';
     }
@@ -1182,20 +1814,27 @@ function clearWalletUI() {
         $('disconnectWallet');
 
     if (disconnect) {
+
         disconnect.style.display =
             'none';
     }
 }
 
 
-function showConnectedWallet(address) {
+function showConnectedWallet(
+    address
+) {
 
     if (!address) {
+
         clearWalletUI();
+
         return;
     }
 
-    if ($('walletAddress')) {
+    if (
+        $('walletAddress')
+    ) {
 
         $('walletAddress').textContent =
             address.slice(0, 8) +
@@ -1209,7 +1848,9 @@ function showConnectedWallet(address) {
             );
     }
 
-    if ($('wallet-mini')) {
+    if (
+        $('wallet-mini')
+    ) {
 
         $('wallet-mini').textContent =
             address.slice(0, 6) +
@@ -1221,6 +1862,7 @@ function showConnectedWallet(address) {
         $('connectWalletBtn');
 
     if (connect) {
+
         connect.style.display =
             'none';
     }
@@ -1229,6 +1871,7 @@ function showConnectedWallet(address) {
         $('disconnectWallet');
 
     if (disconnect) {
+
         disconnect.style.display =
             'block';
     }
@@ -1237,10 +1880,14 @@ function showConnectedWallet(address) {
 
 async function setupWallet() {
 
-    if (!window.TON_CONNECT_UI) {
+    if (
+        !window.TON_CONNECT_UI
+    ) {
+
         console.log(
             'TON Connect UI not loaded'
         );
+
         return;
     }
 
@@ -1250,16 +1897,6 @@ async function setupWallet() {
 
     try {
 
-        /*
-         * بسیار مهم:
-         *
-         * TON Connect روی دستگاه ممکن است Wallet
-         * اکانت قبلی Telegram را restore کند.
-         *
-         * اگر Telegram ID فعلی با مالک Wallet قبلی
-         * متفاوت باشد، Wallet قبلی را قطع می‌کنیم.
-         */
-
         const currentOwner =
             walletOwnerKey();
 
@@ -1267,24 +1904,26 @@ async function setupWallet() {
             getSavedWalletOwner();
 
         tonUI =
-            new window.TON_CONNECT_UI.TonConnectUI({
-                manifestUrl: MANIFEST,
-                buttonRootId: 'ton-connect'
-            });
+            new window.TON_CONNECT_UI.TonConnectUI(
+                {
+                    manifestUrl:
+                        MANIFEST,
+
+                    buttonRootId:
+                        'ton-connect'
+                }
+            );
 
         /*
-         * اگر اکانت Telegram عوض شده:
-         * Wallet قبلی فقط از دستگاه Disconnect می‌شود.
-         *
-         * نکته:
-         * سرور اکانت قبلی را Disconnect نمی‌کنیم.
-         * چون آن Wallet متعلق به همان اکانت قبلی است.
+         * اگر Telegram account عوض شده،
+         * Wallet محلی قبلی را قطع می‌کنیم.
          */
 
         if (
             previousOwner &&
             currentOwner &&
-            previousOwner !== currentOwner
+            previousOwner !==
+            currentOwner
         ) {
 
             console.log(
@@ -1295,30 +1934,27 @@ async function setupWallet() {
             );
 
             try {
+
                 await tonUI.disconnect();
+
             } catch (e) {
+
                 console.log(
                     'Old wallet disconnect:',
                     e
                 );
             }
 
-            setSavedWalletOwner(null);
+            setSavedWalletOwner(
+                null
+            );
 
             clearWalletUI();
         }
 
 
-        /*
-         * وضعیت اتصال Wallet
-         */
-
         tonUI.onStatusChange(
             async wallet => {
-
-                /*
-                 * اگر Wallet وجود ندارد
-                 */
 
                 if (
                     !wallet ||
@@ -1334,11 +1970,6 @@ async function setupWallet() {
                 const address =
                     wallet.account.address;
 
-                /*
-                 * اگر Wallet جدید است،
-                 * آن را به Telegram ID فعلی متصل می‌کنیم.
-                 */
-
                 setSavedWalletOwner(
                     currentOwner
                 );
@@ -1349,14 +1980,11 @@ async function setupWallet() {
 
                 try {
 
-                    /*
-                     * فقط برای اکانت Telegram فعلی
-                     */
-
                     await api(
                         '/api/wallet/connect',
                         {
                             method: 'POST',
+
                             body: JSON.stringify({
                                 telegram_id:
                                     user.id,
@@ -1368,7 +1996,7 @@ async function setupWallet() {
                     );
 
                     notify(
-                        'Wallet connected to this Telegram account',
+                        'Wallet connected',
                         true
                     );
 
@@ -1386,66 +2014,60 @@ async function setupWallet() {
             }
         );
 
-        /*
-         * اگر دکمه دستی Connect در HTML وجود داشته باشد
-         */
 
-        $('connectWalletBtn')?.addEventListener(
-            'click',
-            () => {
+        $('connectWalletBtn')
+            ?.addEventListener(
+                'click',
+                () => {
 
-                if (tonUI) {
-                    tonUI.openModal();
+                    if (tonUI) {
+
+                        tonUI.openModal();
+                    }
                 }
-            }
-        );
+            );
 
 
-        /*
-         * Disconnect دستی
-         */
+        $('disconnectWallet')
+            ?.addEventListener(
+                'click',
+                async () => {
 
-        $('disconnectWallet')?.addEventListener(
-            'click',
-            async () => {
+                    try {
 
-                try {
+                        await tonUI.disconnect();
 
-                    await tonUI.disconnect();
+                        setSavedWalletOwner(
+                            null
+                        );
 
-                    setSavedWalletOwner(
-                        null
-                    );
+                        clearWalletUI();
 
-                    clearWalletUI();
+                        await api(
+                            '/api/wallet/disconnect',
+                            {
+                                method: 'POST',
 
-                    /*
-                     * فقط Wallet همین اکانت
-                     * از دیتابیس حذف شود.
-                     */
+                                body: JSON.stringify({
+                                    telegram_id:
+                                        user.id
+                                })
+                            }
+                        );
 
-                    await api(
-                        '/api/wallet/disconnect',
-                        {
-                            method: 'POST',
-                            body: JSON.stringify({
-                                telegram_id:
-                                    user.id
-                            })
-                        }
-                    );
+                        notify(
+                            'Wallet disconnected',
+                            true
+                        );
 
-                    notify(
-                        'Wallet disconnected',
-                        true
-                    );
+                    } catch (e) {
 
-                } catch (e) {
-
-                    notify(e.message);
+                        notify(
+                            e.message
+                        );
+                    }
                 }
-            }
-        );
+            );
 
     } catch (e) {
 
@@ -1473,17 +2095,22 @@ async function setupWithdraw() {
     b.onclick =
         async () => {
 
-            if (withdrawing) {
+            if (
+                withdrawing
+            ) {
                 return;
             }
 
-            withdrawing = true;
+            withdrawing =
+                true;
 
-            b.disabled = true;
+            b.disabled =
+                true;
 
             try {
 
                 if (queue) {
+
                     await processTaps();
                 }
 
@@ -1499,7 +2126,8 @@ async function setupWithdraw() {
 
                 const a =
                     Number(
-                        $('withdrawAmount')?.value
+                        $('withdrawAmount')
+                            ?.value
                     );
 
                 if (
@@ -1521,6 +2149,7 @@ async function setupWithdraw() {
                         '/api/withdraw/create',
                         {
                             method: 'POST',
+
                             body: JSON.stringify({
                                 telegram_id:
                                     user.id,
@@ -1534,32 +2163,35 @@ async function setupWithdraw() {
                         }
                     );
 
-                await tonUI.sendTransaction({
+                await tonUI.sendTransaction(
+                    {
+                        validUntil:
+                            Math.floor(
+                                Date.now() /
+                                1000
+                            ) + 300,
 
-                    validUntil:
-                        Math.floor(
-                            Date.now() / 1000
-                        ) + 300,
+                        network:
+                            MAINNET,
 
-                    network:
-                        MAINNET,
+                        messages: [
+                            {
+                                address:
+                                    TREASURY,
 
-                    messages: [
-                        {
-                            address:
-                                TREASURY,
-
-                            amount:
-                                FEE
-                        }
-                    ]
-                });
+                                amount:
+                                    FEE
+                            }
+                        ]
+                    }
+                );
 
                 const v =
                     await api(
                         '/api/withdraw/verify',
                         {
                             method: 'POST',
+
                             body: JSON.stringify({
                                 telegram_id:
                                     user.id,
@@ -1573,17 +2205,26 @@ async function setupWithdraw() {
                         }
                     );
 
-                if ($('withdrawStatus')) {
+                if (
+                    $('withdrawStatus')
+                ) {
 
                     $('withdrawStatus')
                         .textContent =
-                        v.status === 'verified'
+                        v.status ===
+                        'verified'
+
                             ? 'Payment verified. Processing.'
+
                             : 'Payment sent. Under review.';
                 }
 
-                if ($('withdrawAmount')) {
-                    $('withdrawAmount').value = '';
+                if (
+                    $('withdrawAmount')
+                ) {
+
+                    $('withdrawAmount')
+                        .value = '';
                 }
 
                 loadHistory();
@@ -1595,20 +2236,26 @@ async function setupWithdraw() {
 
             } catch (e) {
 
-                if ($('withdrawStatus')) {
+                if (
+                    $('withdrawStatus')
+                ) {
 
                     $('withdrawStatus')
                         .textContent =
                         e.message;
                 }
 
-                notify(e.message);
+                notify(
+                    e.message
+                );
 
             } finally {
 
-                withdrawing = false;
+                withdrawing =
+                    false;
 
-                b.disabled = false;
+                b.disabled =
+                    false;
             }
         };
 }
@@ -1627,66 +2274,222 @@ window.sinapsWithdraw =
 
 
 /* =========================================================
-   DAILY / WALLET UI CSS
+   CSS
 ========================================================= */
 
 function css() {
 
     const s =
-        document.createElement('style');
+        document.createElement(
+            'style'
+        );
 
     s.textContent = `
 
-/* -----------------------------------------
-   DAILY
------------------------------------------ */
+/* =====================================================
+   DAILY MODAL
+===================================================== */
+
+#dailyModal {
+
+    position: fixed;
+
+    inset: 0;
+
+    z-index: 99999;
+
+    display: none;
+
+    align-items: flex-end;
+
+    justify-content: center;
+
+    padding: 12px;
+
+    background:
+        rgba(0,0,0,.72);
+
+    backdrop-filter:
+        blur(8px);
+}
+
+#dailyModal.show {
+
+    display: flex;
+}
+
 
 .daily-modal-box {
-    max-width: 430px !important;
-    padding: 17px !important;
+
+    width: 100%;
+
+    max-width: 430px;
+
+    max-height: 86vh;
+
+    overflow-y: auto;
+
+    position: relative;
+
+    padding: 18px;
+
+    border-radius: 25px;
+
+    border: 1px solid
+        rgba(70,220,255,.25);
+
+    background:
+        linear-gradient(
+            145deg,
+            #0c2139,
+            #050914
+        );
+
+    box-shadow:
+        0 -10px 50px
+        rgba(0,0,0,.7);
+
+    color: #fff;
 }
+
+
+.closex {
+
+    position: absolute;
+
+    right: 13px;
+
+    top: 8px;
+
+    width: 35px;
+
+    height: 35px;
+
+    border: 0;
+
+    border-radius: 50%;
+
+    background:
+        rgba(255,255,255,.06);
+
+    color: #fff;
+
+    font-size: 25px;
+
+    line-height: 1;
+
+    cursor: pointer;
+}
+
 
 .daily-title {
-    text-align: center;
-    margin-bottom: 12px;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 11px;
+
+    margin-bottom: 15px;
+
+    padding-right: 30px;
 }
+
+
+.daily-icon {
+
+    width: 48px;
+
+    height: 48px;
+
+    flex: 0 0 48px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border-radius: 15px;
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(45,220,255,.18),
+            rgba(90,70,255,.12)
+        );
+
+    border: 1px solid
+        rgba(80,220,255,.2);
+
+    font-size: 25px;
+}
+
 
 .daily-title small {
+
+    display: block;
+
     color: #6de5ff;
-    letter-spacing: 1.5px;
-    font-size: 9px;
+
+    font-size: 8px;
+
+    letter-spacing: 1.7px;
+
+    font-weight: 800;
 }
 
+
 .daily-title h2 {
-    margin: 4px 0 0;
+
+    margin: 3px 0;
+
     font-size: 21px;
 }
 
 
-/*
- * Daily boxes smaller
- */
+.daily-title p {
+
+    margin: 0;
+
+    color: #8da7b9;
+
+    font-size: 10px;
+}
+
+
+/* =====================================================
+   DAYS
+===================================================== */
 
 .days-grid {
+
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+
+    grid-template-columns:
+        repeat(5, 1fr);
+
     gap: 6px;
 }
 
 
-/*
- * کوچک‌تر از قبل
- */
-
 .day {
-    min-height: 51px !important;
-    height: 51px !important;
 
-    border: 1px solid rgba(255,255,255,.10);
+    position: relative;
 
-    border-radius: 11px;
+    min-height: 54px !important;
 
-    background: rgba(255,255,255,.045);
+    height: 54px !important;
+
+    padding: 4px;
+
+    border-radius: 12px;
+
+    border: 1px solid
+        rgba(255,255,255,.09);
+
+    background:
+        rgba(255,255,255,.045);
 
     color: #fff;
 
@@ -1698,154 +2501,437 @@ function css() {
 
     justify-content: center;
 
-    position: relative;
-
-    padding: 4px;
-
     transition:
-        transform .15s,
-        border-color .15s,
-        box-shadow .15s;
+        .15s ease;
+
+    font-family: inherit;
 }
+
 
 .day b {
-    font-size: 9px;
-    line-height: 11px;
-}
 
-.day small {
-    color: #7cff9b;
     font-size: 8px;
-    margin-top: 2px;
+
+    line-height: 10px;
+
+    color: #a6bac6;
 }
 
-.day span.day-check {
+
+.day strong {
+
+    margin-top: 2px;
+
+    font-size: 11px;
+
+    line-height: 13px;
+}
+
+
+.day strong small {
+
+    margin-left: 2px;
+
+    color: #7cff9b;
+
+    font-size: 7px;
+}
+
+
+.day-check {
+
     position: absolute;
 
+    right: 3px;
+
     top: 3px;
-    right: 4px;
 
     width: 14px;
-    height: 14px;
 
-    border-radius: 50%;
+    height: 14px;
 
     display: flex;
 
     align-items: center;
+
     justify-content: center;
 
+    border-radius: 50%;
+
     font-size: 9px;
+
     font-weight: 900;
 }
 
 
-/*
- * روز دریافت شده
- */
+/* claimed */
 
 .day.claimed {
 
     border-color:
-        rgba(124,255,155,.9) !important;
+        rgba(73,232,120,.9) !important;
 
     background:
         linear-gradient(
             145deg,
-            rgba(65,190,105,.20),
-            rgba(20,80,50,.18)
+            rgba(65,190,105,.23),
+            rgba(20,80,50,.15)
         ) !important;
 
     box-shadow:
-        0 0 13px
-        rgba(80,255,150,.18);
+        0 0 14px
+        rgba(80,255,150,.16);
 }
 
-.day.claimed span.day-check {
 
-    background: #49e878;
+.day.claimed b {
 
-    color: #04150b;
+    color: #7cff9b;
+}
+
+
+.day.claimed strong {
+
+    color: #dffff0;
+}
+
+
+.day.claimed
+.day-check {
+
+    background:
+        #49e878;
+
+    color:
+        #04150b;
 
     box-shadow:
         0 0 8px
-        rgba(73,232,120,.8);
+        rgba(73,232,120,.75);
 }
 
 
-/*
- * روز قابل دریافت
- */
+/* current */
 
 .day.current {
 
     border-color:
-        rgba(54,229,255,.9) !important;
+        rgba(54,229,255,.95) !important;
+
+    background:
+        rgba(30,190,235,.09);
 
     box-shadow:
-        0 0 14px
-        rgba(33,223,255,.22);
+        0 0 15px
+        rgba(33,223,255,.24);
 
     animation:
         dailyPulse 1.7s infinite;
+
+    cursor: pointer;
 }
+
+
+.day.current b {
+
+    color: #6de5ff;
+}
+
+
+.day.current strong {
+
+    color: #fff;
+}
+
 
 @keyframes dailyPulse {
 
-    0%,100% {
+    0%,
+    100% {
+
         box-shadow:
             0 0 8px
-            rgba(33,223,255,.15);
+            rgba(33,223,255,.12);
     }
 
     50% {
+
         box-shadow:
-            0 0 18px
+            0 0 20px
             rgba(33,223,255,.35);
     }
 }
 
+
+/* previous */
+
 .day.previous {
-    opacity: .48;
+
+    opacity: .42;
 }
 
+
 .day:disabled {
+
     cursor: default;
 }
 
-#dailyMsg {
-    text-align: center;
+
+/* =====================================================
+   DAILY MESSAGE
+===================================================== */
+
+.daily-message {
+
     margin-top: 12px;
+
+    padding: 10px;
+
+    border-radius: 12px;
+
+    text-align: center;
+
+    background:
+        rgba(255,255,255,.045);
+
+    border: 1px solid
+        rgba(255,255,255,.06);
+
+    color: #9db3c0;
+
     font-size: 10px;
 }
 
 
-/* -----------------------------------------
+.daily-loading {
+
+    grid-column:
+        1 / -1;
+
+    text-align: center;
+
+    padding: 35px 10px;
+
+    color: #8da7b9;
+
+    font-size: 11px;
+}
+
+
+.daily-error {
+
+    grid-column:
+        1 / -1;
+
+    text-align: center;
+
+    padding: 30px 10px;
+
+    border-radius: 15px;
+
+    background:
+        rgba(255,80,80,.05);
+
+    border: 1px solid
+        rgba(255,100,100,.15);
+
+    color: #ffb0b0;
+
+    font-size: 11px;
+}
+
+
+.daily-error small {
+
+    color: #8da7b9;
+
+    font-size: 9px;
+}
+
+
+/* =====================================================
+   DAILY GIFT BUTTON
+===================================================== */
+
+#dailyGift {
+
+    position: absolute;
+
+    z-index: 20;
+
+    left: 8px;
+
+    bottom: 78px;
+
+    width: 62px;
+
+    height: 62px;
+
+    padding: 0;
+
+    border-radius: 20px;
+
+    border: 1px solid
+        rgba(69,232,255,.35);
+
+    background:
+        linear-gradient(
+            145deg,
+            #102f4d,
+            #07101e
+        );
+
+    color: #fff;
+
+    box-shadow:
+        0 0 25px
+        rgba(32,223,255,.16);
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+}
+
+
+#dailyGift .gift {
+
+    font-size: 25px;
+}
+
+
+#dailyGift span {
+
+    font-size: 9px;
+}
+
+
+/* =====================================================
    WALLET
------------------------------------------ */
+===================================================== */
 
 .wallet-card {
+
     position: relative;
 }
 
+
 #ton-connect {
+
     min-height: 48px;
 }
 
+
 #walletAddress {
+
     font-size: 11px;
+
     font-family: monospace;
 }
 
-`;
 
+/* =====================================================
+   TOAST
+===================================================== */
+
+#sinapsToast {
+
+    position: fixed;
+
+    left: 50%;
+
+    bottom: 90px;
+
+    transform:
+        translateX(-50%);
+
+    z-index: 100000;
+
+    display: none;
+
+    background:
+        #091729;
+
+    border: 1px solid
+        rgba(54,220,255,.35);
+
+    border-radius: 14px;
+
+    padding: 11px 15px;
+
+    color: #fff;
+
+    font-size: 12px;
+
+    max-width: 90%;
+
+    text-align: center;
+
+    box-shadow:
+        0 10px 35px
+        rgba(0,0,0,.55);
+}
+
+
+#sinapsToast.ok {
+
+    border-color:
+        rgba(124,255,155,.55);
+}
+
+
+/* =====================================================
+   MOBILE
+===================================================== */
+
+@media(max-width:380px) {
+
+    .daily-modal-box {
+
+        padding: 14px;
+
+    }
+
+    .days-grid {
+
+        gap: 5px;
+
+    }
+
+    .day {
+
+        min-height: 51px !important;
+
+        height: 51px !important;
+
+        border-radius: 10px;
+
+    }
+
+    .day b {
+
+        font-size: 7px;
+
+    }
+
+    .day strong {
+
+        font-size: 10px;
+
+    }
+}
+
+`;
 
     document.head.appendChild(s);
 }
 
 
 /* =========================================================
-   EXTRA UI
+   DAILY BUTTON
 ========================================================= */
 
 function prepareDailyButton() {
@@ -1854,16 +2940,31 @@ function prepareDailyButton() {
         $('dailyGift');
 
     if (!gift) {
+
+        console.log(
+            'dailyGift button not found'
+        );
+
         return;
     }
 
     /*
-     * اگر قبلاً app.js قدیمی روی صفحه
-     * Daily ساخته باشد، دوباره نساز.
+     * جلوگیری از چند بار ثبت شدن click
      */
 
     gift.onclick =
-        openDaily;
+        null;
+
+    gift.addEventListener(
+        'click',
+        e => {
+
+            e.preventDefault();
+
+            openDaily();
+
+        }
+    );
 }
 
 
@@ -1890,24 +2991,28 @@ async function start() {
     render();
 
     /*
-     * اول User را مشخص می‌کنیم
+     * ابتدا Telegram user
      */
 
     await loadUser();
 
     /*
-     * بعد TON Connect را راه‌اندازی می‌کنیم
-     * تا Telegram ID فعلی مشخص باشد.
+     * سپس Wallet
      */
 
     await setupWallet();
+
+    /*
+     * سپس Withdraw
+     */
 
     await setupWithdraw();
 }
 
 
 if (
-    document.readyState === 'loading'
+    document.readyState ===
+    'loading'
 ) {
 
     document.addEventListener(
