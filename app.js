@@ -694,12 +694,361 @@ function renderDaily(data = {}) {
         "click",
         claimDaily
       );
+// ============================================================
+// DAILY REWARDS — FIXED
+// ============================================================
+
+function localDateKey() {
+  const d = new Date();
+
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+
+  return `${y}-${m}-${day}`;
+}
+
+
+// تبدیل تاریخ/تایم‌استمپ به YYYY-MM-DD
+function normalizeDateKey(value) {
+  if (!value) return null;
+
+  // اگر سرور مستقیماً YYYY-MM-DD داده
+  if (typeof value === "string") {
+
+    const match = value.match(
+      /^(\d{4}-\d{2}-\d{2})/
+    );
+
+    if (match) {
+      return match[1];
     }
+  }
+
+  const d = new Date(value);
+
+  if (Number.isNaN(d.getTime())) {
+    return null;
+  }
+
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+
+  return `${y}-${m}-${day}`;
+}
+
+
+// ------------------------------------------------------------
+// LOAD DAILY
+// ------------------------------------------------------------
+
+async function loadDaily() {
+
+  const grid = $("dailyGrid");
+
+  if (!grid) return;
+
+  try {
+
+    const user = telegramUser();
+
+    if (!user?.id) {
+
+      renderDaily({
+        streak: 0,
+        last_claim_date: null,
+        claimed_today: false
+      });
+
+      return;
+    }
+
+    const data = await api(
+      `/api/daily?telegram_id=${encodeURIComponent(user.id)}`
+    );
+
+    console.log("DAILY SERVER DATA:", data);
+
+    const daily = data.daily || data;
+
+    renderDaily(daily);
+
+  } catch (e) {
+
+    console.error(
+      "Daily load error:",
+      e
+    );
+
+    renderDaily({
+      streak: 0,
+      last_claim_date: null,
+      claimed_today: false
+    });
+
+    toast(
+      "Daily rewards could not be loaded"
+    );
+  }
+}
+
+
+// ------------------------------------------------------------
+// RENDER DAILY
+// ------------------------------------------------------------
+
+function renderDaily(data = {}) {
+
+  const grid = $("dailyGrid");
+
+  if (!grid) return;
+
+
+  // -------------------------------
+  // STREAK
+  // -------------------------------
+
+  const streak = Math.max(
+    0,
+    Math.min(
+      30,
+      Number(
+        data.streak ??
+        data.daily_streak ??
+        data.current_streak ??
+        0
+      )
+    )
+  );
+
+
+  // -------------------------------
+  // FIND LAST CLAIM DATE
+  // -------------------------------
+
+  const rawLastClaim =
+    data.last_claim_date ??
+    data.last_claimed_date ??
+    data.last_claim_at ??
+    data.last_claimed_at ??
+    data.last_claim ??
+    data.claimed_date ??
+    data.claimed_at ??
+    data.claimDate ??
+    data.lastClaimDate ??
+    data.lastClaim ??
+    null;
+
+
+  const lastClaimDate =
+    normalizeDateKey(rawLastClaim);
+
+
+  const today =
+    localDateKey();
+
+
+  // -------------------------------
+  // CHECK SERVER FLAGS TOO
+  // -------------------------------
+
+  const serverClaimedToday =
+    data.claimed_today === true ||
+    data.claimedToday === true ||
+    data.today_claimed === true ||
+    data.todayClaimed === true ||
+    data.claimed_today === 1 ||
+    data.claimedToday === 1;
+
+
+  // -------------------------------
+  // LOCAL CLAIM FALLBACK
+  // -------------------------------
+
+  const user = telegramUser();
+
+  const localClaimKey =
+    user?.id
+      ? `sinaps_daily_claim_${user.id}`
+      : null;
+
+  const localClaimDate =
+    localClaimKey
+      ? localStorage.getItem(localClaimKey)
+      : null;
+
+
+  const localClaimedToday =
+    localClaimDate === today;
+
+
+  // -------------------------------
+  // FINAL CLAIM STATUS
+  // -------------------------------
+
+  const claimedToday =
+    serverClaimedToday ||
+    lastClaimDate === today ||
+    localClaimedToday;
+
+
+  console.log(
+    "DAILY STATUS:",
+    {
+      streak,
+      rawLastClaim,
+      lastClaimDate,
+      today,
+      serverClaimedToday,
+      localClaimDate,
+      localClaimedToday,
+      claimedToday
+    }
+  );
+
+
+  // -------------------------------
+  // CURRENT DAY
+  // -------------------------------
+
+  let currentDay;
+
+  if (claimedToday) {
+
+    currentDay = Math.max(
+      1,
+      Math.min(
+        streak,
+        30
+      )
+    );
+
+  } else {
+
+    currentDay = Math.max(
+      1,
+      Math.min(
+        streak + 1,
+        30
+      )
+    );
+  }
+
+
+  // -------------------------------
+  // DRAW 30 DAYS
+  // -------------------------------
+
+  grid.innerHTML = "";
+
+
+  for (
+    let day = 1;
+    day <= 30;
+    day++
+  ) {
+
+    const cell =
+      document.createElement("button");
+
+    cell.type = "button";
+
+    cell.className =
+      "daily-day";
+
+
+    const reward =
+      day * 10;
+
+
+    let status =
+      "locked";
+
+    let icon =
+      "🔒";
+
+
+    // -----------------------------
+    // ALREADY COMPLETED DAYS
+    // -----------------------------
+
+    if (day < currentDay) {
+
+      status = "claimed";
+
+      icon = "✓";
+    }
+
+
+    // -----------------------------
+    // TODAY — CAN CLAIM
+    // -----------------------------
+
+    if (
+      !claimedToday &&
+      day === currentDay
+    ) {
+
+      status = "current";
+
+      icon = "CLAIM";
+    }
+
+
+    // -----------------------------
+    // TODAY — ALREADY CLAIMED
+    // -----------------------------
+
+    if (
+      claimedToday &&
+      day === currentDay
+    ) {
+
+      status = "claimed";
+
+      icon = "✓";
+    }
+
+
+    cell.classList.add(status);
+
+
+    cell.innerHTML = `
+      <span class="daily-day-number">
+        DAY ${day}
+      </span>
+
+      <strong>
+        ${formatNumber(reward)} SNP
+      </strong>
+
+      <span class="daily-check">
+        ${icon}
+      </span>
+    `;
+
+
+    // فقط روز قابل دریافت قابل کلیک است
+    if (status === "current") {
+
+      cell.addEventListener(
+        "click",
+        claimDaily
+      );
+    }
+
 
     grid.appendChild(cell);
   }
 
+
+  // -------------------------------
+  // DAILY NOTIFICATION DOT
+  // -------------------------------
+
   if ($("dailyDot")) {
+
     $("dailyDot").classList.toggle(
       "hidden",
       claimedToday
@@ -708,19 +1057,28 @@ function renderDaily(data = {}) {
 }
 
 
+// ------------------------------------------------------------
+// CLAIM DAILY
+// ------------------------------------------------------------
+
 async function claimDaily() {
+
+  const button =
+    document.querySelector(
+      ".daily-day.current"
+    );
+
+
+  if (button) {
+
+    button.disabled = true;
+
+    button.style.pointerEvents =
+      "none";
+  }
+
+
   try {
-
-    const button =
-      document.querySelector(
-        ".daily-day.current"
-      );
-
-    if (button) {
-      button.disabled = true;
-      button.style.pointerEvents =
-        "none";
-    }
 
     const data = await api(
       "/api/daily/claim",
@@ -730,10 +1088,16 @@ async function claimDaily() {
       }
     );
 
+
     console.log(
       "DAILY CLAIM RESPONSE:",
       data
     );
+
+
+    // -------------------------------
+    // UPDATE BALANCE
+    // -------------------------------
 
     if (data.user) {
 
@@ -760,17 +1124,82 @@ async function claimDaily() {
       renderUser();
     }
 
+
+    // -------------------------------
+    // SAVE LOCAL CLAIM
+    // -------------------------------
+
+    const user =
+      telegramUser();
+
+    if (user?.id) {
+
+      localStorage.setItem(
+        `sinaps_daily_claim_${user.id}`,
+        localDateKey()
+      );
+    }
+
+
+    // -------------------------------
+    // SHOW SUCCESS
+    // -------------------------------
+
     const reward =
-      Number(data.reward || 0);
+      Number(
+        data.reward || 0
+      );
 
     const day =
-      Number(data.day || 1);
+      Number(
+        data.day ||
+        data.streak ||
+        1
+      );
+
 
     toast(
       `🎁 +${formatNumber(reward)} SNP · Day ${day}`
     );
 
+
+    // -------------------------------
+    // IMMEDIATELY SHOW GREEN CHECK
+    // -------------------------------
+
+    if (button) {
+
+      button.classList.remove(
+        "current"
+      );
+
+      button.classList.add(
+        "claimed"
+      );
+
+      button.disabled = true;
+
+      button.style.pointerEvents =
+        "none";
+
+
+      const check =
+        button.querySelector(
+          ".daily-check"
+        );
+
+      if (check) {
+        check.textContent = "✓";
+      }
+    }
+
+
+    // -------------------------------
+    // RELOAD FROM SERVER
+    // -------------------------------
+
     await loadDaily();
+
 
   } catch (e) {
 
@@ -779,25 +1208,30 @@ async function claimDaily() {
       e
     );
 
+
     toast(
       e.message ||
       "Daily reward unavailable"
     );
 
-    const button =
-      document.querySelector(
-        ".daily-day.current"
-      );
 
     if (button) {
+
       button.disabled = false;
-      button.style.pointerEvents = "";
+
+      button.style.pointerEvents =
+        "";
     }
   }
 }
 
 
+// ------------------------------------------------------------
+// OPEN DAILY
+// ------------------------------------------------------------
+
 function openDaily() {
+
   const modal =
     $("dailyModal");
 
@@ -809,12 +1243,15 @@ function openDaily() {
 }
 
 
+// ------------------------------------------------------------
+// CLOSE DAILY
+// ------------------------------------------------------------
+
 function closeDaily() {
+
   $("dailyModal")
     ?.classList.remove("show");
 }
-
-
 // ============================================================
 // WALLET
 // ============================================================
