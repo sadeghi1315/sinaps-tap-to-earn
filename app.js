@@ -7,52 +7,84 @@ if (tg) {
 }
 
 const API = "https://sinaps-backend.onrender.com";
+
 const TON_MANIFEST =
   "https://sadeghi1315.github.io/sinaps-tap-to-earn/tonconnect-manifest.json";
+
+
+// ============================================================
+// STATE
+// ============================================================
 
 const state = {
   balance: 0,
   energy: 1000,
   maxEnergy: 1000,
   tapPower: 1,
+
   rechargeMultiplier: 1,
   tapBoostLevel: 1,
   energyBoostLevel: 1,
   rechargeLevel: 1,
+
   walletAddress: null,
   username: "",
   referralCode: "",
+
   currentPage: "home"
 };
 
+
+// ============================================================
+// GLOBALS
+// ============================================================
+
 let tonUI = null;
+
 let tapQueue = 0;
 let tapTimer = null;
 let energyTimer = null;
+
 let walletInitialized = false;
 let disconnectRequested = false;
 
-const $ = id => document.getElementById(id);
+
+// ============================================================
+// HELPERS
+// ============================================================
+
+const $ = id =>
+  document.getElementById(id);
+
 
 const formatNumber = value =>
   Number(value || 0).toLocaleString("en-US");
 
+
 const telegramUser = () =>
   tg?.initDataUnsafe?.user || null;
+
 
 const authHeaders = () => ({
   "Content-Type": "application/json",
   "X-Telegram-Init-Data": tg?.initData || ""
 });
 
+
 async function api(path, options = {}) {
-  const response = await fetch(API + path, {
-    ...options,
-    headers: {
-      ...authHeaders(),
-      ...(options.headers || {})
+
+  const response = await fetch(
+    API + path,
+    {
+      ...options,
+
+      headers: {
+        ...authHeaders(),
+        ...(options.headers || {})
+      }
     }
-  });
+  );
+
 
   let data = {};
 
@@ -60,29 +92,43 @@ async function api(path, options = {}) {
     data = await response.json();
   } catch (_) {}
 
+
   if (!response.ok) {
-    throw new Error(data.error || "Request failed");
+    throw new Error(
+      data.error || "Request failed"
+    );
   }
+
 
   return data;
 }
 
+
 function toast(message) {
+
   const el = $("toast");
 
   if (!el) return;
 
+
   el.textContent = message;
+
   el.classList.add("show");
+
 
   clearTimeout(el._timer);
 
+
   el._timer = setTimeout(() => {
+
     el.classList.remove("show");
+
   }, 2400);
 }
 
+
 function shortAddress(address) {
+
   if (!address) return "";
 
   return address.length > 15
@@ -96,74 +142,135 @@ function shortAddress(address) {
 // ============================================================
 
 function applyUser(user) {
+
   if (!user) return;
 
-  state.balance = Number(user.balance || 0);
-  state.energy = Number(user.energy || 0);
-  state.maxEnergy = Number(user.max_energy || 1000);
-  state.tapPower = Number(user.tap_power || 1);
+
+  state.balance =
+    Number(user.balance || 0);
+
+
+  state.energy =
+    Number(user.energy || 0);
+
+
+  state.maxEnergy =
+    Number(user.max_energy || 1000);
+
+
+  state.tapPower =
+    Number(user.tap_power || 1);
+
 
   state.rechargeMultiplier =
-    Number(user.recharge_multiplier || 1);
+    Number(
+      user.recharge_multiplier || 1
+    );
+
 
   state.tapBoostLevel =
-    Number(user.tap_boost_level || 1);
+    Number(
+      user.tap_boost_level || 1
+    );
+
 
   state.energyBoostLevel =
-    Number(user.energy_boost_level || 1);
+    Number(
+      user.energy_boost_level || 1
+    );
+
 
   state.rechargeLevel =
-    Number(user.recharge_level || 1);
+    Number(
+      user.recharge_level || 1
+    );
+
 
   state.walletAddress =
     user.wallet_address || null;
+
 
   state.referralCode =
     user.referral_code ||
     state.referralCode ||
     "";
 
+
   renderUser();
+
   renderWallet();
 }
 
+
 function renderUser() {
-  const user = telegramUser();
+
+  const user =
+    telegramUser();
+
 
   if ($("username")) {
+
     $("username").textContent =
       user?.username
         ? `@${user.username}`
-        : (user?.first_name || "@user");
+        : (
+          user?.first_name ||
+          "@user"
+        );
   }
+
 
   if ($("balance")) {
+
     $("balance").textContent =
-      formatNumber(state.balance);
+      formatNumber(
+        state.balance
+      );
   }
 
+
   if ($("boostBalance")) {
+
     $("boostBalance").textContent =
-      formatNumber(state.balance);
+      formatNumber(
+        state.balance
+      );
   }
+
 
   renderEnergy();
 }
 
+
 async function loadUser() {
+
   try {
-    const user = telegramUser();
 
-    const data = await api("/api/user", {
-      method: "POST",
-      body: JSON.stringify({
-        username: user?.username || "",
-        start_param:
-          tg?.initDataUnsafe?.start_param || ""
-      })
-    });
+    const user =
+      telegramUser();
 
-    applyUser(data.user);
+
+    const data =
+      await api(
+        "/api/user",
+        {
+          method: "POST",
+
+          body: JSON.stringify({
+            username:
+              user?.username || "",
+
+            start_param:
+              tg?.initDataUnsafe?.start_param || ""
+          })
+        }
+      );
+
+
+    applyUser(
+      data.user
+    );
+
 
     await Promise.allSettled([
       loadBoosts(),
@@ -173,9 +280,19 @@ async function loadUser() {
       loadWallet()
     ]);
 
+
   } catch (e) {
-    console.error("loadUser", e);
-    toast(e.message || "Server connection failed");
+
+    console.error(
+      "loadUser",
+      e
+    );
+
+
+    toast(
+      e.message ||
+      "Server connection failed"
+    );
   }
 }
 
@@ -185,43 +302,69 @@ async function loadUser() {
 // ============================================================
 
 function renderEnergy() {
-  const energy = Math.max(
-    0,
-    Math.min(
-      Number(state.energy || 0),
-      Number(state.maxEnergy || 1000)
-    )
-  );
+
+  const energy =
+    Math.max(
+      0,
+      Math.min(
+        Number(state.energy || 0),
+        Number(state.maxEnergy || 1000)
+      )
+    );
+
 
   if ($("energy")) {
+
     $("energy").textContent =
       `${formatNumber(energy)} / ${formatNumber(state.maxEnergy)}`;
   }
 
+
   if ($("energyFill")) {
+
     $("energyFill").style.width =
-      `${state.maxEnergy
-        ? (energy / state.maxEnergy) * 100
-        : 0}%`;
+      `${
+        state.maxEnergy
+          ? (energy / state.maxEnergy) * 100
+          : 0
+      }%`;
   }
 }
 
+
 function startEnergyTimer() {
-  clearInterval(energyTimer);
 
-  energyTimer = setInterval(() => {
-    if (state.energy < state.maxEnergy) {
-      state.energy = Math.min(
-        state.maxEnergy,
-        state.energy + 1
-      );
+  clearInterval(
+    energyTimer
+  );
 
-      renderEnergy();
-    }
-  }, Math.max(
-    500,
-    3000 / Math.max(1, state.rechargeMultiplier)
-  ));
+
+  energyTimer =
+    setInterval(() => {
+
+      if (
+        state.energy <
+        state.maxEnergy
+      ) {
+
+        state.energy =
+          Math.min(
+            state.maxEnergy,
+            state.energy + 1
+          );
+
+
+        renderEnergy();
+      }
+
+    }, Math.max(
+      500,
+      3000 /
+      Math.max(
+        1,
+        state.rechargeMultiplier
+      )
+    ));
 }
 
 
@@ -229,94 +372,178 @@ function startEnergyTimer() {
 // TAP
 // ============================================================
 
-function showTapNumber(event, amount) {
-  const area = $("tapArea");
-  const container = $("floaters");
+function showTapNumber(
+  event,
+  amount
+) {
 
-  if (!area || !container) return;
+  const area =
+    $("tapArea");
 
-  const rect = area.getBoundingClientRect();
+  const container =
+    $("floaters");
+
+
+  if (!area || !container) {
+    return;
+  }
+
+
+  const rect =
+    area.getBoundingClientRect();
+
 
   const x =
     event?.clientX ??
-    rect.left + rect.width / 2;
+    rect.left +
+    rect.width / 2;
+
 
   const y =
     event?.clientY ??
-    rect.top + rect.height / 2;
+    rect.top +
+    rect.height / 2;
 
-  const el = document.createElement("div");
 
-  el.className = "tap-floater";
-  el.textContent = `+${amount}`;
+  const el =
+    document.createElement(
+      "div"
+    );
+
+
+  el.className =
+    "tap-floater";
+
+
+  el.textContent =
+    `+${amount}`;
+
 
   el.style.left =
     `${x - rect.left}px`;
 
+
   el.style.top =
     `${y - rect.top}px`;
 
-  container.appendChild(el);
 
-  setTimeout(() => el.remove(), 800);
+  container.appendChild(
+    el
+  );
+
+
+  setTimeout(() => {
+
+    el.remove();
+
+  }, 800);
 }
 
+
 function tap(event) {
+
   if (state.energy <= 0) {
-    return toast("No energy");
+
+    return toast(
+      "No energy"
+    );
   }
 
-  const reward = state.tapPower;
+
+  const reward =
+    state.tapPower;
+
 
   state.energy -= 1;
+
   state.balance += reward;
+
 
   tapQueue += 1;
 
+
   renderUser();
-  showTapNumber(event, reward);
+
+  showTapNumber(
+    event,
+    reward
+  );
+
 
   if (!tapTimer) {
-    tapTimer = setTimeout(
-      flushTaps,
-      100
-    );
+
+    tapTimer =
+      setTimeout(
+        flushTaps,
+        100
+      );
   }
 }
 
+
 async function flushTaps() {
-  clearTimeout(tapTimer);
+
+  clearTimeout(
+    tapTimer
+  );
+
   tapTimer = null;
 
-  if (tapQueue <= 0) return;
 
-  const count = Math.min(
-    tapQueue,
-    50
-  );
+  if (tapQueue <= 0) {
+    return;
+  }
+
+
+  const count =
+    Math.min(
+      tapQueue,
+      50
+    );
+
 
   tapQueue -= count;
 
-  try {
-    const data = await api("/api/tap", {
-      method: "POST",
-      body: JSON.stringify({
-        count
-      })
-    });
 
-    applyUser(data.user);
+  try {
+
+    const data =
+      await api(
+        "/api/tap",
+        {
+          method: "POST",
+
+          body: JSON.stringify({
+            count
+          })
+        }
+      );
+
+
+    applyUser(
+      data.user
+    );
+
 
   } catch (e) {
-    console.error("tap", e);
+
+    console.error(
+      "tap",
+      e
+    );
+
+
     await loadUser();
   }
 
+
   if (tapQueue > 0) {
-    tapTimer = setTimeout(
-      flushTaps,
-      100
-    );
+
+    tapTimer =
+      setTimeout(
+        flushTaps,
+        100
+      );
   }
 }
 
@@ -326,31 +553,58 @@ async function flushTaps() {
 // ============================================================
 
 async function loadBoosts() {
+
   try {
-    const data = await api("/api/boosts");
+
+    const data =
+      await api(
+        "/api/boosts"
+      );
+
 
     renderBoosts(
       data.boosts || []
     );
 
+
     if ($("boostBalance")) {
+
       $("boostBalance").textContent =
-        formatNumber(data.balance);
+        formatNumber(
+          data.balance
+        );
     }
 
+
   } catch (e) {
-    console.error("boosts", e);
+
+    console.error(
+      "boosts",
+      e
+    );
   }
 }
 
-function renderBoosts(boosts) {
-  const container = $("boostsList");
 
-  if (!container) return;
+function renderBoosts(
+  boosts
+) {
 
-  container.innerHTML = "";
+  const container =
+    $("boostsList");
+
+
+  if (!container) {
+    return;
+  }
+
+
+  container.innerHTML =
+    "";
+
 
   const meta = {
+
     tap: {
       title: "⚡ Tap Power",
       icon: "⚡",
@@ -368,107 +622,189 @@ function renderBoosts(boosts) {
     recharge: {
       title: "🚀 Energy Recharge",
       icon: "🚀",
-      current: state.rechargeMultiplier,
-      suffix: "× recharge speed"
+      current:
+        state.rechargeMultiplier,
+      suffix:
+        "× recharge speed"
     }
+
   };
 
+
   boosts.forEach(item => {
-    const m = meta[item.type];
-    const next = item.next;
+
+    const m =
+      meta[item.type];
+
+
+    const next =
+      item.next;
+
 
     if (!m) return;
 
-    const card =
-      document.createElement("div");
 
-    card.className = "boost-card";
+    const card =
+      document.createElement(
+        "div"
+      );
+
+
+    card.className =
+      "boost-card";
+
 
     if (!next) {
-      card.classList.add("maxed");
+
+      card.classList.add(
+        "maxed"
+      );
     }
 
-    let currentText =
+
+    const currentText =
       item.type === "tap"
+
         ? `${item.current_level} SNP / tap`
+
         : item.type === "energy"
-          ? `${formatNumber(item.current_level * 1000)} max energy`
+
+          ? `${formatNumber(
+              item.current_level * 1000
+            )} max energy`
+
           : `${item.current_level}× faster recharge`;
 
-    let nextText =
+
+    const nextText =
       next
+
         ? (
           item.type === "tap"
+
             ? `${next.level} SNP / tap`
+
             : item.type === "energy"
-              ? `${formatNumber(next.level * 1000)} max energy`
+
+              ? `${formatNumber(
+                  next.level * 1000
+                )} max energy`
+
               : `${next.level}× faster recharge`
         )
+
         : "Maximum level reached";
 
+
     card.innerHTML = `
-      <div class="boost-icon">${m.icon}</div>
+
+      <div class="boost-icon">
+        ${m.icon}
+      </div>
 
       <div class="boost-info">
+
         <div class="boost-name">
           ${m.title.replace(/^\S+\s/, "")}
         </div>
 
         <div class="boost-current">
-          Level ${item.current_level} · ${currentText}
+          Level ${item.current_level}
+          · ${currentText}
         </div>
 
         <div class="boost-next">
-          ${next ? `Next: ${nextText}` : nextText}
+          ${
+            next
+              ? `Next: ${nextText}`
+              : nextText
+          }
         </div>
+
       </div>
 
       <button
         class="boost-buy"
-        ${next ? `data-type="${item.type}"` : "disabled"}
+        ${
+          next
+            ? `data-type="${item.type}"`
+            : "disabled"
+        }
       >
-        ${next
-          ? `${formatNumber(next.price)} SNP`
-          : "MAX"}
+        ${
+          next
+            ? `${formatNumber(next.price)} SNP`
+            : "MAX"
+        }
       </button>
+
     `;
 
-    container.appendChild(card);
+
+    container.appendChild(
+      card
+    );
   });
 
+
   container
-    .querySelectorAll(".boost-buy[data-type]")
+    .querySelectorAll(
+      ".boost-buy[data-type]"
+    )
     .forEach(btn => {
+
       btn.addEventListener(
         "click",
-        () => buyBoost(btn.dataset.type)
+        () =>
+          buyBoost(
+            btn.dataset.type
+          )
       );
     });
 }
 
-async function buyBoost(type) {
+
+async function buyBoost(
+  type
+) {
+
   try {
-    const data = await api(
-      "/api/boosts/buy",
-      {
-        method: "POST",
-        body: JSON.stringify({ type })
-      }
+
+    const data =
+      await api(
+        "/api/boosts/buy",
+        {
+          method: "POST",
+
+          body: JSON.stringify({
+            type
+          })
+        }
+      );
+
+
+    applyUser(
+      data.user
     );
 
-    applyUser(data.user);
 
     toast(
       data.message ||
       "Boost activated"
     );
 
+
     startEnergyTimer();
+
 
     await loadBoosts();
 
+
   } catch (e) {
-    toast(e.message);
+
+    toast(
+      e.message
+    );
   }
 }
 
@@ -478,262 +814,98 @@ async function buyBoost(type) {
 // ============================================================
 
 function localDateKey() {
-  const d = new Date();
+
+  const d =
+    new Date();
+
 
   const y =
     d.getFullYear();
 
+
   const m =
-    String(d.getMonth() + 1)
-      .padStart(2, "0");
+    String(
+      d.getMonth() + 1
+    ).padStart(
+      2,
+      "0"
+    );
+
 
   const day =
-    String(d.getDate())
-      .padStart(2, "0");
+    String(
+      d.getDate()
+    ).padStart(
+      2,
+      "0"
+    );
+
 
   return `${y}-${m}-${day}`;
 }
 
 
-// تبدیل تاریخ سرور به YYYY-MM-DD
-function normalizeDateKey(value) {
-  if (!value) return null;
+function normalizeDateKey(
+  value
+) {
 
-  if (typeof value === "string") {
-    const match =
-      value.match(/^(\d{4}-\d{2}-\d{2})/);
-
-    if (match) {
-      return match[1];
-    }
-  }
-
-  const d = new Date(value);
-
-  if (Number.isNaN(d.getTime())) {
+  if (!value) {
     return null;
   }
 
-  const y =
-    d.getFullYear();
 
-  const m =
-    String(d.getMonth() + 1)
-      .padStart(2, "0");
-
-  const day =
-    String(d.getDate())
-      .padStart(2, "0");
-
-  return `${y}-${m}-${day}`;
-}
-
-
-async function loadDaily() {
-  const grid = $("dailyGrid");
-
-  if (!grid) return;
-
-  try {
-    const user = telegramUser();
-
-    if (!user?.id) {
-      renderDaily({
-        streak: 0,
-        last_claim_date: null
-      });
-
-      return;
-    }
-
-    const data = await api(
-      `/api/daily?telegram_id=${encodeURIComponent(user.id)}`
-    );
-
-    console.log(
-      "DAILY SERVER DATA:",
-      data
-    );
-
-    renderDaily(
-      data.daily || data
-    );
-
-  } catch (e) {
-    console.error(
-      "Daily load error:",
-      e
-    );
-
-    renderDaily({
-      streak: 0,
-      last_claim_date: null
-    });
-
-    toast(
-      "Daily rewards could not be loaded"
-    );
-  }
-}
-
-
-function renderDaily(data = {}) {
-  const grid = $("dailyGrid");
-
-  if (!grid) return;
-
-  const streak = Math.max(
-    0,
-    Math.min(
-      30,
-      Number(data.streak || 0)
-    )
-  );
-
-  const rawLastClaim =
-    data.last_claim_date ??
-    data.lastClaimDate ??
-    data.last_claim ??
-    data.claimed_date ??
-    null;
-
-  const lastClaimDate =
-    normalizeDateKey(rawLastClaim);
-
-  const today =
-    localDateKey();
-
-  const claimedToday =
-    Boolean(lastClaimDate) &&
-    lastClaimDate === today;
-
-  console.log(
-    "DAILY STATUS:",
-    {
-      streak,
-      rawLastClaim,
-      lastClaimDate,
-      today,
-      claimedToday
-    }
-  );
-
-  const currentDay =
-    claimedToday
-      ? Math.max(
-          1,
-          Math.min(streak, 30)
-        )
-      : Math.min(
-          streak + 1,
-          30
-        );
-
-  grid.innerHTML = "";
-
-  for (
-    let day = 1;
-    day <= 30;
-    day++
+  if (
+    typeof value ===
+    "string"
   ) {
 
-    const cell =
-      document.createElement("button");
-
-    cell.type = "button";
-    cell.className = "daily-day";
-
-    const reward =
-      day * 10;
-
-    let status = "locked";
-    let icon = "🔒";
-
-    // روزهای قبلی
-    if (day < currentDay) {
-      status = "claimed";
-      icon = "✓";
-    }
-
-    // روز قابل دریافت
-    if (
-      !claimedToday &&
-      day === currentDay
-    ) {
-      status = "current";
-      icon = "CLAIM";
-    }
-
-    // امروز قبلاً دریافت شده
-    if (
-      claimedToday &&
-      day === currentDay
-    ) {
-      status = "claimed";
-      icon = "✓";
-    }
-
-    cell.classList.add(status);
-
-    cell.innerHTML = `
-      <span class="daily-day-number">
-        DAY ${day}
-      </span>
-
-      <strong>
-        ${formatNumber(reward)} SNP
-      </strong>
-
-      <span class="daily-check">
-        ${icon}
-      </span>
-    `;
-
-    if (status === "current") {
-      cell.addEventListener(
-        "click",
-        claimDaily
+    const match =
+      value.match(
+        /^(\d{4}-\d{2}-\d{2})/
       );
-// ============================================================
-// DAILY REWARDS — FIXED
-// ============================================================
 
-function localDateKey() {
-  const d = new Date();
-
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-
-  return `${y}-${m}-${day}`;
-}
-
-
-// تبدیل تاریخ/تایم‌استمپ به YYYY-MM-DD
-function normalizeDateKey(value) {
-  if (!value) return null;
-
-  // اگر سرور مستقیماً YYYY-MM-DD داده
-  if (typeof value === "string") {
-
-    const match = value.match(
-      /^(\d{4}-\d{2}-\d{2})/
-    );
 
     if (match) {
       return match[1];
     }
   }
 
-  const d = new Date(value);
 
-  if (Number.isNaN(d.getTime())) {
+  const d =
+    new Date(value);
+
+
+  if (
+    Number.isNaN(
+      d.getTime()
+    )
+  ) {
+
     return null;
   }
 
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
+
+  const y =
+    d.getFullYear();
+
+
+  const m =
+    String(
+      d.getMonth() + 1
+    ).padStart(
+      2,
+      "0"
+    );
+
+
+  const day =
+    String(
+      d.getDate()
+    ).padStart(
+      2,
+      "0"
+    );
+
 
   return `${y}-${m}-${day}`;
 }
@@ -745,34 +917,48 @@ function normalizeDateKey(value) {
 
 async function loadDaily() {
 
-  const grid = $("dailyGrid");
+  const grid =
+    $("dailyGrid");
 
-  if (!grid) return;
+
+  if (!grid) {
+    return;
+  }
+
 
   try {
 
-    const user = telegramUser();
+    const user =
+      telegramUser();
+
 
     if (!user?.id) {
 
       renderDaily({
         streak: 0,
-        last_claim_date: null,
-        claimed_today: false
+        last_claim_date: null
       });
 
       return;
     }
 
-    const data = await api(
-      `/api/daily?telegram_id=${encodeURIComponent(user.id)}`
+
+    const data =
+      await api(
+        `/api/daily?telegram_id=${encodeURIComponent(user.id)}`
+      );
+
+
+    console.log(
+      "DAILY SERVER DATA:",
+      data
     );
 
-    console.log("DAILY SERVER DATA:", data);
 
-    const daily = data.daily || data;
+    renderDaily(
+      data.daily || data
+    );
 
-    renderDaily(daily);
 
   } catch (e) {
 
@@ -781,11 +967,12 @@ async function loadDaily() {
       e
     );
 
+
     renderDaily({
       streak: 0,
-      last_claim_date: null,
-      claimed_today: false
+      last_claim_date: null
     });
+
 
     toast(
       "Daily rewards could not be loaded"
@@ -798,99 +985,89 @@ async function loadDaily() {
 // RENDER DAILY
 // ------------------------------------------------------------
 
-function renderDaily(data = {}) {
+function renderDaily(
+  data = {}
+) {
 
-  const grid = $("dailyGrid");
+  const grid =
+    $("dailyGrid");
 
-  if (!grid) return;
+
+  if (!grid) {
+    return;
+  }
 
 
-  // -------------------------------
-  // STREAK
-  // -------------------------------
-
-  const streak = Math.max(
-    0,
-    Math.min(
-      30,
-      Number(
-        data.streak ??
-        data.daily_streak ??
-        data.current_streak ??
-        0
+  const streak =
+    Math.max(
+      0,
+      Math.min(
+        30,
+        Number(
+          data.streak ||
+          data.daily_streak ||
+          data.current_streak ||
+          0
+        )
       )
-    )
-  );
+    );
 
-
-  // -------------------------------
-  // FIND LAST CLAIM DATE
-  // -------------------------------
 
   const rawLastClaim =
+
     data.last_claim_date ??
+
     data.last_claimed_date ??
+
     data.last_claim_at ??
+
     data.last_claimed_at ??
+
     data.last_claim ??
+
     data.claimed_date ??
+
     data.claimed_at ??
-    data.claimDate ??
+
     data.lastClaimDate ??
+
+    data.claimDate ??
+
     data.lastClaim ??
+
     null;
 
 
   const lastClaimDate =
-    normalizeDateKey(rawLastClaim);
+    normalizeDateKey(
+      rawLastClaim
+    );
 
 
   const today =
     localDateKey();
 
 
-  // -------------------------------
-  // CHECK SERVER FLAGS TOO
-  // -------------------------------
-
   const serverClaimedToday =
+
     data.claimed_today === true ||
+
     data.claimedToday === true ||
+
     data.today_claimed === true ||
+
     data.todayClaimed === true ||
+
     data.claimed_today === 1 ||
+
     data.claimedToday === 1;
 
 
-  // -------------------------------
-  // LOCAL CLAIM FALLBACK
-  // -------------------------------
-
-  const user = telegramUser();
-
-  const localClaimKey =
-    user?.id
-      ? `sinaps_daily_claim_${user.id}`
-      : null;
-
-  const localClaimDate =
-    localClaimKey
-      ? localStorage.getItem(localClaimKey)
-      : null;
-
-
-  const localClaimedToday =
-    localClaimDate === today;
-
-
-  // -------------------------------
-  // FINAL CLAIM STATUS
-  // -------------------------------
-
   const claimedToday =
+
     serverClaimedToday ||
-    lastClaimDate === today ||
-    localClaimedToday;
+
+    lastClaimDate === today;
 
 
   console.log(
@@ -901,46 +1078,40 @@ function renderDaily(data = {}) {
       lastClaimDate,
       today,
       serverClaimedToday,
-      localClaimDate,
-      localClaimedToday,
       claimedToday
     }
   );
 
 
-  // -------------------------------
-  // CURRENT DAY
-  // -------------------------------
-
   let currentDay;
+
 
   if (claimedToday) {
 
-    currentDay = Math.max(
-      1,
-      Math.min(
-        streak,
-        30
-      )
-    );
+    currentDay =
+      Math.max(
+        1,
+        Math.min(
+          streak,
+          30
+        )
+      );
 
   } else {
 
-    currentDay = Math.max(
-      1,
-      Math.min(
-        streak + 1,
-        30
-      )
-    );
+    currentDay =
+      Math.max(
+        1,
+        Math.min(
+          streak + 1,
+          30
+        )
+      );
   }
 
 
-  // -------------------------------
-  // DRAW 30 DAYS
-  // -------------------------------
-
-  grid.innerHTML = "";
+  grid.innerHTML =
+    "";
 
 
   for (
@@ -950,9 +1121,14 @@ function renderDaily(data = {}) {
   ) {
 
     const cell =
-      document.createElement("button");
+      document.createElement(
+        "button"
+      );
 
-    cell.type = "button";
+
+    cell.type =
+      "button";
+
 
     cell.className =
       "daily-day";
@@ -965,56 +1141,59 @@ function renderDaily(data = {}) {
     let status =
       "locked";
 
+
     let icon =
       "🔒";
 
 
-    // -----------------------------
-    // ALREADY COMPLETED DAYS
-    // -----------------------------
+    // روزهای دریافت شده
+    if (
+      day < currentDay
+    ) {
 
-    if (day < currentDay) {
+      status =
+        "claimed";
 
-      status = "claimed";
-
-      icon = "✓";
+      icon =
+        "✓";
     }
 
 
-    // -----------------------------
-    // TODAY — CAN CLAIM
-    // -----------------------------
-
+    // روز قابل دریافت
     if (
       !claimedToday &&
       day === currentDay
     ) {
 
-      status = "current";
+      status =
+        "current";
 
-      icon = "CLAIM";
+      icon =
+        "CLAIM";
     }
 
 
-    // -----------------------------
-    // TODAY — ALREADY CLAIMED
-    // -----------------------------
-
+    // امروز دریافت شده
     if (
       claimedToday &&
       day === currentDay
     ) {
 
-      status = "claimed";
+      status =
+        "claimed";
 
-      icon = "✓";
+      icon =
+        "✓";
     }
 
 
-    cell.classList.add(status);
+    cell.classList.add(
+      status
+    );
 
 
     cell.innerHTML = `
+
       <span class="daily-day-number">
         DAY ${day}
       </span>
@@ -1026,11 +1205,13 @@ function renderDaily(data = {}) {
       <span class="daily-check">
         ${icon}
       </span>
+
     `;
 
 
-    // فقط روز قابل دریافت قابل کلیک است
-    if (status === "current") {
+    if (
+      status === "current"
+    ) {
 
       cell.addEventListener(
         "click",
@@ -1039,13 +1220,11 @@ function renderDaily(data = {}) {
     }
 
 
-    grid.appendChild(cell);
+    grid.appendChild(
+      cell
+    );
   }
 
-
-  // -------------------------------
-  // DAILY NOTIFICATION DOT
-  // -------------------------------
 
   if ($("dailyDot")) {
 
@@ -1071,7 +1250,8 @@ async function claimDaily() {
 
   if (button) {
 
-    button.disabled = true;
+    button.disabled =
+      true;
 
     button.style.pointerEvents =
       "none";
@@ -1080,13 +1260,14 @@ async function claimDaily() {
 
   try {
 
-    const data = await api(
-      "/api/daily/claim",
-      {
-        method: "POST",
-        body: "{}"
-      }
-    );
+    const data =
+      await api(
+        "/api/daily/claim",
+        {
+          method: "POST",
+          body: "{}"
+        }
+      );
 
 
     console.log(
@@ -1095,9 +1276,7 @@ async function claimDaily() {
     );
 
 
-    // -------------------------------
     // UPDATE BALANCE
-    // -------------------------------
 
     if (data.user) {
 
@@ -1110,7 +1289,9 @@ async function claimDaily() {
     ) {
 
       state.balance =
-        Number(data.balance);
+        Number(
+          data.balance
+        );
 
       renderUser();
 
@@ -1119,36 +1300,19 @@ async function claimDaily() {
     ) {
 
       state.balance +=
-        Number(data.reward || 0);
+        Number(
+          data.reward || 0
+        );
 
       renderUser();
     }
 
 
-    // -------------------------------
-    // SAVE LOCAL CLAIM
-    // -------------------------------
-
-    const user =
-      telegramUser();
-
-    if (user?.id) {
-
-      localStorage.setItem(
-        `sinaps_daily_claim_${user.id}`,
-        localDateKey()
-      );
-    }
-
-
-    // -------------------------------
-    // SHOW SUCCESS
-    // -------------------------------
-
     const reward =
       Number(
         data.reward || 0
       );
+
 
     const day =
       Number(
@@ -1159,13 +1323,13 @@ async function claimDaily() {
 
 
     toast(
-      `🎁 +${formatNumber(reward)} SNP · Day ${day}`
+      `🎁 +${formatNumber(
+        reward
+      )} SNP · Day ${day}`
     );
 
 
-    // -------------------------------
-    // IMMEDIATELY SHOW GREEN CHECK
-    // -------------------------------
+    // نمایش فوری تیک سبز
 
     if (button) {
 
@@ -1173,11 +1337,15 @@ async function claimDaily() {
         "current"
       );
 
+
       button.classList.add(
         "claimed"
       );
 
-      button.disabled = true;
+
+      button.disabled =
+        true;
+
 
       button.style.pointerEvents =
         "none";
@@ -1188,15 +1356,16 @@ async function claimDaily() {
           ".daily-check"
         );
 
+
       if (check) {
-        check.textContent = "✓";
+
+        check.textContent =
+          "✓";
       }
     }
 
 
-    // -------------------------------
-    // RELOAD FROM SERVER
-    // -------------------------------
+    // دریافت وضعیت جدید از سرور
 
     await loadDaily();
 
@@ -1217,7 +1386,8 @@ async function claimDaily() {
 
     if (button) {
 
-      button.disabled = false;
+      button.disabled =
+        false;
 
       button.style.pointerEvents =
         "";
@@ -1227,7 +1397,7 @@ async function claimDaily() {
 
 
 // ------------------------------------------------------------
-// OPEN DAILY
+// OPEN / CLOSE DAILY
 // ------------------------------------------------------------
 
 function openDaily() {
@@ -1235,80 +1405,107 @@ function openDaily() {
   const modal =
     $("dailyModal");
 
-  if (!modal) return;
 
-  modal.classList.add("show");
+  if (!modal) {
+    return;
+  }
+
+
+  modal.classList.add(
+    "show"
+  );
+
 
   loadDaily();
 }
 
 
-// ------------------------------------------------------------
-// CLOSE DAILY
-// ------------------------------------------------------------
-
 function closeDaily() {
 
   $("dailyModal")
-    ?.classList.remove("show");
+    ?.classList.remove(
+      "show"
+    );
 }
+
+
 // ============================================================
 // WALLET
 // ============================================================
 
 function renderWallet() {
+
   const address =
     $("walletAddress");
+
 
   const disconnect =
     $("disconnectWallet");
 
+
   const walletStatus =
     $("walletStatus");
+
 
   const connectButton =
     $("connectWalletButton");
 
+
   if (state.walletAddress) {
 
     if (address) {
+
       address.textContent =
         state.walletAddress;
     }
 
+
     if (walletStatus) {
+
       walletStatus.textContent =
         "TON wallet connected";
     }
 
+
     if (disconnect) {
+
       disconnect.style.display =
         "block";
     }
 
+
     if (connectButton) {
+
       connectButton.style.display =
         "none";
     }
 
+
   } else {
 
     if (address) {
+
       address.textContent =
         "Not connected";
     }
 
+
     if (walletStatus) {
+
       walletStatus.textContent =
         "Connect your TON wallet";
     }
 
+
     if (disconnect) {
+
       disconnect.style.display =
         "none";
     }
 
+
     if (connectButton) {
+
       connectButton.style.display =
         "block";
     }
@@ -1317,9 +1514,13 @@ function renderWallet() {
 
 
 async function initWallet() {
+
   try {
 
-    if (!window.TON_CONNECT_UI?.TonConnectUI) {
+    if (
+      !window.TON_CONNECT_UI?.TonConnectUI
+    ) {
+
       console.error(
         "TON Connect UI missing"
       );
@@ -1327,14 +1528,18 @@ async function initWallet() {
       return;
     }
 
+
     tonUI =
       new TON_CONNECT_UI.TonConnectUI({
+
         manifestUrl:
           TON_MANIFEST,
 
         buttonRootId:
           "ton-connect-top"
+
       });
+
 
     tonUI.onStatusChange(
       async wallet => {
@@ -1342,14 +1547,18 @@ async function initWallet() {
         walletInitialized =
           true;
 
+
         const address =
           wallet?.account?.address ||
           null;
 
+
         state.walletAddress =
           address;
 
+
         renderWallet();
+
 
         if (address) {
 
@@ -1360,6 +1569,7 @@ async function initWallet() {
                 "/api/wallet/connect",
                 {
                   method: "POST",
+
                   body: JSON.stringify({
                     wallet_address:
                       address
@@ -1367,15 +1577,18 @@ async function initWallet() {
                 }
               );
 
+
             applyUser(
               data.user
             );
+
 
             if (
               Number(
                 data.referral_reward || 0
               ) > 0
             ) {
+
               toast(
                 `Referral activated: +${formatNumber(
                   data.referral_reward
@@ -1383,7 +1596,9 @@ async function initWallet() {
               );
             }
 
+
             await loadFriends();
+
 
           } catch (e) {
 
@@ -1392,14 +1607,17 @@ async function initWallet() {
               e
             );
 
+
             toast(
               "Wallet connected, but could not be saved"
             );
           }
 
+
         } else {
 
           try {
+
             await api(
               "/api/wallet/disconnect",
               {
@@ -1407,11 +1625,17 @@ async function initWallet() {
                 body: "{}"
               }
             );
+
           } catch (_) {}
+
 
           await loadFriends();
 
-          if (disconnectRequested) {
+
+          if (
+            disconnectRequested
+          ) {
+
             disconnectRequested =
               false;
           }
@@ -1419,13 +1643,21 @@ async function initWallet() {
       }
     );
 
-    if (tonUI.connectionRestored) {
+
+    if (
+      tonUI.connectionRestored
+    ) {
+
       await tonUI.connectionRestored;
     }
 
-    if (!state.walletAddress) {
+
+    if (
+      !state.walletAddress
+    ) {
 
       try {
+
         await api(
           "/api/wallet/disconnect",
           {
@@ -1433,12 +1665,16 @@ async function initWallet() {
             body: "{}"
           }
         );
+
       } catch (_) {}
     }
 
+
     renderWallet();
 
+
   } catch (e) {
+
     console.error(
       "TON Connect",
       e
@@ -1448,16 +1684,23 @@ async function initWallet() {
 
 
 async function connectWallet() {
+
   if (!tonUI) {
+
     return toast(
       "TON Connect is not ready"
     );
   }
 
+
   try {
+
     await tonUI.openModal();
+
   } catch (e) {
+
     console.error(e);
+
 
     toast(
       "Could not open wallet"
@@ -1467,19 +1710,32 @@ async function connectWallet() {
 
 
 async function disconnectWallet() {
-  disconnectRequested = true;
+
+  disconnectRequested =
+    true;
+
 
   try {
-    if (tonUI?.disconnect) {
+
+    if (
+      tonUI?.disconnect
+    ) {
+
       await tonUI.disconnect();
     }
+
   } catch (_) {}
 
-  state.walletAddress = null;
+
+  state.walletAddress =
+    null;
+
 
   renderWallet();
 
+
   try {
+
     await api(
       "/api/wallet/disconnect",
       {
@@ -1487,19 +1743,25 @@ async function disconnectWallet() {
         body: "{}"
       }
     );
+
   } catch (_) {}
 
+
   await loadFriends();
+
 
   toast(
     "Wallet disconnected"
   );
 
-  disconnectRequested = false;
+
+  disconnectRequested =
+    false;
 }
 
 
 async function loadWallet() {
+
   renderWallet();
 }
 
@@ -1509,31 +1771,39 @@ async function loadWallet() {
 // ============================================================
 
 async function withdraw() {
+
   const amount =
     Number(
       $("withdrawAmount")?.value || 0
     );
 
+
   if (
     !Number.isInteger(amount) ||
     amount <= 0
   ) {
+
     return toast(
       "Enter a valid amount"
     );
   }
 
+
   if (!state.walletAddress) {
+
     return toast(
       "Connect your wallet first"
     );
   }
 
+
   if (amount > state.balance) {
+
     return toast(
       "Not enough SNP"
     );
   }
+
 
   try {
 
@@ -1542,13 +1812,16 @@ async function withdraw() {
         "/api/withdraw/create",
         {
           method: "POST",
+
           body: JSON.stringify({
             amount,
+
             wallet_address:
               state.walletAddress
           })
         }
       );
+
 
     state.balance =
       Number(
@@ -1556,37 +1829,53 @@ async function withdraw() {
         state.balance
       );
 
+
     renderUser();
+
 
     toast(
       "Withdrawal created"
     );
 
-    if (!tonUI) return;
+
+    if (!tonUI) {
+      return;
+    }
+
 
     try {
 
       await tonUI.sendTransaction({
+
         validUntil:
           Math.floor(
             Date.now() / 1000
           ) + 300,
 
         messages: [
+
           {
+
             address:
               data.treasury_wallet,
 
             amount:
-              String(data.fee_nano)
+              String(
+                data.fee_nano
+              )
+
           }
+
         ]
+
       });
+
 
       await api(
         "/api/withdraw/verify",
         {
           method: "POST",
+
           body: JSON.stringify({
             withdrawal_id:
               data.withdrawal_id
@@ -1594,38 +1883,54 @@ async function withdraw() {
         }
       );
 
+
       toast(
         "Fee paid. SNP payout is pending."
       );
 
-      if ($("withdrawAmount")) {
-        $("withdrawAmount").value = "";
+
+      if (
+        $("withdrawAmount")
+      ) {
+
+        $("withdrawAmount").value =
+          "";
       }
+
 
     } catch (e) {
 
       try {
+
         await api(
           "/api/withdraw/cancel",
           {
             method: "POST",
+
             body: JSON.stringify({
               withdrawal_id:
                 data.withdrawal_id
             })
           }
         );
+
       } catch (_) {}
 
+
       await loadUser();
+
 
       toast(
         "Withdrawal cancelled"
       );
     }
 
+
   } catch (e) {
-    toast(e.message);
+
+    toast(
+      e.message
+    );
   }
 }
 
@@ -1635,54 +1940,87 @@ async function withdraw() {
 // ============================================================
 
 async function loadTasks() {
+
   try {
 
     const data =
-      await api("/api/tasks");
+      await api(
+        "/api/tasks"
+      );
+
 
     const container =
       $("tasksList");
 
-    if (!container) return;
 
-    container.innerHTML = "";
+    if (!container) {
+      return;
+    }
 
-    data.tasks.forEach(task => {
 
-      const row =
-        document.createElement("div");
+    container.innerHTML =
+      "";
 
-      row.className =
-        "task-row";
 
-      row.innerHTML = `
-        <div class="task-icon">
-          ${task.icon}
-        </div>
+    (data.tasks || [])
+      .forEach(task => {
 
-        <div class="task-info">
-          <strong>${task.name}</strong>
-          <small>
-            +${formatNumber(task.reward)} SNP
-          </small>
-        </div>
+        const row =
+          document.createElement(
+            "div"
+          );
 
-        <button
-          class="task-button"
-          ${task.completed ? "disabled" : ""}
-          data-task-id="${task.id}"
-          data-url="${task.url || "#"}"
-        >
-          ${
-            task.completed
-              ? "DONE"
-              : task.action || "VERIFY"
-          }
-        </button>
-      `;
 
-      container.appendChild(row);
-    });
+        row.className =
+          "task-row";
+
+
+        row.innerHTML = `
+
+          <div class="task-icon">
+            ${task.icon}
+          </div>
+
+          <div class="task-info">
+
+            <strong>
+              ${task.name}
+            </strong>
+
+            <small>
+              +${formatNumber(
+                task.reward
+              )} SNP
+            </small>
+
+          </div>
+
+          <button
+            class="task-button"
+            ${
+              task.completed
+                ? "disabled"
+                : ""
+            }
+            data-task-id="${task.id}"
+            data-url="${task.url || "#"}"
+          >
+            ${
+              task.completed
+                ? "DONE"
+                : task.action ||
+                  "VERIFY"
+            }
+          </button>
+
+        `;
+
+
+        container.appendChild(
+          row
+        );
+      });
+
 
     container
       .querySelectorAll(
@@ -1700,24 +2038,36 @@ async function loadTasks() {
         );
       });
 
+
   } catch (e) {
 
     const c =
       $("tasksList");
 
+
     if (c) {
+
       c.innerHTML =
         `<div class="empty-state">
-          ${e.message || "Tasks unavailable"}
+          ${
+            e.message ||
+            "Tasks unavailable"
+          }
         </div>`;
     }
   }
 }
 
 
-async function claimTask(taskId, url) {
+async function claimTask(
+  taskId,
+  url
+) {
 
-  if (url && url !== "#") {
+  if (
+    url &&
+    url !== "#"
+  ) {
 
     try {
 
@@ -1725,13 +2075,19 @@ async function claimTask(taskId, url) {
         tg?.openTelegramLink &&
         url.includes("t.me/")
       ) {
-        tg.openTelegramLink(url);
+
+        tg.openTelegramLink(
+          url
+        );
+
       } else {
+
         window.open(
           url,
           "_blank"
         );
       }
+
 
     } catch (_) {
 
@@ -1741,10 +2097,16 @@ async function claimTask(taskId, url) {
       );
     }
 
+
     await new Promise(
-      r => setTimeout(r, 1200)
+      resolve =>
+        setTimeout(
+          resolve,
+          1200
+        )
     );
   }
+
 
   try {
 
@@ -1753,13 +2115,18 @@ async function claimTask(taskId, url) {
         "/api/tasks/claim",
         {
           method: "POST",
+
           body: JSON.stringify({
-            task_id: taskId,
+            task_id:
+              taskId,
+
             wallet_address:
-              state.walletAddress || ""
+              state.walletAddress ||
+              ""
           })
         }
       );
+
 
     state.balance =
       Number(
@@ -1767,16 +2134,25 @@ async function claimTask(taskId, url) {
         state.balance
       );
 
+
     renderUser();
 
+
     toast(
-      `+${formatNumber(data.reward)} SNP`
+      `+${formatNumber(
+        data.reward
+      )} SNP`
     );
+
 
     await loadTasks();
 
+
   } catch (e) {
-    toast(e.message);
+
+    toast(
+      e.message
+    );
   }
 }
 
@@ -1786,101 +2162,140 @@ async function claimTask(taskId, url) {
 // ============================================================
 
 async function loadFriends() {
+
   try {
 
     const data =
-      await api("/api/friends");
+      await api(
+        "/api/friends"
+      );
+
 
     const input =
       $("referralLink");
 
+
     if (input) {
+
       input.value =
-        data.referral_link || "";
+        data.referral_link ||
+        "";
     }
+
 
     if ($("referralCode")) {
+
       $("referralCode").textContent =
-        data.referral_code || "—";
+        data.referral_code ||
+        "—";
     }
 
+
     if ($("referralFriends")) {
+
       $("referralFriends").textContent =
         formatNumber(
           data.total_friends || 0
         );
     }
 
+
     if ($("activeReferrals")) {
+
       $("activeReferrals").textContent =
         formatNumber(
           data.active_referrals || 0
         );
     }
 
+
     if ($("referralIncome")) {
+
       $("referralIncome").textContent =
         `${formatNumber(
           data.total_earnings || 0
         )} SNP`;
     }
 
+
     if ($("inviteReward")) {
+
       $("inviteReward").textContent =
         `+${formatNumber(
           data.invite_reward || 100
         )} SNP`;
     }
 
+
     if ($("referralRate")) {
+
       $("referralRate").textContent =
         `${Math.round(
           Number(
-            data.referral_rate || 0.15
+            data.referral_rate ||
+            0.15
           ) * 100
         )}%`;
     }
 
+
     const list =
       $("friendsList");
 
-    if (!list) return;
 
-    list.innerHTML = "";
+    if (!list) {
+      return;
+    }
 
-    if (!data.friends?.length) {
+
+    list.innerHTML =
+      "";
+
+
+    if (
+      !data.friends?.length
+    ) {
 
       list.innerHTML =
         `<div class="empty-state">
           No invited friends yet.
         </div>`;
 
+
       return;
     }
+
 
     data.friends.forEach(
       friend => {
 
         const row =
-          document.createElement("div");
+          document.createElement(
+            "div"
+          );
+
 
         row.className =
           "friend-row";
+
 
         const balance =
           formatNumber(
             friend.balance || 0
           );
 
+
         const statusClass =
           friend.wallet_connected
             ? "friend-active"
             : "friend-pending";
 
+
         const status =
           friend.wallet_connected
             ? "WALLET CONNECTED"
             : "CONNECT WALLET";
+
 
         const reward =
           friend.referral_rewarded
@@ -1889,7 +2304,9 @@ async function loadFriends() {
               ? "+100 SNP"
               : "LOCKED";
 
+
         row.innerHTML = `
+
           <div class="friend-avatar">
             ${
               friend.wallet_connected
@@ -1930,11 +2347,16 @@ async function loadFriends() {
           <b>
             ${reward}
           </b>
+
         `;
 
-        list.appendChild(row);
+
+        list.appendChild(
+          row
+        );
       }
     );
+
 
   } catch (e) {
 
@@ -1943,10 +2365,13 @@ async function loadFriends() {
       e
     );
 
+
     const list =
       $("friendsList");
 
+
     if (list) {
+
       list.innerHTML =
         `<div class="empty-state">
           Referral data unavailable.
@@ -1957,10 +2382,15 @@ async function loadFriends() {
 
 
 async function copyReferral() {
+
   const input =
     $("referralLink");
 
-  if (!input?.value) return;
+
+  if (!input?.value) {
+    return;
+  }
+
 
   try {
 
@@ -1968,17 +2398,21 @@ async function copyReferral() {
       input.value
     );
 
+
     toast(
       "Referral link copied"
     );
+
 
   } catch (_) {
 
     input.select();
 
+
     document.execCommand(
       "copy"
     );
+
 
     toast(
       "Copied"
@@ -1988,25 +2422,42 @@ async function copyReferral() {
 
 
 function shareReferral() {
+
   const link =
     $("referralLink")?.value;
 
-  if (!link) return;
+
+  if (!link) {
+    return;
+  }
+
 
   const text =
     encodeURIComponent(
       "Join SINAPS and start earning SNP!"
     );
 
+
   const url =
-    encodeURIComponent(link);
+    encodeURIComponent(
+      link
+    );
+
 
   const share =
     `https://t.me/share/url?url=${url}&text=${text}`;
 
-  if (tg?.openTelegramLink) {
-    tg.openTelegramLink(share);
+
+  if (
+    tg?.openTelegramLink
+  ) {
+
+    tg.openTelegramLink(
+      share
+    );
+
   } else {
+
     window.open(
       share,
       "_blank"
@@ -2020,39 +2471,65 @@ function shareReferral() {
 // ============================================================
 
 async function loadHistory() {
+
   try {
 
     const data =
-      await api("/api/history");
+      await api(
+        "/api/history"
+      );
+
 
     const container =
       $("historyList");
 
-    if (!container) return;
 
-    container.innerHTML = "";
+    if (!container) {
+      return;
+    }
+
+
+    container.innerHTML =
+      "";
+
 
     (data.history || [])
       .forEach(item => {
 
         const amount =
-          Number(item.amount || 0);
+          Number(
+            item.amount || 0
+          );
+
 
         const row =
-          document.createElement("div");
+          document.createElement(
+            "div"
+          );
+
 
         row.className =
           "history-row";
 
+
         row.innerHTML = `
+
           <div>
+
             <strong>
-              ${item.type || "Transaction"}
+              ${
+                item.type ||
+                "Transaction"
+              }
             </strong>
 
             <small>
-              ${item.details || ""}
+              ${
+                item.details ||
+                ""
+              }
             </small>
+
           </div>
 
           <strong
@@ -2068,12 +2545,19 @@ async function loadHistory() {
                 : ""
             }${formatNumber(amount)}
           </strong>
+
         `;
 
-        container.appendChild(row);
+
+        container.appendChild(
+          row
+        );
       });
 
-    if (!data.history?.length) {
+
+    if (
+      !data.history?.length
+    ) {
 
       container.innerHTML =
         `<div class="empty-state">
@@ -2081,7 +2565,9 @@ async function loadHistory() {
         </div>`;
     }
 
+
   } catch (e) {
+
     console.error(
       "history",
       e
@@ -2097,24 +2583,34 @@ async function loadHistory() {
 const SNP_CHART_URL =
   "https://www.geckoterminal.com/ton/pools/EQAmLlerUViNn9PwFVRlR_AjDvhd5pkmeLNOu5bNDpvXV0ls";
 
+
 const SNP_BUY_URL =
   "https://app.ston.fi/swap?chartVisible=false&ft=GRAM&tt=EQAmLlerUViNn9PwFVRlR_AjDvhd5pkmeLNOu5bNDpvXV0ls";
 
 
-function openExternalLink(url) {
+function openExternalLink(
+  url
+) {
+
   try {
 
     if (tg?.openLink) {
-      tg.openLink(url);
+
+      tg.openLink(
+        url
+      );
+
       return;
     }
 
   } catch (e) {
+
     console.error(
       "Telegram openLink error:",
       e
     );
   }
+
 
   window.open(
     url,
@@ -2124,6 +2620,7 @@ function openExternalLink(url) {
 
 
 function openSnpChart() {
+
   openExternalLink(
     SNP_CHART_URL
   );
@@ -2131,6 +2628,7 @@ function openSnpChart() {
 
 
 function openSnpBuy() {
+
   openExternalLink(
     SNP_BUY_URL
   );
@@ -2141,13 +2639,18 @@ function openSnpBuy() {
 // NAVIGATION
 // ============================================================
 
-function showPage(page) {
+function showPage(
+  page
+) {
 
   state.currentPage =
     page;
 
+
   document
-    .querySelectorAll(".page")
+    .querySelectorAll(
+      ".page"
+    )
     .forEach(el => {
 
       el.classList.toggle(
@@ -2156,8 +2659,11 @@ function showPage(page) {
       );
     });
 
+
   document
-    .querySelectorAll(".nav-btn")
+    .querySelectorAll(
+      ".nav-btn"
+    )
     .forEach(el => {
 
       el.classList.toggle(
@@ -2166,20 +2672,37 @@ function showPage(page) {
       );
     });
 
-  if (page === "boost") {
+
+  if (
+    page === "boost"
+  ) {
+
     loadBoosts();
   }
 
-  if (page === "tasks") {
+
+  if (
+    page === "tasks"
+  ) {
+
     loadTasks();
   }
 
-  if (page === "friends") {
+
+  if (
+    page === "friends"
+  ) {
+
     loadFriends();
   }
 
-  if (page === "wallet") {
+
+  if (
+    page === "wallet"
+  ) {
+
     loadWallet();
+
     loadHistory();
   }
 }
@@ -2192,24 +2715,31 @@ function showPage(page) {
 function setupEvents() {
 
   // TAP
-  $("sCoin")?.addEventListener(
-    "pointerdown",
-    e => {
-      e.preventDefault();
-      tap(e);
-    },
-    {
-      passive: false
-    }
-  );
+
+  $("sCoin")
+    ?.addEventListener(
+      "pointerdown",
+      event => {
+
+        event.preventDefault();
+
+        tap(event);
+
+      },
+      {
+        passive: false
+      }
+    );
 
 
   // DAILY
+
   $("dailyGift")
     ?.addEventListener(
       "click",
       openDaily
     );
+
 
   $("dailyClose")
     ?.addEventListener(
@@ -2217,8 +2747,11 @@ function setupEvents() {
       closeDaily
     );
 
+
   $("dailyModal")
-    ?.querySelector(".modal-backdrop")
+    ?.querySelector(
+      ".modal-backdrop"
+    )
     ?.addEventListener(
       "click",
       closeDaily
@@ -2226,31 +2759,38 @@ function setupEvents() {
 
 
   // NAVIGATION
+
   document
-    .querySelectorAll(".nav-btn")
+    .querySelectorAll(
+      ".nav-btn"
+    )
     .forEach(btn => {
 
       btn.addEventListener(
         "click",
-        () => showPage(
-          btn.dataset.page
-        )
+        () =>
+          showPage(
+            btn.dataset.page
+          )
       );
     });
 
 
   // WALLET
+
   $("connectWalletButton")
     ?.addEventListener(
       "click",
       connectWallet
     );
 
+
   $("disconnectWallet")
     ?.addEventListener(
       "click",
       disconnectWallet
     );
+
 
   $("withdrawButton")
     ?.addEventListener(
@@ -2260,17 +2800,20 @@ function setupEvents() {
 
 
   // REFERRAL
+
   $("copyReferral")
     ?.addEventListener(
       "click",
       copyReferral
     );
 
+
   $("copyReferralLarge")
     ?.addEventListener(
       "click",
       copyReferral
     );
+
 
   $("shareReferral")
     ?.addEventListener(
@@ -2279,15 +2822,14 @@ function setupEvents() {
     );
 
 
-  // ==========================================================
-  // SNP MARKET BUTTONS
-  // ==========================================================
+  // SNP MARKET
 
   $("chartButton")
     ?.addEventListener(
       "click",
       openSnpChart
     );
+
 
   $("buySnpButton")
     ?.addEventListener(
@@ -2303,13 +2845,27 @@ function setupEvents() {
 
 async function init() {
 
-  setupEvents();
+  try {
 
-  await initWallet();
+    setupEvents();
 
-  await loadUser();
+    await initWallet();
 
-  startEnergyTimer();
+    await loadUser();
+
+    startEnergyTimer();
+
+  } catch (e) {
+
+    console.error(
+      "SINAPS INIT ERROR:",
+      e
+    );
+
+    toast(
+      "SINAPS could not start"
+    );
+  }
 }
 
 
