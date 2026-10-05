@@ -2312,75 +2312,644 @@ body {
    SMALL PHONES
    ============================================================ */
 
-@media (max-width:390px) {
+/* ============================================================
+   SINAPS — FINAL HOME FIX
+   No separate header
+   Username + Wallet over galaxy
+   Energy always visible
+   ============================================================ */
 
-  #homePage .home {
-    padding-left: 12px;
-    padding-right: 12px;
-  }
 
-  .snp-coin-big {
-    width: 82px;
-    height: 82px;
+/* ============================================================
+   GLOBAL
+   ============================================================ */
 
-    font-size: 40px;
-  }
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
 
-  .snp-title {
-    font-size: 27px;
-  }
+  overflow: hidden !important;
 
-  .snp-action {
-    min-height: 70px;
-  }
+  background: #02030d;
 
+  overscroll-behavior: none;
 }
 
 
 /* ============================================================
-   SHORT SCREENS
+   APP
+   ============================================================ */
+
+#app {
+  position: fixed;
+  inset: 0;
+
+  width: 100%;
+  height: 100%;
+
+  overflow: hidden !important;
+
+  background: #02030d;
+}
+
+
+/* ============================================================
+   HOME
+   ============================================================ */
+
+#homePage {
+  position: fixed !important;
+
+  inset: 0 !important;
+
+  width: 100% !important;
+  height: 100% !important;
+
+  min-height: 0 !important;
+  max-height: none !important;
+
+  display: none;
+
+  overflow: hidden !important;
+
+  padding: 0 !important;
+
+  background: #02030d;
+}
+
+
+#homePage.active {
+  display: block !important;
+}
+
+
+/* ============================================================
+   GALAXY — FULL HOME BACKGROUND
+   ============================================================ */
+
+#homePage .galaxy {
+  position: absolute !important;
+
+  inset: 0 !important;
+
+  width: 100%;
+  height: 100%;
+
+  z-index: 0;
+
+  overflow: hidden;
+
+  pointer-events: none;
+}
+
+
+/* ============================================================
+   HEADER
+   NO SEPARATE HEADER
+   It floats over the galaxy
+   ============================================================ */
+
+#homePage .home-only-header {
+  position: absolute !important;
+
+  top: 0;
+  left: 0;
+  right: 0;
+
+  width: 100%;
+  height: 76px;
+
+  z-index: 500;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: space-between;
+
+  padding:
+    max(9px, env(safe-area-inset-top))
+    14px
+    8px;
+
+  background: transparent !important;
+
+  border: 0 !important;
+
+  box-shadow: none !important;
+
+  backdrop-filter: none !important;
+
+  -webkit-backdrop-filter: none !important;
+}
+
+
+/* ============================================================
+   USERNAME
+   ============================================================ */
+
+#homePage .brand {
+  position: relative;
+  z-index: 510;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 9px;
+}
+
+
+/* Hide old SINAPS logo from header */
+
+#homePage .brand-logo {
+  display: none !important;
+}
+
+
+/* SINAPS / USERNAME */
+
+#homePage .brand-text {
+  display: flex;
+
+  flex-direction: column;
+
+  justify-content: center;
+}
+
+
+#homePage .brand-name {
+  font-size: 11px;
+
+  letter-spacing: 3px;
+
+  font-weight: 900;
+
+  color: #6edcff;
+
+  text-shadow:
+    0 0 14px rgba(71,210,255,.35);
+}
+
+
+#homePage .brand-user {
+  margin-top: 3px;
+
+  font-size: 14px;
+
+  font-weight: 900;
+
+  color: #fff;
+
+  text-shadow:
+    0 2px 12px rgba(0,0,0,.8);
+}
+
+
+/* ============================================================
+   TON CONNECT
+   ============================================================ */
+
+#homePage .ton-connect-top {
+  position: relative;
+
+  z-index: 520;
+
+  width: auto;
+  min-width: 0;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: flex-end;
+
+  background: transparent !important;
+}
+
+
+#homePage .ton-connect-top button {
+  min-width: 125px !important;
+
+  height: 40px !important;
+
+  padding: 0 12px !important;
+
+  border-radius: 13px !important;
+
+  background:
+    rgba(5,24,46,.58) !important;
+
+  border:
+    1px solid rgba(91,210,255,.28) !important;
+
+  box-shadow:
+    0 4px 18px rgba(0,0,0,.25) !important;
+
+  backdrop-filter:
+    blur(8px) !important;
+
+  -webkit-backdrop-filter:
+    blur(8px) !important;
+}
+
+
+/* ============================================================
+   HOME CONTENT
+   ============================================================ */
+
+#homePage .home {
+  position: absolute !important;
+
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+
+  width: 100% !important;
+  height: 100% !important;
+
+  min-height: 0 !important;
+  max-height: none !important;
+
+  overflow: hidden !important;
+
+  padding:
+    76px
+    16px
+    calc(92px + env(safe-area-inset-bottom))
+    !important;
+
+  box-sizing: border-box;
+
+  z-index: 10;
+}
+
+
+/* ============================================================
+   HERO
+   ============================================================ */
+
+#homePage .home-head,
+#homePage .hero {
+  position: relative;
+
+  z-index: 30;
+
+  text-align: center;
+}
+
+
+/* Keep title compact */
+
+#homePage .hero-title {
+  margin-top: 0;
+
+  font-size: 30px;
+
+  letter-spacing: 4px;
+}
+
+
+/* ============================================================
+   DAILY BUTTON
+   ============================================================ */
+
+#homePage .daily-gift {
+  position: absolute !important;
+
+  top: 88px !important;
+  left: 15px !important;
+
+  z-index: 100;
+
+  width: 55px;
+  height: 55px;
+}
+
+
+/* ============================================================
+   BALANCE
+   ============================================================ */
+
+#homePage .home-balance {
+  position: relative;
+
+  z-index: 40;
+
+  margin-top: 8px;
+}
+
+
+#homePage .home-balance strong {
+  font-size: 38px;
+}
+
+
+/* ============================================================
+   TAP AREA
+   ============================================================ */
+
+#homePage .tap-area {
+  position: relative;
+
+  z-index: 40;
+
+  width: 100%;
+
+  height: 390px;
+
+  margin-top: -2px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  overflow: visible !important;
+
+  touch-action: none;
+}
+
+
+/* ============================================================
+   COIN
+   ============================================================ */
+
+#homePage .s-coin {
+  position: relative;
+
+  z-index: 60;
+
+  width: min(245px, 65vw);
+  height: min(245px, 65vw);
+
+  touch-action: none;
+
+  user-select: none;
+
+  -webkit-user-select: none;
+}
+
+
+#homePage .s-coin img {
+  width: 100%;
+  height: 100%;
+
+  object-fit: contain;
+
+  display: block;
+
+  filter:
+    drop-shadow(
+      0 0 30px
+      rgba(255,205,50,.4)
+    );
+}
+
+
+/* ============================================================
+   TAP LABEL
+   ============================================================ */
+
+#homePage .tap-label {
+  bottom: 10px;
+
+  z-index: 70;
+}
+
+
+/* ============================================================
+   FLOATERS
+   ============================================================ */
+
+#homePage .floaters {
+  position: absolute;
+
+  inset: 0;
+
+  z-index: 200;
+
+  pointer-events: none;
+}
+
+
+/* ============================================================
+   ENERGY
+   ALWAYS VISIBLE
+   ============================================================ */
+
+#homePage .energy-section {
+  position: absolute !important;
+
+  left: 16px;
+  right: 16px;
+
+  bottom:
+    calc(88px + env(safe-area-inset-bottom));
+
+  z-index: 300;
+
+  margin: 0 !important;
+
+  padding: 10px 0 4px;
+
+  background:
+    linear-gradient(
+      180deg,
+      transparent,
+      rgba(2,8,22,.35)
+    );
+}
+
+
+/* Energy text */
+
+#homePage .energy-header {
+  position: relative;
+
+  z-index: 310;
+
+  display: flex;
+
+  justify-content: space-between;
+
+  align-items: center;
+
+  margin-bottom: 7px;
+}
+
+
+#homePage .energy-name {
+  font-size: 14px;
+
+  font-weight: 800;
+
+  color: rgba(255,255,255,.82);
+}
+
+
+#homePage .energy-value {
+  font-size: 14px;
+
+  font-weight: 950;
+
+  color: #61dcff;
+
+  text-shadow:
+    0 0 12px rgba(71,205,255,.35);
+}
+
+
+/* Energy bar */
+
+#homePage .energy-bar {
+  position: relative;
+
+  z-index: 310;
+
+  width: 100%;
+
+  height: 13px;
+
+  padding: 2px;
+
+  border-radius: 99px;
+
+  background:
+    rgba(255,255,255,.12);
+
+  border:
+    1px solid rgba(100,205,255,.12);
+
+  box-shadow:
+    0 0 18px rgba(0,0,0,.3);
+}
+
+
+#homePage .energy-fill {
+  height: 100%;
+
+  min-width: 2px;
+
+  border-radius: 99px;
+
+  background:
+    linear-gradient(
+      90deg,
+      #3974ff,
+      #58dcff
+    );
+
+  box-shadow:
+    0 0 15px
+    rgba(71,208,255,.45);
+
+  transition:
+    width .2s ease;
+}
+
+
+/* ============================================================
+   BOTTOM NAV
+   ============================================================ */
+
+.bottom-nav {
+  position: fixed !important;
+
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+
+  width: 100% !important;
+
+  height: 78px;
+
+  z-index: 10000 !important;
+
+  transform: translateZ(0);
+
+  -webkit-transform: translateZ(0);
+}
+
+
+/* ============================================================
+   OTHER PAGES
+   ============================================================ */
+
+.page:not(#homePage) {
+  position: fixed;
+
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 78px;
+
+  width: 100%;
+
+  height: calc(100% - 78px);
+
+  overflow: hidden;
+
+  box-sizing: border-box;
+}
+
+
+.page:not(#homePage).active {
+  display: block;
+}
+
+
+.page:not(#homePage).inner-page {
+  overflow-x: hidden;
+
+  overflow-y: auto;
+
+  -webkit-overflow-scrolling: touch;
+
+  padding:
+    24px
+    16px
+    110px;
+
+  box-sizing: border-box;
+}
+
+
+/* ============================================================
+   SHORT SCREEN
    ============================================================ */
 
 @media (max-height:700px) {
 
   #homePage .home {
-    padding-top: 0;
+    padding-top: 70px !important;
   }
 
   #homePage .hero-title {
-    font-size: 29px;
+    font-size: 27px;
   }
 
   #homePage .home-balance {
-    margin-top: 10px;
+    margin-top: 4px;
   }
 
   #homePage .home-balance strong {
-    font-size: 34px;
+    font-size: 32px;
   }
 
   #homePage .tap-area {
-    height: 340px;
+    height: 325px;
   }
 
   #homePage .s-coin {
-    width: min(205px,62vw);
-    height: min(205px,62vw);
+    width: min(210px, 60vw);
+    height: min(210px, 60vw);
   }
 
-  #homePage .ring-one {
-    width: 235px;
-    height: 235px;
-  }
-
-  #homePage .ring-two {
-    width: 290px;
-    height: 290px;
-  }
-
-  #homePage .ring-three {
-    width: 340px;
-    height: 340px;
+  #homePage .daily-gift {
+    top: 82px !important;
   }
 
 }
@@ -2388,39 +2957,22 @@ body {
 
 @media (max-height:620px) {
 
-  #homePage .home-only-header {
-    height: 70px;
-  }
-
   #homePage .home {
-    top: 70px;
-
-    height: calc(100% - 70px);
-    max-height: calc(100% - 70px);
+    padding-top: 68px !important;
   }
 
   #homePage .tap-area {
-    height: 285px;
+    height: 270px;
   }
 
   #homePage .s-coin {
-    width: 180px;
-    height: 180px;
+    width: 175px;
+    height: 175px;
   }
 
-  #homePage .ring-one {
-    width: 210px;
-    height: 210px;
-  }
-
-  #homePage .ring-two {
-    width: 255px;
-    height: 255px;
-  }
-
-  #homePage .ring-three {
-    width: 300px;
-    height: 300px;
+  #homePage .energy-section {
+    bottom:
+      calc(82px + env(safe-area-inset-bottom));
   }
 
   .bottom-nav {
@@ -2430,6 +2982,34 @@ body {
   .page:not(#homePage) {
     bottom: 72px;
     height: calc(100% - 72px);
+  }
+
+}
+
+
+/* ============================================================
+   SMALL PHONE
+   ============================================================ */
+
+@media (max-width:390px) {
+
+  #homePage .home {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+
+  #homePage .energy-section {
+    left: 12px;
+    right: 12px;
+  }
+
+  #homePage .s-coin {
+    width: min(220px, 64vw);
+    height: min(220px, 64vw);
+  }
+
+  #homePage .ton-connect-top button {
+    min-width: 112px !important;
   }
 
 }
