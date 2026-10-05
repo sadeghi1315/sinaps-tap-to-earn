@@ -207,47 +207,181 @@ async function buyBoost(type) {
 }
 
 // ============================================================
-// DAILY
+// DAILY REWARDS
 // ============================================================
-async function loadDaily() {
-  try { renderDaily(await api("/api/daily/status")); }
-  catch (e) { console.error("daily", e); }
+
+function localDateKey() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
 
-function renderDaily(data) {
+async function loadDaily() {
   const grid = $("dailyGrid");
   if (!grid) return;
+
+  try {
+    const user = telegramUser();
+
+    if (!user?.id) {
+      renderDaily({
+        streak: 0,
+        last_claim_date: null
+      });
+      return;
+    }
+
+    const data = await api(
+      `/api/daily?telegram_id=${encodeURIComponent(user.id)}`
+    );
+
+    renderDaily(data.daily || data);
+  } catch (e) {
+    console.error("Daily load error:", e);
+
+    // حتی اگر سرور موقتاً پاسخ نداد،
+    // جدول 30 روزه خالی نماند.
+    renderDaily({
+      streak: 0,
+      last_claim_date: null
+    });
+
+    toast("Daily rewards could not be loaded");
+  }
+}
+
+function renderDaily(data = {}) {
+  const grid = $("dailyGrid");
+  if (!grid) return;
+
+  const streak = Math.max(
+    0,
+    Math.min(30, Number(data.streak || 0))
+  );
+
+  const lastClaimDate = data.last_claim_date || null;
+  const today = localDateKey();
+
+  const claimedToday = lastClaimDate === today;
+
+  // اگر امروز claim نشده باشد، روز بعدی قابل دریافت است.
+  const currentDay = claimedToday
+    ? streak
+    : Math.min(streak + 1, 30);
+
   grid.innerHTML = "";
-  const next = Number(data.nextDay || 1);
-  const claimed = new Set((data.claimedDays || []).map(Number));
+
   for (let day = 1; day <= 30; day++) {
     const cell = document.createElement("button");
+
     cell.type = "button";
     cell.className = "daily-day";
-    const isClaimed = claimed.has(day);
-    const isToday = day === next && !data.claimedToday;
-    if (isClaimed) cell.classList.add("claimed");
-    if (isToday) cell.classList.add("current");
-    if (!isToday && !isClaimed) cell.classList.add("locked");
-    cell.innerHTML = `<span class="daily-day-number">DAY ${day}</span><strong>${day * 10} SNP</strong><span class="daily-check">${isClaimed ? "✓" : isToday ? "CLAIM" : "🔒"}</span>`;
-    if (isToday) cell.addEventListener("click", claimDaily);
+
+    const reward = day * 10;
+
+    let status = "locked";
+    let icon = "🔒";
+
+    // روزهای قبلی streak دریافت شده‌اند
+    if (day < currentDay) {
+      status = "claimed";
+      icon = "✓";
+    }
+
+    // امروز قابل دریافت است
+    if (!claimedToday && day === currentDay) {
+      status = "current";
+      icon = "CLAIM";
+    }
+
+    // امروز قبلاً دریافت شده
+    if (claimedToday && day === streak) {
+      status = "claimed";
+      icon = "✓";
+    }
+
+    cell.classList.add(status);
+
+    cell.innerHTML = `
+      <span class="daily-day-number">DAY ${day}</span>
+      <strong>${formatNumber(reward)} SNP</strong>
+      <span class="daily-check">${icon}</span>
+    `;
+
+    if (status === "current") {
+      cell.addEventListener("click", claimDaily);
+    }
+
     grid.appendChild(cell);
   }
-  if ($("dailyDot")) $("dailyDot").classList.toggle("hidden", Boolean(data.claimedToday));
+
+  // نقطه روی آیکون هدیه:
+  // اگر امروز جایزه گرفته شده باشد مخفی می‌شود.
+  if ($("dailyDot")) {
+    $("dailyDot").classList.toggle("hidden", claimedToday);
+  }
 }
 
 async function claimDaily() {
   try {
-    const data = await api("/api/daily/claim", { method: "POST", body: "{}" });
-    state.balance = Number(data.balance || state.balance);
-    renderUser();
-    toast(`+${formatNumber(data.reward)} SNP · Day ${data.day}`);
-    await loadDaily();
-  } catch (e) { toast(e.message); }
-}
-function openDaily() { $("dailyModal")?.classList.add("show"); loadDaily(); }
-function closeDaily() { $("dailyModal")?.classList.remove("show"); }
+    const button = document.querySelector(".daily-day.current");
 
+    if (button) {
+      button.disabled = true;
+      button.style.pointerEvents = "none";
+    }
+
+    const data = await api("/api/daily/claim", {
+      method: "POST",
+      body: "{}"
+    });
+
+    // موجودی را از پاسخ سرور بگیر
+    if (data.user) {
+      applyUser(data.user);
+    } else if (data.balance !== undefined) {
+      state.balance = Number(data.balance);
+      renderUser();
+    } else if (data.reward !== undefined) {
+      state.balance += Number(data.reward || 0);
+      renderUser();
+    }
+
+    const reward = Number(data.reward || 0);
+    const day = Number(data.day || 1);
+
+    toast(`🎁 +${formatNumber(reward)} SNP · Day ${day}`);
+
+    // جدول را بلافاصله به‌روزرسانی کن
+    await loadDaily();
+
+  } catch (e) {
+    console.error("Daily claim error:", e);
+    toast(e.message || "Daily reward unavailable");
+
+    const button = document.querySelector(".daily-day.current");
+    if (button) {
+      button.disabled = false;
+      button.style.pointerEvents = "";
+    }
+  }
+}
+
+function openDaily() {
+  const modal = $("dailyModal");
+  if (!modal) return;
+
+  modal.classList.add("show");
+
+  // هر بار پنجره باز می‌شود، وضعیت واقعی سرور را بگیر
+  loadDaily();
+}
+
+function closeDaily() {
+  $("dailyModal")?.classList.remove("show");
+}
 // ============================================================
 // WALLET
 // ============================================================
