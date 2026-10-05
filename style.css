@@ -1914,3 +1914,64 @@ button{
     left:12px !important;
   }
 }
+
+/* ============================================================
+   SINAPS — HOME SCROLL LOCK
+   Home must stay completely fixed
+   ============================================================ */
+
+html,
+body{
+  overflow:hidden !important;
+  height:100%;
+  height:100dvh;
+}
+
+#app{
+  height:100%;
+  height:100dvh;
+  min-height:0 !important;
+  overflow:hidden !important;
+}
+
+#homePage{
+  height:calc(100dvh - 78px) !important;
+  min-height:0 !important;
+  max-height:calc(100dvh - 78px) !important;
+  overflow:hidden !important;
+  padding-bottom:78px !important;
+}
+
+#homePage .home{
+  height:100% !important;
+  min-height:0 !important;
+  max-height:100% !important;
+  overflow:hidden !important;
+  padding-bottom:0 !important;
+  touch-action:none !important;
+}
+
+/* Prevent accidental vertical overscroll */
+#homePage,
+#homePage *{
+  overscroll-behavior:none !important;
+}
+
+/* Keep bottom navigation fixed */
+.bottom-nav{
+  position:fixed !important;
+  bottom:0 !important;
+  left:0 !important;
+  right:0 !important;
+}
+
+/* Daily Gift stays clickable */
+#homePage .daily-gift{
+  touch-action:manipulation !important;
+}
+
+/* Tap area must not create page scrolling */
+#homePage .tap-area{
+  overflow:visible !important;
+  touch-action:none !important;
+}
