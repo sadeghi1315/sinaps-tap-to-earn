@@ -11,9 +11,26 @@
 
   <title>SINAPS — Tap to Earn</title>
 
-  <link rel="stylesheet" href="style.css?v=122">
+  <!-- UPDATED: 122 → 123 -->
+  <link rel="stylesheet" href="style.css?v=123">
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+  <!-- Telegram WebApp swipe protection -->
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      if (window.Telegram && Telegram.WebApp) {
+        Telegram.WebApp.ready();
+
+        if (
+          typeof Telegram.WebApp.disableVerticalSwipes === "function"
+        ) {
+          Telegram.WebApp.disableVerticalSwipes();
+        }
+      }
+    });
+  </script>
+
   <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
 
   <style>
@@ -607,7 +624,6 @@
 
   <!-- =======================================================
        HOME
-       Header is ONLY inside Home
        ======================================================= -->
 
   <main
@@ -813,9 +829,7 @@
   </main>
 
 
-  <!-- =======================================================
-       BOOST
-       ======================================================= -->
+  <!-- BOOST -->
 
   <section
     class="page inner-page"
@@ -828,7 +842,6 @@
     <div class="page-subtitle">
       Spend SNP to permanently upgrade your mining power.
     </div>
-
 
     <div class="boost-balance">
 
@@ -865,9 +878,7 @@
   </section>
 
 
-  <!-- =======================================================
-       TASKS
-       ======================================================= -->
+  <!-- TASKS -->
 
   <section
     class="page inner-page"
@@ -889,14 +900,11 @@
   </section>
 
 
-  <!-- =======================================================
-       REFERRAL
-       ======================================================= -->
+  <!-- REFERRAL -->
 
   <section
     class="page inner-page referral-page"
     data-page="friends">
-
 
     <div class="referral-heading">
 
@@ -1009,7 +1017,6 @@
 
     <div class="referral-stats">
 
-
       <div class="ref-stat">
 
         <div class="ref-stat-icon">
@@ -1060,12 +1067,10 @@
 
       </div>
 
-
     </div>
 
 
     <div class="referral-benefits">
-
 
       <div>
 
@@ -1105,7 +1110,6 @@
 
       </div>
 
-
     </div>
 
 
@@ -1127,18 +1131,14 @@
       class="friends-list">
     </div>
 
-
   </section>
 
 
-  <!-- =======================================================
-       WALLET
-       ======================================================= -->
+  <!-- WALLET -->
 
   <section
     class="page inner-page"
     data-page="wallet">
-
 
     <div class="page-title">
       Wallet
@@ -1245,60 +1245,46 @@
       class="history-list">
     </div>
 
-
   </section>
 
 
-  <!-- =======================================================
-       SNP MARKET
-       ======================================================= -->
+  <!-- SNP MARKET -->
 
   <section
     class="page inner-page snp-page"
     data-page="game">
 
-
     <div class="snp-hero">
-
 
       <div class="snp-coin-big">
         S
       </div>
 
-
       <div class="snp-title">
         SINAPS
       </div>
-
 
       <div class="snp-symbol">
         SNP
       </div>
 
-
       <div class="snp-description">
         Explore the SINAPS market or buy SNP instantly on TON.
       </div>
-
 
     </div>
 
 
     <div class="snp-actions">
 
-
-      <!-- CHART -->
-
       <button
         id="chartButton"
         class="snp-action chart-action"
         type="button">
 
-
         <div class="snp-action-icon">
           📊
         </div>
-
 
         <div class="snp-action-text">
 
@@ -1312,27 +1298,21 @@
 
         </div>
 
-
         <div class="snp-action-arrow">
           ›
         </div>
 
-
       </button>
 
-
-      <!-- BUY -->
 
       <button
         id="buySnpButton"
         class="snp-action buy-action"
         type="button">
 
-
         <div class="snp-action-icon">
           🚀
         </div>
-
 
         <div class="snp-action-text">
 
@@ -1346,14 +1326,11 @@
 
         </div>
 
-
         <div class="snp-action-arrow">
           ›
         </div>
 
-
       </button>
-
 
     </div>
 
@@ -1374,24 +1351,18 @@
 
     </div>
 
-
   </section>
 
 
-  <!-- =======================================================
-       DAILY REWARDS
-       ======================================================= -->
+  <!-- DAILY REWARDS -->
 
   <div
     id="dailyModal"
     class="modal">
 
-
     <div class="modal-backdrop"></div>
 
-
     <div class="daily-modal-card">
-
 
       <button
         id="dailyClose"
@@ -1423,18 +1394,14 @@
         class="daily-grid">
       </div>
 
-
     </div>
 
   </div>
 
 
-  <!-- =======================================================
-       BOTTOM NAV
-       ======================================================= -->
+  <!-- BOTTOM NAV -->
 
   <nav class="bottom-nav">
-
 
     <button
       class="nav-btn active"
@@ -1516,8 +1483,6 @@
     </button>
 
 
-    <!-- SNP -->
-
     <button
       class="nav-btn"
       data-page="game"
@@ -1532,7 +1497,6 @@
       </small>
 
     </button>
-
 
   </nav>
 
