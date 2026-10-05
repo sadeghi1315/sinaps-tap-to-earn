@@ -5,27 +5,283 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
   <meta name="theme-color" content="#02030d">
   <title>SINAPS — Tap to Earn</title>
-  <link rel="stylesheet" href="style.css?v=120">
+
+  <link rel="stylesheet" href="style.css?v=121">
+
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+
+  <style>
+    /* =========================================================
+       SINAPS LOADING SCREEN
+       ========================================================= */
+
+    #sinapsLoader {
+      position: fixed;
+      inset: 0;
+      z-index: 999999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 50% 42%, rgba(40, 70, 180, 0.18), transparent 32%),
+        radial-gradient(circle at 50% 50%, rgba(0, 180, 255, 0.08), transparent 50%),
+        #02030d;
+      transition:
+        opacity 0.6s ease,
+        visibility 0.6s ease;
+    }
+
+    #sinapsLoader::before {
+      content: "";
+      position: absolute;
+      width: 320px;
+      height: 320px;
+      border-radius: 50%;
+      background: radial-gradient(
+        circle,
+        rgba(45, 110, 255, 0.16),
+        rgba(45, 110, 255, 0.05) 35%,
+        transparent 70%
+      );
+      filter: blur(10px);
+      animation: loaderPulse 2s ease-in-out infinite;
+    }
+
+    .sinaps-loader-content {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 30px;
+      box-sizing: border-box;
+    }
+
+    .sinaps-loader-logo {
+      position: relative;
+      width: 128px;
+      height: 128px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 28px;
+    }
+
+    .sinaps-loader-logo::before,
+    .sinaps-loader-logo::after {
+      content: "";
+      position: absolute;
+      inset: -14px;
+      border-radius: 50%;
+      border: 1px solid rgba(90, 150, 255, 0.18);
+    }
+
+    .sinaps-loader-logo::after {
+      inset: -27px;
+      border-color: rgba(90, 150, 255, 0.08);
+    }
+
+    .sinaps-loader-logo img {
+      width: 112px;
+      height: 112px;
+      object-fit: contain;
+      display: block;
+      filter:
+        drop-shadow(0 0 12px rgba(55, 125, 255, 0.55))
+        drop-shadow(0 0 35px rgba(55, 125, 255, 0.22));
+      animation: logoFloat 2s ease-in-out infinite;
+    }
+
+    .sinaps-loader-title {
+      font-size: 27px;
+      line-height: 1;
+      font-weight: 900;
+      letter-spacing: 6px;
+      color: #ffffff;
+      margin-left: 6px;
+      text-shadow:
+        0 0 12px rgba(255, 255, 255, 0.18),
+        0 0 28px rgba(55, 125, 255, 0.25);
+    }
+
+    .sinaps-loader-subtitle {
+      margin-top: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 3px;
+      color: rgba(190, 205, 235, 0.65);
+      text-transform: uppercase;
+    }
+
+    .sinaps-loader-progress {
+      width: 150px;
+      height: 3px;
+      margin-top: 34px;
+      overflow: hidden;
+      border-radius: 99px;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .sinaps-loader-progress-bar {
+      width: 0%;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(
+        90deg,
+        #4d7cff,
+        #7eb8ff,
+        #4d7cff
+      );
+      box-shadow: 0 0 12px rgba(80, 140, 255, 0.8);
+      animation: loaderProgress 1.7s ease-out forwards;
+    }
+
+    .sinaps-loader-status {
+      margin-top: 13px;
+      min-height: 15px;
+      font-size: 10px;
+      letter-spacing: 2px;
+      color: rgba(180, 195, 225, 0.5);
+      text-transform: uppercase;
+    }
+
+    #sinapsLoader.loader-hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    @keyframes loaderPulse {
+      0%,
+      100% {
+        transform: scale(0.9);
+        opacity: 0.55;
+      }
+
+      50% {
+        transform: scale(1.08);
+        opacity: 1;
+      }
+    }
+
+    @keyframes logoFloat {
+      0%,
+      100% {
+        transform: translateY(0) scale(1);
+      }
+
+      50% {
+        transform: translateY(-5px) scale(1.025);
+      }
+    }
+
+    @keyframes loaderProgress {
+      0% {
+        width: 0%;
+      }
+
+      25% {
+        width: 30%;
+      }
+
+      60% {
+        width: 67%;
+      }
+
+      100% {
+        width: 100%;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      #sinapsLoader::before,
+      .sinaps-loader-logo img,
+      .sinaps-loader-progress-bar {
+        animation: none;
+      }
+
+      .sinaps-loader-progress-bar {
+        width: 100%;
+      }
+    }
+  </style>
 </head>
+
 <body>
+
+<!-- =========================================================
+     SINAPS LOADING SCREEN
+     ========================================================= -->
+
+<div id="sinapsLoader">
+
+  <div class="sinaps-loader-content">
+
+    <div class="sinaps-loader-logo">
+      <img
+        src="sinaps-coin.png"
+        alt="SINAPS"
+      >
+    </div>
+
+    <div class="sinaps-loader-title">
+      SINAPS
+    </div>
+
+    <div class="sinaps-loader-subtitle">
+      Tap • Earn • Grow
+    </div>
+
+    <div class="sinaps-loader-progress">
+      <div class="sinaps-loader-progress-bar"></div>
+    </div>
+
+    <div id="sinapsLoaderStatus" class="sinaps-loader-status">
+      INITIALIZING
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- =========================================================
+     MAIN APP
+     ========================================================= -->
+
 <div id="app">
 
   <header class="topbar">
     <div class="brand">
       <div class="brand-logo">S</div>
+
       <div class="brand-text">
         <div class="brand-name">SINAPS</div>
         <div class="brand-user" id="username">@user</div>
       </div>
     </div>
-    <div id="ton-connect-top" class="ton-connect-top" aria-label="TON Connect Wallet"></div>
+
+    <div
+      id="ton-connect-top"
+      class="ton-connect-top"
+      aria-label="TON Connect Wallet">
+    </div>
   </header>
 
+
   <!-- HOME -->
-  <main id="homePage" class="page active" data-page="home">
+
+  <main
+    id="homePage"
+    class="page active"
+    data-page="home">
+
     <section class="home">
+
       <div class="galaxy" aria-hidden="true">
         <div class="stars stars-a"></div>
         <div class="stars stars-b"></div>
@@ -35,179 +291,758 @@
         <div class="galaxy-grid"></div>
       </div>
 
-      <button id="dailyGift" class="daily-gift" type="button" aria-label="Daily Reward">
+
+      <button
+        id="dailyGift"
+        class="daily-gift"
+        type="button"
+        aria-label="Daily Reward">
+
         <span class="gift-emoji">🎁</span>
         <span id="dailyDot" class="daily-dot"></span>
+
       </button>
 
+
       <section class="home-head">
-        <div class="hero-title">TAP &amp; EARN</div>
-        <div class="hero-subtitle">Collect SINAPS tokens and grow your balance.</div>
+
+        <div class="hero-title">
+          TAP &amp; EARN
+        </div>
+
+        <div class="hero-subtitle">
+          Collect SINAPS tokens and grow your balance.
+        </div>
+
       </section>
 
+
       <div class="home-balance">
-        <span>YOUR BALANCE</span>
-        <strong id="balance">0</strong>
-        <small>SNP</small>
+
+        <span>
+          YOUR BALANCE
+        </span>
+
+        <strong id="balance">
+          0
+        </strong>
+
+        <small>
+          SNP
+        </small>
+
       </div>
 
-      <section id="tapArea" class="tap-area">
-        <div id="floaters" class="floaters"></div>
+
+      <section
+        id="tapArea"
+        class="tap-area">
+
+        <div
+          id="floaters"
+          class="floaters">
+        </div>
+
         <div class="tap-rings ring-one"></div>
         <div class="tap-rings ring-two"></div>
         <div class="tap-rings ring-three"></div>
-        <button id="sCoin" class="s-coin" type="button" aria-label="Tap SINAPS">
-          <img src="sinaps-coin.png" alt="SINAPS Coin">
+
+        <button
+          id="sCoin"
+          class="s-coin"
+          type="button"
+          aria-label="Tap SINAPS">
+
+          <img
+            src="sinaps-coin.png"
+            alt="SINAPS Coin">
+
         </button>
-        <div class="tap-label">TAP</div>
+
+        <div class="tap-label">
+          TAP
+        </div>
+
       </section>
+
 
       <section class="energy-section">
+
         <div class="energy-header">
-          <div class="energy-name"><span>⚡</span> Energy</div>
-          <div id="energy" class="energy-value">1000 / 1000</div>
+
+          <div class="energy-name">
+            <span>⚡</span>
+            Energy
+          </div>
+
+          <div
+            id="energy"
+            class="energy-value">
+            1000 / 1000
+          </div>
+
         </div>
-        <div class="energy-bar"><div id="energyFill" class="energy-fill"></div></div>
+
+        <div class="energy-bar">
+
+          <div
+            id="energyFill"
+            class="energy-fill">
+          </div>
+
+        </div>
+
       </section>
+
     </section>
+
   </main>
 
+
   <!-- BOOST -->
-  <section class="page inner-page" data-page="boost">
-    <div class="page-title">Boost</div>
-    <div class="page-subtitle">Spend SNP to permanently upgrade your mining power.</div>
-    <div class="boost-balance">
-      <div class="boost-balance-coin">S</div>
-      <div><span>Your balance</span><strong><span id="boostBalance">0</span> SNP</strong></div>
+
+  <section
+    class="page inner-page"
+    data-page="boost">
+
+    <div class="page-title">
+      Boost
     </div>
-    <div id="boostsList" class="boosts-list"></div>
+
+    <div class="page-subtitle">
+      Spend SNP to permanently upgrade your mining power.
+    </div>
+
+    <div class="boost-balance">
+
+      <div class="boost-balance-coin">
+        S
+      </div>
+
+      <div>
+
+        <span>
+          Your balance
+        </span>
+
+        <strong>
+          <span id="boostBalance">
+            0
+          </span>
+          SNP
+        </strong>
+
+      </div>
+
+    </div>
+
+    <div
+      id="boostsList"
+      class="boosts-list">
+    </div>
+
   </section>
+
 
   <!-- TASKS -->
-  <section class="page inner-page" data-page="tasks">
-    <div class="page-title">Tasks</div>
-    <div class="page-subtitle">Complete verified tasks and earn SNP.</div>
-    <div id="tasksList" class="tasks-list"></div>
+
+  <section
+    class="page inner-page"
+    data-page="tasks">
+
+    <div class="page-title">
+      Tasks
+    </div>
+
+    <div class="page-subtitle">
+      Complete verified tasks and earn SNP.
+    </div>
+
+    <div
+      id="tasksList"
+      class="tasks-list">
+    </div>
+
   </section>
+
 
   <!-- REFERRAL -->
-  <section class="page inner-page referral-page" data-page="friends">
+
+  <section
+    class="page inner-page referral-page"
+    data-page="friends">
+
     <div class="referral-heading">
-      <div class="page-title">Refer &amp; Earn</div>
-      <div class="page-subtitle">Invite friends and earn more SNP.</div>
+
+      <div class="page-title">
+        Refer &amp; Earn
+      </div>
+
+      <div class="page-subtitle">
+        Invite friends and earn more SNP.
+      </div>
+
     </div>
+
 
     <div class="referral-reward-banner">
+
       <div>
-        <span>PER INVITE</span>
-        <strong>100 <em>SNP</em></strong>
+
+        <span>
+          PER INVITE
+        </span>
+
+        <strong>
+          100 <em>SNP</em>
+        </strong>
+
       </div>
-      <div class="referral-reward-icon">S</div>
+
+      <div class="referral-reward-icon">
+        S
+      </div>
+
     </div>
+
 
     <div class="referral-main-card">
-      <div class="referral-section-label">YOUR REFERRAL LINK</div>
+
+      <div class="referral-section-label">
+        YOUR REFERRAL LINK
+      </div>
+
       <div class="referral-link-box">
-        <span class="referral-link-icon">🔗</span>
-        <input id="referralLink" readonly value="">
-        <button id="copyReferral" type="button" aria-label="Copy referral link">▣</button>
+
+        <span class="referral-link-icon">
+          🔗
+        </span>
+
+        <input
+          id="referralLink"
+          readonly
+          value="">
+
+        <button
+          id="copyReferral"
+          type="button"
+          aria-label="Copy referral link">
+          ▣
+        </button>
+
       </div>
+
+
       <div class="referral-actions">
-        <button id="copyReferralLarge" type="button">▣&nbsp; Copy Link</button>
-        <button id="shareReferral" type="button">➤&nbsp; Share</button>
+
+        <button
+          id="copyReferralLarge"
+          type="button">
+          ▣&nbsp; Copy Link
+        </button>
+
+        <button
+          id="shareReferral"
+          type="button">
+          ➤&nbsp; Share
+        </button>
+
       </div>
+
+
       <div class="referral-rule">
-        <span>🔐</span>
-        <div><strong>Wallet required</strong><small>Your invited friend must connect a TON wallet before the 100 SNP referral gift and future referral rewards are activated.</small></div>
+
+        <span>
+          🔐
+        </span>
+
+        <div>
+
+          <strong>
+            Wallet required
+          </strong>
+
+          <small>
+            Your invited friend must connect a TON wallet before the 100 SNP referral gift and future referral rewards are activated.
+          </small>
+
+        </div>
+
       </div>
+
     </div>
+
 
     <div class="referral-stats">
+
       <div class="ref-stat">
-        <div class="ref-stat-icon">👤</div>
-        <strong id="referralFriends">0</strong>
-        <span>Total Referrals</span>
+
+        <div class="ref-stat-icon">
+          👤
+        </div>
+
+        <strong id="referralFriends">
+          0
+        </strong>
+
+        <span>
+          Total Referrals
+        </span>
+
       </div>
+
+
       <div class="ref-stat">
-        <div class="ref-stat-icon">✓</div>
-        <strong id="activeReferrals">0</strong>
-        <span>Active Referrals</span>
+
+        <div class="ref-stat-icon">
+          ✓
+        </div>
+
+        <strong id="activeReferrals">
+          0
+        </strong>
+
+        <span>
+          Active Referrals
+        </span>
+
       </div>
+
+
       <div class="ref-stat">
-        <div class="ref-stat-icon">S</div>
-        <strong id="referralIncome">0 SNP</strong>
-        <span>Total Earned</span>
+
+        <div class="ref-stat-icon">
+          S
+        </div>
+
+        <strong id="referralIncome">
+          0 SNP
+        </strong>
+
+        <span>
+          Total Earned
+        </span>
+
       </div>
+
     </div>
+
 
     <div class="referral-benefits">
-      <div><b>15%</b><span>of eligible rewards from active friends</span></div>
-      <div><b id="inviteReward">+100 SNP</b><span>when a referred friend connects a wallet</span></div>
-      <div><b id="referralCode">—</b><span>your unique referral code</span></div>
+
+      <div>
+        <b>
+          15%
+        </b>
+        <span>
+          of eligible rewards from active friends
+        </span>
+      </div>
+
+      <div>
+        <b id="inviteReward">
+          +100 SNP
+        </b>
+        <span>
+          when a referred friend connects a wallet
+        </span>
+      </div>
+
+      <div>
+        <b id="referralCode">
+          —
+        </b>
+        <span>
+          your unique referral code
+        </span>
+      </div>
+
     </div>
+
 
     <div class="friends-table-title">
-      <span>YOUR FRIENDS</span>
-      <span>BALANCE / WALLET</span>
+
+      <span>
+        YOUR FRIENDS
+      </span>
+
+      <span>
+        BALANCE / WALLET
+      </span>
+
     </div>
-    <div id="friendsList" class="friends-list"></div>
+
+
+    <div
+      id="friendsList"
+      class="friends-list">
+    </div>
+
   </section>
+
 
   <!-- WALLET -->
-  <section class="page inner-page" data-page="wallet">
-    <div class="page-title">Wallet</div>
-    <div class="page-subtitle">Connect your TON wallet to verify ownership and withdraw.</div>
+
+  <section
+    class="page inner-page"
+    data-page="wallet">
+
+    <div class="page-title">
+      Wallet
+    </div>
+
+    <div class="page-subtitle">
+      Connect your TON wallet to verify ownership and withdraw.
+    </div>
+
+
     <div class="wallet-card">
-      <div class="wallet-card-icon">◇</div>
-      <div class="wallet-card-info">
-        <span id="walletStatus">Connect your TON wallet</span>
-        <strong id="walletAddress">Not connected</strong>
+
+      <div class="wallet-card-icon">
+        ◇
       </div>
+
+      <div class="wallet-card-info">
+
+        <span id="walletStatus">
+          Connect your TON wallet
+        </span>
+
+        <strong id="walletAddress">
+          Not connected
+        </strong>
+
+      </div>
+
     </div>
+
+
     <div class="wallet-buttons">
-      <button id="connectWalletButton" class="primary-wallet-button" type="button">CONNECT TON WALLET</button>
-      <button id="disconnectWallet" class="secondary-wallet-button" type="button" style="display:none">DISCONNECT</button>
+
+      <button
+        id="connectWalletButton"
+        class="primary-wallet-button"
+        type="button">
+        CONNECT TON WALLET
+      </button>
+
+      <button
+        id="disconnectWallet"
+        class="secondary-wallet-button"
+        type="button"
+        style="display:none">
+        DISCONNECT
+      </button>
+
     </div>
+
+
     <div class="withdraw-card">
-      <div class="withdraw-title">Withdraw SNP</div>
-      <div class="withdraw-subtitle">Your SNP is reserved when a withdrawal is created. A 0.1 TON processing fee is paid from your connected wallet.</div>
-      <div class="withdraw-input-row"><input id="withdrawAmount" type="number" inputmode="numeric" placeholder="SNP amount" min="1"><button id="withdrawButton" type="button">WITHDRAW</button></div>
-      <div class="withdraw-fee">Fee: 0.1 TON · SNP payout is processed by the treasury.</div>
+
+      <div class="withdraw-title">
+        Withdraw SNP
+      </div>
+
+      <div class="withdraw-subtitle">
+        Your SNP is reserved when a withdrawal is created. A 0.1 TON processing fee is paid from your connected wallet.
+      </div>
+
+      <div class="withdraw-input-row">
+
+        <input
+          id="withdrawAmount"
+          type="number"
+          inputmode="numeric"
+          placeholder="SNP amount"
+          min="1">
+
+        <button
+          id="withdrawButton"
+          type="button">
+          WITHDRAW
+        </button>
+
+      </div>
+
+      <div class="withdraw-fee">
+        Fee: 0.1 TON · SNP payout is processed by the treasury.
+      </div>
+
     </div>
-    <div class="history-title">Transaction History</div>
-    <div id="historyList" class="history-list"></div>
+
+
+    <div class="history-title">
+      Transaction History
+    </div>
+
+    <div
+      id="historyList"
+      class="history-list">
+    </div>
+
   </section>
+
 
   <!-- GAME -->
-  <section class="page inner-page" data-page="game">
-    <div class="page-title">Game</div>
-    <div class="page-subtitle">Simple SINAPS demo game.</div>
-    <div class="game-card"><div class="game-icon">🎮</div><div id="gameResult" class="game-result">Try your luck.</div><button id="playGame" class="game-button" type="button">PLAY</button></div>
+
+  <section
+    class="page inner-page"
+    data-page="game">
+
+    <div class="page-title">
+      Game
+    </div>
+
+    <div class="page-subtitle">
+      Simple SINAPS demo game.
+    </div>
+
+    <div class="game-card">
+
+      <div class="game-icon">
+        🎮
+      </div>
+
+      <div
+        id="gameResult"
+        class="game-result">
+        Try your luck.
+      </div>
+
+      <button
+        id="playGame"
+        class="game-button"
+        type="button">
+        PLAY
+      </button>
+
+    </div>
+
   </section>
 
+
   <!-- DAILY -->
-  <div id="dailyModal" class="modal">
+
+  <div
+    id="dailyModal"
+    class="modal">
+
     <div class="modal-backdrop"></div>
+
     <div class="daily-modal-card">
-      <button id="dailyClose" class="modal-close" type="button">×</button>
-      <div class="daily-modal-icon">🎁</div>
-      <div class="daily-modal-title">Daily Rewards</div>
-      <div class="daily-modal-subtitle">Claim one reward every day · Day 1 = 10 SNP · Day 30 = 300 SNP</div>
-      <div id="dailyGrid" class="daily-grid"></div>
+
+      <button
+        id="dailyClose"
+        class="modal-close"
+        type="button">
+        ×
+      </button>
+
+      <div class="daily-modal-icon">
+        🎁
+      </div>
+
+      <div class="daily-modal-title">
+        Daily Rewards
+      </div>
+
+      <div class="daily-modal-subtitle">
+        Claim one reward every day · Day 1 = 10 SNP · Day 30 = 300 SNP
+      </div>
+
+      <div
+        id="dailyGrid"
+        class="daily-grid">
+      </div>
+
     </div>
+
   </div>
 
+
+  <!-- BOTTOM NAV -->
+
   <nav class="bottom-nav">
-    <button class="nav-btn active" data-page="home" type="button"><span>⌂</span><small>Home</small></button>
-    <button class="nav-btn" data-page="boost" type="button"><span>⚡</span><small>Boost</small></button>
-    <button class="nav-btn" data-page="tasks" type="button"><span>✓</span><small>Task</small></button>
-    <button class="nav-btn" data-page="friends" type="button"><span>♟</span><small>Refer</small></button>
-    <button class="nav-btn" data-page="wallet" type="button"><span>◇</span><small>Wallet</small></button>
-    <button class="nav-btn" data-page="game" type="button"><span>🎮</span><small>Game</small></button>
+
+    <button
+      class="nav-btn active"
+      data-page="home"
+      type="button">
+
+      <span>⌂</span>
+      <small>Home</small>
+
+    </button>
+
+
+    <button
+      class="nav-btn"
+      data-page="boost"
+      type="button">
+
+      <span>⚡</span>
+      <small>Boost</small>
+
+    </button>
+
+
+    <button
+      class="nav-btn"
+      data-page="tasks"
+      type="button">
+
+      <span>✓</span>
+      <small>Task</small>
+
+    </button>
+
+
+    <button
+      class="nav-btn"
+      data-page="friends"
+      type="button">
+
+      <span>♟</span>
+      <small>Refer</small>
+
+    </button>
+
+
+    <button
+      class="nav-btn"
+      data-page="wallet"
+      type="button">
+
+      <span>◇</span>
+      <small>Wallet</small>
+
+    </button>
+
+
+    <button
+      class="nav-btn"
+      data-page="game"
+      type="button">
+
+      <span>🎮</span>
+      <small>Game</small>
+
+    </button>
+
   </nav>
 
-  <div id="toast" class="toast"></div>
+
+  <div
+    id="toast"
+    class="toast">
+  </div>
+
 </div>
-<script src="app.js?v=120"></script>
+
+
+<!-- APP JS -->
+
+<script src="app.js?v=121"></script>
+
+
+<!-- =========================================================
+     LOADING CONTROL
+     ========================================================= -->
+
+<script>
+
+(function () {
+
+  const loader =
+    document.getElementById("sinapsLoader");
+
+  const status =
+    document.getElementById("sinapsLoaderStatus");
+
+  if (!loader) {
+    return;
+  }
+
+  const messages = [
+    "INITIALIZING",
+    "CONNECTING",
+    "LOADING SINAPS",
+    "READY"
+  ];
+
+  let index = 0;
+
+  const messageTimer =
+    setInterval(function () {
+
+      index++;
+
+      if (index < messages.length) {
+
+        if (status) {
+          status.textContent = messages[index];
+        }
+
+      }
+
+    }, 500);
+
+
+  function hideLoader() {
+
+    clearInterval(messageTimer);
+
+    if (status) {
+      status.textContent = "READY";
+    }
+
+    setTimeout(function () {
+
+      loader.classList.add("loader-hidden");
+
+      setTimeout(function () {
+
+        loader.remove();
+
+      }, 650);
+
+    }, 150);
+
+  }
+
+
+  /*
+   * Give app.js enough time to initialize,
+   * then reveal the Mini App.
+   */
+
+  window.addEventListener(
+    "load",
+    function () {
+
+      setTimeout(
+        hideLoader,
+        1750
+      );
+
+    }
+  );
+
+
+  /*
+   * Safety fallback.
+   * Even if another script has an issue,
+   * the loader will never stay forever.
+   */
+
+  setTimeout(
+    hideLoader,
+    3500
+  );
+
+})();
+
+</script>
+
 </body>
 </html>
