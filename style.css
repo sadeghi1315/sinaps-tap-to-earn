@@ -1729,3 +1729,707 @@ button{
   touch-action:none;
   overscroll-behavior:none;
 }
+/* ============================================================
+   SINAPS — FINAL LAYOUT FIX
+   Home = fixed / no scroll
+   Other pages = scrollable
+   Home header = inside Home
+   ============================================================ */
+
+
+/* ---------- GLOBAL ---------- */
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  margin: 0;
+  padding: 0;
+
+  background: #02030d;
+
+  overflow: hidden !important;
+
+  overscroll-behavior: none;
+  overscroll-behavior-y: none;
+
+  -webkit-tap-highlight-color: transparent;
+}
+
+
+/* ---------- APP ---------- */
+
+#app {
+  position: fixed;
+  inset: 0;
+
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  max-height: 100%;
+
+  overflow: hidden !important;
+
+  background: #02030d;
+}
+
+
+/* ============================================================
+   HOME
+   ============================================================ */
+
+#homePage {
+  position: fixed;
+
+  inset: 0;
+
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  max-height: 100%;
+
+  display: none;
+
+  overflow: hidden !important;
+
+  padding: 0 !important;
+
+  background: #02030d;
+}
+
+#homePage.active {
+  display: block;
+}
+
+
+/* ============================================================
+   HOME HEADER
+   Header is now INSIDE homePage
+   ============================================================ */
+
+#homePage .home-only-header {
+  position: relative;
+
+  width: 100%;
+  height: 78px;
+
+  z-index: 500;
+
+  flex-shrink: 0;
+}
+
+
+/* ============================================================
+   HOME CONTENT
+   ============================================================ */
+
+#homePage .home {
+  position: absolute;
+
+  left: 0;
+  right: 0;
+  bottom: 0;
+
+  top: 78px;
+
+  width: 100%;
+
+  height: calc(100% - 78px);
+
+  min-height: 0;
+  max-height: calc(100% - 78px);
+
+  overflow: hidden !important;
+
+  padding:
+    4px
+    16px
+    calc(92px + env(safe-area-inset-bottom));
+
+  box-sizing: border-box;
+
+  overscroll-behavior: none;
+}
+
+
+/* ============================================================
+   HOME GALAXY
+   ============================================================ */
+
+#homePage .galaxy {
+  position: absolute;
+
+  inset: 0;
+
+  width: 100%;
+  height: 100%;
+
+  overflow: hidden;
+
+  pointer-events: none;
+}
+
+
+/* ============================================================
+   HOME HEADER / HERO
+   ============================================================ */
+
+#homePage .home-head,
+#homePage .hero {
+  position: relative;
+
+  z-index: 20;
+}
+
+
+/* ============================================================
+   DAILY BUTTON
+   ============================================================ */
+
+#homePage .daily-gift {
+  z-index: 80;
+}
+
+
+/* ============================================================
+   BALANCE
+   ============================================================ */
+
+#homePage .home-balance {
+  position: relative;
+
+  z-index: 30;
+}
+
+
+/* ============================================================
+   TAP AREA
+   ============================================================ */
+
+#homePage .tap-area {
+  position: relative;
+
+  z-index: 30;
+
+  width: 100%;
+
+  overflow: visible;
+
+  touch-action: none;
+
+  user-select: none;
+}
+
+
+/* ============================================================
+   COIN
+   ============================================================ */
+
+#homePage .s-coin {
+  position: relative;
+
+  z-index: 50;
+
+  touch-action: none;
+
+  user-select: none;
+
+  -webkit-user-select: none;
+}
+
+
+/* ============================================================
+   ENERGY
+   ============================================================ */
+
+#homePage .energy-section {
+  position: relative;
+
+  z-index: 50;
+}
+
+
+/* ============================================================
+   FLOATERS
+   ============================================================ */
+
+#homePage .floaters {
+  z-index: 100;
+}
+
+
+/* ============================================================
+   OTHER PAGES
+   ============================================================ */
+
+.page:not(#homePage) {
+  position: fixed;
+
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 78px;
+
+  width: 100%;
+
+  height: calc(100% - 78px);
+
+  min-height: 0;
+
+  overflow: hidden;
+
+  box-sizing: border-box;
+}
+
+.page:not(#homePage).active {
+  display: block;
+}
+
+
+/* ============================================================
+   INNER PAGES
+   ============================================================ */
+
+.page:not(#homePage).inner-page {
+  overflow-x: hidden;
+  overflow-y: auto;
+
+  -webkit-overflow-scrolling: touch;
+
+  overscroll-behavior-y: contain;
+
+  padding:
+    24px
+    16px
+    110px;
+
+  box-sizing: border-box;
+}
+
+
+/* ============================================================
+   SNP PAGE
+   ============================================================ */
+
+.snp-page {
+  background:
+    radial-gradient(
+      circle at 50% 20%,
+      rgba(48,126,255,.13),
+      transparent 35%
+    ),
+    linear-gradient(
+      180deg,
+      #020611,
+      #02030d
+    );
+}
+
+.snp-hero {
+  position: relative;
+
+  padding:
+    20px
+    10px
+    18px;
+
+  text-align: center;
+}
+
+.snp-coin-big {
+  width: 92px;
+  height: 92px;
+
+  margin: 4px auto 14px;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 50%;
+
+  background:
+    linear-gradient(
+      145deg,
+      #ffe86c,
+      #d79500
+    );
+
+  color: #fff;
+
+  font-size: 46px;
+  font-weight: 950;
+
+  box-shadow:
+    0 0 35px rgba(255,204,40,.25),
+    inset 0 2px 5px rgba(255,255,255,.25);
+}
+
+.snp-title {
+  font-size: 30px;
+  font-weight: 950;
+
+  letter-spacing: 4px;
+
+  color: #b9efff;
+
+  text-shadow:
+    0 0 25px rgba(80,205,255,.3);
+}
+
+.snp-symbol {
+  margin-top: 5px;
+
+  color: #63dfff;
+
+  font-size: 13px;
+  font-weight: 900;
+
+  letter-spacing: 3px;
+}
+
+.snp-description {
+  max-width: 310px;
+
+  margin: 12px auto 0;
+
+  color: rgba(255,255,255,.48);
+
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+
+/* ============================================================
+   SNP BUTTONS
+   ============================================================ */
+
+.snp-actions {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 12px;
+
+  margin-top: 8px;
+}
+
+.snp-action {
+  width: 100%;
+
+  min-height: 76px;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 13px;
+
+  padding: 12px 14px;
+
+  border-radius: 19px;
+
+  color: #fff;
+
+  text-align: left;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(15,35,68,.96),
+      rgba(5,14,30,.98)
+    );
+
+  border: 1px solid
+    rgba(83,195,255,.16);
+
+  box-shadow:
+    0 12px 30px
+    rgba(0,0,0,.22);
+
+  transition:
+    transform .12s ease,
+    border-color .12s ease;
+}
+
+.snp-action:active {
+  transform: scale(.98);
+}
+
+.snp-action:hover {
+  border-color:
+    rgba(83,195,255,.35);
+}
+
+.snp-action-icon {
+  width: 48px;
+  height: 48px;
+
+  flex: 0 0 48px;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 15px;
+
+  background:
+    rgba(64,174,255,.10);
+
+  font-size: 24px;
+}
+
+.snp-action-text {
+  flex: 1;
+
+  min-width: 0;
+}
+
+.snp-action-text strong {
+  display: block;
+
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.snp-action-text span {
+  display: block;
+
+  margin-top: 4px;
+
+  color: rgba(255,255,255,.42);
+
+  font-size: 10px;
+}
+
+.snp-action-arrow {
+  color: #69ddff;
+
+  font-size: 28px;
+  line-height: 1;
+}
+
+.chart-action .snp-action-icon {
+  color: #62dfff;
+
+  background:
+    rgba(60,185,255,.12);
+}
+
+.buy-action {
+  background:
+    linear-gradient(
+      145deg,
+      rgba(23,76,79,.96),
+      rgba(5,25,30,.98)
+    );
+
+  border-color:
+    rgba(73,224,183,.22);
+}
+
+.buy-action .snp-action-icon {
+  background:
+    rgba(68,221,178,.12);
+}
+
+
+/* ============================================================
+   SNP INFO CARD
+   ============================================================ */
+
+.snp-info-card {
+  margin-top: 14px;
+
+  padding: 15px;
+
+  text-align: center;
+
+  border-radius: 17px;
+
+  background:
+    rgba(255,255,255,.035);
+
+  border: 1px solid
+    rgba(255,255,255,.07);
+}
+
+.snp-info-card span {
+  display: block;
+
+  color: rgba(255,255,255,.38);
+
+  font-size: 9px;
+
+  letter-spacing: 2px;
+}
+
+.snp-info-card strong {
+  display: block;
+
+  margin-top: 5px;
+
+  color: #68ddff;
+
+  font-size: 17px;
+}
+
+.snp-info-card small {
+  display: block;
+
+  margin-top: 4px;
+
+  color: rgba(255,255,255,.3);
+
+  font-size: 9px;
+}
+
+
+/* ============================================================
+   BOTTOM NAV
+   ============================================================ */
+
+.bottom-nav {
+  position: fixed !important;
+
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+
+  width: 100%;
+
+  height: 78px;
+
+  z-index: 10000;
+
+  transform: translateZ(0);
+
+  -webkit-transform:
+    translateZ(0);
+}
+
+
+/* ============================================================
+   SMALL PHONES
+   ============================================================ */
+
+@media (max-width:390px) {
+
+  #homePage .home {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .snp-coin-big {
+    width: 82px;
+    height: 82px;
+
+    font-size: 40px;
+  }
+
+  .snp-title {
+    font-size: 27px;
+  }
+
+  .snp-action {
+    min-height: 70px;
+  }
+
+}
+
+
+/* ============================================================
+   SHORT SCREENS
+   ============================================================ */
+
+@media (max-height:700px) {
+
+  #homePage .home {
+    padding-top: 0;
+  }
+
+  #homePage .hero-title {
+    font-size: 29px;
+  }
+
+  #homePage .home-balance {
+    margin-top: 10px;
+  }
+
+  #homePage .home-balance strong {
+    font-size: 34px;
+  }
+
+  #homePage .tap-area {
+    height: 340px;
+  }
+
+  #homePage .s-coin {
+    width: min(205px,62vw);
+    height: min(205px,62vw);
+  }
+
+  #homePage .ring-one {
+    width: 235px;
+    height: 235px;
+  }
+
+  #homePage .ring-two {
+    width: 290px;
+    height: 290px;
+  }
+
+  #homePage .ring-three {
+    width: 340px;
+    height: 340px;
+  }
+
+}
+
+
+@media (max-height:620px) {
+
+  #homePage .home-only-header {
+    height: 70px;
+  }
+
+  #homePage .home {
+    top: 70px;
+
+    height: calc(100% - 70px);
+    max-height: calc(100% - 70px);
+  }
+
+  #homePage .tap-area {
+    height: 285px;
+  }
+
+  #homePage .s-coin {
+    width: 180px;
+    height: 180px;
+  }
+
+  #homePage .ring-one {
+    width: 210px;
+    height: 210px;
+  }
+
+  #homePage .ring-two {
+    width: 255px;
+    height: 255px;
+  }
+
+  #homePage .ring-three {
+    width: 300px;
+    height: 300px;
+  }
+
+  .bottom-nav {
+    height: 72px;
+  }
+
+  .page:not(#homePage) {
+    bottom: 72px;
+    height: calc(100% - 72px);
+  }
+
+}
