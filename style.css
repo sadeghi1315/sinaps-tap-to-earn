@@ -165,13 +165,15 @@ button{
 }
 
 /* ============================================================
-   HOME
+   HOME — FIXED VIEWPORT
    ============================================================ */
 
 #homePage{
   position:absolute !important;
+
   left:0 !important;
   right:0 !important;
+
   top:78px !important;
   bottom:78px !important;
 
@@ -185,7 +187,9 @@ button{
   padding:0 !important;
 
   display:none;
+
   overflow:hidden !important;
+
   overscroll-behavior:none !important;
   touch-action:none !important
 }
@@ -194,20 +198,33 @@ button{
   display:block !important
 }
 
+/* ============================================================
+   HOME CONTENT
+   ============================================================ */
+
 .home{
   position:absolute !important;
   inset:0 !important;
 
-  width:100%;
+  width:100% !important;
   height:100% !important;
 
   min-height:0 !important;
   max-height:none !important;
 
   margin:0 !important;
-  padding:4px 16px 0 !important;
+
+  /*
+   * فضای پایین کمی بیشتر برای Energy
+   */
+  padding:4px 16px 10px !important;
+
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:stretch !important;
 
   overflow:hidden !important;
+
   overscroll-behavior:none !important;
   touch-action:none !important
 }
@@ -219,7 +236,11 @@ button{
 .home-head{
   position:relative;
   z-index:15;
+
+  flex:0 0 auto;
+
   text-align:center;
+
   padding-top:8px
 }
 
@@ -253,6 +274,7 @@ button{
   inset:0;
   overflow:hidden;
   pointer-events:none;
+
   background:
     radial-gradient(circle at 50% 54%,rgba(29,100,210,.43),transparent 24%),
     radial-gradient(circle at 17% 77%,rgba(0,190,255,.14),transparent 27%),
@@ -398,11 +420,11 @@ button{
 .daily-gift{
   position:absolute;
   z-index:100;
-  top:160px;
+  top:82px;
   left:18px;
-  width:68px;
-  height:68px;
-  border-radius:21px;
+  width:58px;
+  height:58px;
+  border-radius:18px;
   display:grid;
   place-items:center;
   background:rgba(6,19,38,.82);
@@ -412,7 +434,7 @@ button{
 }
 
 .gift-emoji{
-  font-size:38px;
+  font-size:32px;
   animation:giftFloat 2s ease-in-out infinite
 }
 
@@ -424,10 +446,10 @@ button{
 
 .daily-dot{
   position:absolute;
-  right:5px;
-  top:5px;
-  width:10px;
-  height:10px;
+  right:4px;
+  top:4px;
+  width:9px;
+  height:9px;
   border-radius:50%;
   background:#ff405d;
   box-shadow:0 0 11px rgba(255,64,93,.8)
@@ -444,8 +466,12 @@ button{
 .home-balance{
   position:relative;
   z-index:20;
+
+  flex:0 0 auto;
+
   text-align:center;
-  margin-top:22px
+
+  margin-top:13px
 }
 
 .home-balance span{
@@ -458,8 +484,8 @@ button{
 .home-balance strong{
   display:block;
   margin-top:1px;
-  font-size:42px;
-  line-height:1.02;
+  font-size:40px;
+  line-height:1;
   font-weight:950;
   text-shadow:0 0 24px rgba(79,212,255,.28)
 }
@@ -472,19 +498,31 @@ button{
 }
 
 /* ============================================================
-   TAP AREA
+   TAP AREA — RESPONSIVE / FIT TO SCREEN
    ============================================================ */
 
 .tap-area{
   position:relative;
   z-index:15;
+
   width:100%;
-  height:430px;
+
+  /*
+   * به جای ارتفاع ثابت 430px،
+   * فضای باقی‌مانده Home را می‌گیرد.
+   */
+  flex:1 1 auto;
+
+  min-height:0;
+
   margin-top:0;
+
   display:flex;
   align-items:center;
   justify-content:center;
+
   overflow:visible;
+
   touch-action:none
 }
 
@@ -500,32 +538,59 @@ button{
 }
 
 .ring-one{
-  width:285px;
-  height:285px
+  width:min(285px,68vw);
+  height:min(285px,68vw)
 }
 
 .ring-two{
-  width:350px;
-  height:350px;
+  width:min(350px,82vw);
+  height:min(350px,82vw);
   opacity:.62
 }
 
 .ring-three{
-  width:415px;
-  height:415px;
+  width:min(415px,96vw);
+  height:min(415px,96vw);
   opacity:.35
 }
 
+/*
+ * سکه نسبت به فضای واقعی Tap Area
+ * اندازه می‌گیرد.
+ */
 .s-coin{
   position:relative;
   z-index:5;
-  width:min(270px,69vw);
-  height:min(270px,69vw);
+
+  width:min(
+    270px,
+    69vw,
+    calc(100% - 24px),
+    calc(100vh - 330px)
+  );
+
+  height:min(
+    270px,
+    69vw,
+    calc(100% - 24px),
+    calc(100vh - 330px)
+  );
+
+  min-width:165px;
+  min-height:165px;
+
+  max-width:270px;
+  max-height:270px;
+
   padding:0;
+
   border-radius:50%;
   background:transparent;
+
   touch-action:none;
+
   filter:drop-shadow(0 0 26px rgba(255,202,30,.25));
+
   transition:transform .08s ease
 }
 
@@ -536,13 +601,20 @@ button{
 .s-coin img{
   width:100%;
   height:100%;
+
   object-fit:contain;
   display:block;
+
   user-select:none;
   -webkit-user-drag:none;
+
   border-radius:50%;
+
   filter:drop-shadow(0 0 28px rgba(255,198,50,.35));
-  transition:transform .12s ease,filter .12s ease
+
+  transition:
+    transform .12s ease,
+    filter .12s ease
 }
 
 .s-coin:active img{
@@ -553,11 +625,15 @@ button{
 .tap-label{
   position:absolute;
   z-index:7;
-  bottom:25px;
+
+  bottom:5px;
+
   left:50%;
   transform:translateX(-50%);
-  font-size:12px;
-  letter-spacing:6px;
+
+  font-size:11px;
+  letter-spacing:5px;
+
   color:rgba(255,255,255,.58)
 }
 
@@ -586,35 +662,44 @@ button{
 }
 
 /* ============================================================
-   ENERGY
+   ENERGY — ALWAYS VISIBLE
    ============================================================ */
 
 .energy-section{
   position:relative;
   z-index:25;
-  margin-top:-8px
+
+  flex:0 0 auto;
+
+  width:100%;
+
+  margin-top:0;
+
+  padding:0 0 5px
 }
 
 .energy-header{
   display:flex;
   justify-content:space-between;
   align-items:center;
-  margin-bottom:8px
+
+  margin-bottom:6px
 }
 
 .energy-name{
-  font-size:16px;
+  font-size:14px;
   color:rgba(255,255,255,.82)
 }
 
 .energy-value{
-  font-size:16px;
+  font-size:14px;
   font-weight:900;
   color:#55dfff
 }
 
 .energy-bar{
-  height:13px;
+  width:100%;
+  height:12px;
   padding:2px;
   border-radius:99px;
   background:rgba(255,255,255,.09);
@@ -1597,6 +1682,7 @@ button{
 
 .bottom-nav{
   position:fixed !important;
+
   left:0 !important;
   right:0 !important;
   bottom:0 !important;
@@ -1681,31 +1767,76 @@ button{
   }
 
   .hero-title{
-    font-size:31px
+    font-size:30px
+  }
+
+  .hero-subtitle{
+    font-size:12px
+  }
+
+  .home{
+    padding-left:12px !important;
+    padding-right:12px !important;
+  }
+
+  .home-balance{
+    margin-top:10px
+  }
+
+  .home-balance strong{
+    font-size:36px
   }
 
   .tap-area{
-    height:410px
+    min-height:0;
   }
 
   .s-coin{
-    width:220px;
-    height:220px
+    min-width:150px;
+    min-height:150px;
+
+    width:min(
+      220px,
+      67vw,
+      calc(100% - 20px),
+      calc(100vh - 335px)
+    );
+
+    height:min(
+      220px,
+      67vw,
+      calc(100% - 20px),
+      calc(100vh - 335px)
+    )
   }
 
   .ring-one{
-    width:250px;
-    height:250px
+    width:min(250px,74vw);
+    height:min(250px,74vw)
   }
 
   .ring-two{
-    width:305px;
-    height:305px
+    width:min(305px,88vw);
+    height:min(305px,88vw)
   }
 
   .ring-three{
-    width:360px;
-    height:360px
+    width:min(360px,102vw);
+    height:min(360px,102vw)
+  }
+
+  .tap-label{
+    bottom:3px;
+    font-size:10px;
+  }
+
+  .energy-name,
+  .energy-value{
+    font-size:13px
+  }
+
+  .energy-bar{
+    height:11px
   }
 
   .referral-heading .page-title{
@@ -1745,7 +1876,8 @@ button{
   }
 
   #homePage .daily-gift{
-    left:12px !important
+    left:12px !important;
+    top:82px !important;
   }
 }
 
@@ -1755,28 +1887,189 @@ button{
 
 @media(max-height:700px){
 
-  .hero-title{
-    font-size:32px
+  .home{
+    padding-top:2px !important;
+    padding-bottom:7px !important;
   }
 
-  .tap-area{
-    height:390px
+  .home-head{
+    padding-top:3px
+  }
+
+  .hero-title{
+    font-size:28px
+  }
+
+  .hero-subtitle{
+    margin-top:3px;
+    font-size:11px
+  }
+
+  .home-balance{
+    margin-top:7px
+  }
+
+  .home-balance span{
+    font-size:8px
+  }
+
+  .home-balance strong{
+    font-size:33px
+  }
+
+  .home-balance small{
+    font-size:9px
   }
 
   .s-coin{
-    width:220px;
-    height:220px
+    min-width:140px;
+    min-height:140px;
+
+    width:min(
+      205px,
+      61vw,
+      calc(100% - 20px),
+      calc(100vh - 320px)
+    );
+
+    height:min(
+      205px,
+      61vw,
+      calc(100% - 20px),
+      calc(100vh - 320px)
+    )
+  }
+
+  .ring-one{
+    width:min(235px,70vw);
+    height:min(235px,70vw)
+  }
+
+  .ring-two{
+    width:min(285px,84vw);
+    height:min(285px,84vw)
+  }
+
+  .ring-three{
+    width:min(330px,98vw);
+    height:min(330px,98vw)
+  }
+
+  .energy-section{
+    padding-bottom:4px
+  }
+
+  .energy-header{
+    margin-bottom:5px
+  }
+
+  .energy-name,
+  .energy-value{
+    font-size:12px
+  }
+
+  .energy-bar{
+    height:10px
   }
 
   #homePage .daily-gift{
-    top:146px !important
+    top:70px !important;
+    width:52px;
+    height:52px;
+    border-radius:16px;
+  }
+
+  .gift-emoji{
+    font-size:28px
   }
 }
 
+/* ============================================================
+   VERY SHORT SCREENS
+   ============================================================ */
+
 @media(max-height:620px){
 
+  .home-head{
+    padding-top:0
+  }
+
+  .hero-title{
+    font-size:25px
+  }
+
+  .hero-subtitle{
+    display:none
+  }
+
+  .home-balance{
+    margin-top:4px
+  }
+
+  .home-balance strong{
+    font-size:29px
+  }
+
+  .home-balance small{
+    font-size:8px
+  }
+
+  .s-coin{
+    min-width:125px;
+    min-height:125px;
+
+    width:min(
+      175px,
+      55vw,
+      calc(100% - 18px),
+      calc(100vh - 285px)
+    );
+
+    height:min(
+      175px,
+      55vw,
+      calc(100% - 18px),
+      calc(100vh - 285px)
+    )
+  }
+
+  .ring-one{
+    width:min(205px,64vw);
+    height:min(205px,64vw)
+  }
+
+  .ring-two{
+    width:min(250px,78vw);
+    height:min(250px,78vw)
+  }
+
+  .ring-three{
+    width:min(290px,91vw);
+    height:min(290px,91vw)
+  }
+
+  .tap-label{
+    display:none
+  }
+
+  .energy-name,
+  .energy-value{
+    font-size:11px
+  }
+
+  .energy-bar{
+    height:9px
+  }
+
   #homePage .daily-gift{
-    top:136px !important
+    top:62px !important;
+    width:46px;
+    height:46px;
+    border-radius:14px;
+  }
+
+  .gift-emoji{
+    font-size:24px
   }
 }
 
@@ -1819,5 +2112,10 @@ body{
   body,
   #app{
     height:100dvh !important
+  }
+
+  #homePage{
+    top:78px !important;
+    bottom:78px !important;
   }
 }
