@@ -120,9 +120,7 @@ function toast(message) {
 
 
   el._timer = setTimeout(() => {
-
     el.classList.remove("show");
-
   }, 2400);
 }
 
@@ -936,7 +934,8 @@ async function loadDaily() {
 
       renderDaily({
         streak: 0,
-        last_claim_date: null
+        last_claim_date: null,
+        claimed_today: false
       });
 
       return;
@@ -970,7 +969,8 @@ async function loadDaily() {
 
     renderDaily({
       streak: 0,
-      last_claim_date: null
+      last_claim_date: null,
+      claimed_today: false
     });
 
 
@@ -1004,9 +1004,9 @@ function renderDaily(
       Math.min(
         30,
         Number(
-          data.streak ||
-          data.daily_streak ||
-          data.current_streak ||
+          data.streak ??
+          data.daily_streak ??
+          data.current_streak ??
           0
         )
       )
@@ -1048,19 +1048,29 @@ function renderDaily(
     localDateKey();
 
 
-  const claimedToday =
-  lastClaimDate === today ||
-  data.claimed_today === true ||
-  data.claimedToday === true ||
-  data.today_claimed === true ||
-  data.todayClaimed === true ||
-  data.claimed === true ||
-  data.is_claimed === true ||
-  data.isClaimed === true ||
-  data.can_claim === false ||
-  data.canClaim === false;
+  // وضعیت Claim از سمت سرور
+  const serverClaimedToday =
+
+    data.claimed_today === true ||
+
+    data.claimedToday === true ||
+
+    data.today_claimed === true ||
+
+    data.todayClaimed === true ||
+
+    data.claimed === true ||
+
+    data.is_claimed === true ||
+
+    data.isClaimed === true ||
+
+    data.can_claim === false ||
+
+    data.canClaim === false;
 
 
+  // وضعیت نهایی امروز
   const claimedToday =
 
     serverClaimedToday ||
@@ -1144,7 +1154,7 @@ function renderDaily(
       "🔒";
 
 
-    // روزهای دریافت شده
+    // روزهای قبلی دریافت شده
     if (
       day < currentDay
     ) {
@@ -1647,24 +1657,6 @@ async function initWallet() {
     ) {
 
       await tonUI.connectionRestored;
-    }
-
-
-    if (
-      !state.walletAddress
-    ) {
-
-      try {
-
-        await api(
-          "/api/wallet/disconnect",
-          {
-            method: "POST",
-            body: "{}"
-          }
-        );
-
-      } catch (_) {}
     }
 
 
