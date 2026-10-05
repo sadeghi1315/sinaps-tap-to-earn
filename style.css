@@ -23,8 +23,6 @@ button{border:0;outline:0;cursor:pointer}
 .hero-title{font-size:38px;font-weight:900;letter-spacing:5px;color:#b8eeff;text-shadow:0 0 28px rgba(79,206,255,.35)}
 .hero-subtitle{margin-top:5px;font-size:13px;color:rgba(255,255,255,.55)}
 
-/* Animated 3D galaxy */
-
 .galaxy{position:absolute;inset:0;overflow:hidden;pointer-events:none;background:radial-gradient(circle at 50% 53%,rgba(31,92,185,.42),transparent 27%),radial-gradient(circle at 25% 75%,rgba(0,142,255,.17),transparent 32%),radial-gradient(circle at 80% 72%,rgba(0,221,255,.12),transparent 30%),linear-gradient(180deg,#02030d,#030b20 52%,#02030d)}
 
 .galaxy:before,.galaxy:after{
@@ -414,8 +412,6 @@ color:rgba(255,255,255,.4);
 font-size:12px
 }
 
-/* Referral / partners */
-
 .referral-hero-card{
 padding:16px;
 border-radius:25px;
@@ -767,8 +763,6 @@ background:linear-gradient(135deg,#416eff,#8949ff);
 font-weight:900
 }
 
-/* Daily */
-
 .modal{
 position:fixed;
 inset:0;
@@ -943,11 +937,6 @@ transform:translate(-50%,0)
 .daily-gift{top:86px}
 }
 
-
-/* ============================================================
-   SINAPS 4.1 VISUAL POLISH
-   ============================================================ */
-
 .topbar{
 height:78px;
 padding:10px 12px 8px 14px;
@@ -1088,12 +1077,7 @@ opacity:.72
 }
 }
 
-/* Official TON Connect UI placement */
-
 [data-tc-root]{z-index:200}
-
-
-/* Referral page */
 
 .referral-page{
 padding:24px 14px 112px;
@@ -1416,9 +1400,6 @@ color:#6fe3ff;
 white-space:nowrap
 }
 
-
-/* Wallet page */
-
 .wallet-card{margin-top:8px}
 
 .primary-wallet-button{min-height:48px}
@@ -1517,29 +1498,14 @@ body{
   background:#02030d;
 }
 
-
-/* ============================================================
-   TOP BAR
-   ============================================================ */
-
 .topbar{
   flex:0 0 auto;
   z-index:100;
 }
 
-
-/* ============================================================
-   ALL PAGES
-   ============================================================ */
-
 .page{
   box-sizing:border-box;
 }
-
-
-/* ============================================================
-   HOME — COMPLETELY FIXED
-   ============================================================ */
 
 #homePage{
   position:fixed;
@@ -1585,11 +1551,6 @@ body{
   touch-action:none;
 }
 
-
-/* ============================================================
-   HOME CONTENT
-   ============================================================ */
-
 #homePage .galaxy{
   position:absolute;
   inset:0;
@@ -1606,11 +1567,6 @@ body{
   touch-action:none;
 }
 
-
-/* ============================================================
-   TAP AREA
-   ============================================================ */
-
 #homePage .tap-area{
   overflow:visible;
 
@@ -1621,11 +1577,6 @@ body{
 #homePage .s-coin{
   touch-action:none;
 }
-
-
-/* ============================================================
-   INNER PAGES — THEY CAN SCROLL
-   ============================================================ */
 
 .inner-page{
   position:fixed;
@@ -1652,11 +1603,6 @@ body{
   padding-bottom:110px;
 }
 
-
-/* ============================================================
-   BOTTOM NAV — ALWAYS FIXED
-   ============================================================ */
-
 .bottom-nav{
   position:fixed !important;
 
@@ -1675,11 +1621,6 @@ body{
   -webkit-transform:translateZ(0);
 }
 
-
-/* ============================================================
-   SAFE AREA
-   ============================================================ */
-
 @supports(padding-bottom:env(safe-area-inset-bottom)){
 
   .bottom-nav{
@@ -1691,11 +1632,6 @@ body{
 
 }
 
-
-/* ============================================================
-   PREVENT PAGE BOUNCE
-   ============================================================ */
-
 html{
   overscroll-behavior:none;
 }
@@ -1705,19 +1641,9 @@ body{
   overscroll-behavior-y:none;
 }
 
-
-/* ============================================================
-   BUTTON TOUCH
-   ============================================================ */
-
 button{
   -webkit-tap-highlight-color:transparent;
 }
-
-
-/* ============================================================
-   LOADING SCREEN SAFETY
-   ============================================================ */
 
 #sinapsLoader{
   touch-action:none;
@@ -1727,13 +1653,7 @@ button{
 
 /* ============================================================
    SINAPS — FINAL LAYOUT FIX
-   Home = fixed / no scroll
-   Other pages = scrollable
-   Home header = inside Home
    ============================================================ */
-
-
-/* ---------- GLOBAL ---------- */
 
 html,
 body {
@@ -1753,9 +1673,6 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
-
-/* ---------- APP ---------- */
-
 #app {
   position: fixed;
   inset: 0;
@@ -1769,11 +1686,6 @@ body {
 
   background: #02030d;
 }
-
-
-/* ============================================================
-   HOME
-   ============================================================ */
 
 #homePage {
   position: fixed;
@@ -1798,12 +1710,6 @@ body {
   display: block;
 }
 
-
-/* ============================================================
-   HOME HEADER
-   Header is now INSIDE homePage
-   ============================================================ */
-
 #homePage .home-only-header {
   position: relative;
 
@@ -1814,11 +1720,6 @@ body {
 
   flex-shrink: 0;
 }
-
-
-/* ============================================================
-   HOME CONTENT
-   ============================================================ */
 
 #homePage .home {
   position: absolute;
@@ -1848,11 +1749,6 @@ body {
   overscroll-behavior: none;
 }
 
-
-/* ============================================================
-   HOME GALAXY
-   ============================================================ */
-
 #homePage .galaxy {
   position: absolute;
 
@@ -1866,11 +1762,6 @@ body {
   pointer-events: none;
 }
 
-
-/* ============================================================
-   HOME HEADER / HERO
-   ============================================================ */
-
 #homePage .home-head,
 #homePage .hero {
   position: relative;
@@ -1878,30 +1769,15 @@ body {
   z-index: 20;
 }
 
-
-/* ============================================================
-   DAILY BUTTON
-   ============================================================ */
-
 #homePage .daily-gift {
   z-index: 80;
 }
-
-
-/* ============================================================
-   BALANCE
-   ============================================================ */
 
 #homePage .home-balance {
   position: relative;
 
   z-index: 30;
 }
-
-
-/* ============================================================
-   TAP AREA
-   ============================================================ */
 
 #homePage .tap-area {
   position: relative;
@@ -1917,11 +1793,6 @@ body {
   user-select: none;
 }
 
-
-/* ============================================================
-   COIN
-   ============================================================ */
-
 #homePage .s-coin {
   position: relative;
 
@@ -1934,30 +1805,15 @@ body {
   -webkit-user-select: none;
 }
 
-
-/* ============================================================
-   ENERGY
-   ============================================================ */
-
 #homePage .energy-section {
   position: relative;
 
   z-index: 50;
 }
 
-
-/* ============================================================
-   FLOATERS
-   ============================================================ */
-
 #homePage .floaters {
   z-index: 100;
 }
-
-
-/* ============================================================
-   OTHER PAGES
-   ============================================================ */
 
 .page:not(#homePage) {
   position: fixed;
@@ -1982,11 +1838,6 @@ body {
   display: block;
 }
 
-
-/* ============================================================
-   INNER PAGES
-   ============================================================ */
-
 .page:not(#homePage).inner-page {
   overflow-x: hidden;
   overflow-y: auto;
@@ -2002,11 +1853,6 @@ body {
 
   box-sizing: border-box;
 }
-
-
-/* ============================================================
-   SNP PAGE
-   ============================================================ */
 
 .snp-page {
   background:
@@ -2094,11 +1940,6 @@ body {
   font-size: 12px;
   line-height: 1.5;
 }
-
-
-/* ============================================================
-   SNP BUTTONS
-   ============================================================ */
 
 .snp-actions {
   display: flex;
@@ -2228,11 +2069,6 @@ body {
     rgba(68,221,178,.12);
 }
 
-
-/* ============================================================
-   SNP INFO CARD
-   ============================================================ */
-
 .snp-info-card {
   margin-top: 14px;
 
@@ -2279,11 +2115,6 @@ body {
   font-size: 9px;
 }
 
-
-/* ============================================================
-   BOTTOM NAV
-   ============================================================ */
-
 .bottom-nav {
   position: fixed !important;
 
@@ -2305,19 +2136,7 @@ body {
 
 
 /* ============================================================
-   SMALL PHONES
-   ============================================================ */
-
-/* ============================================================
    SINAPS — FINAL HOME FIX
-   No separate header
-   Username + Wallet over galaxy
-   Energy always visible
-   ============================================================ */
-
-
-/* ============================================================
-   GLOBAL
    ============================================================ */
 
 html,
@@ -2334,11 +2153,6 @@ body {
   overscroll-behavior: none;
 }
 
-
-/* ============================================================
-   APP
-   ============================================================ */
-
 #app {
   position: fixed;
   inset: 0;
@@ -2350,11 +2164,6 @@ body {
 
   background: #02030d;
 }
-
-
-/* ============================================================
-   HOME
-   ============================================================ */
 
 #homePage {
   position: fixed !important;
@@ -2376,15 +2185,9 @@ body {
   background: #02030d;
 }
 
-
 #homePage.active {
   display: block !important;
 }
-
-
-/* ============================================================
-   GALAXY — FULL HOME BACKGROUND
-   ============================================================ */
 
 #homePage .galaxy {
   position: absolute !important;
@@ -2400,13 +2203,6 @@ body {
 
   pointer-events: none;
 }
-
-
-/* ============================================================
-   HEADER
-   NO SEPARATE HEADER
-   It floats over the galaxy
-   ============================================================ */
 
 #homePage .home-only-header {
   position: absolute !important;
@@ -2441,11 +2237,6 @@ body {
   -webkit-backdrop-filter: none !important;
 }
 
-
-/* ============================================================
-   USERNAME
-   ============================================================ */
-
 #homePage .brand {
   position: relative;
   z-index: 510;
@@ -2457,15 +2248,9 @@ body {
   gap: 9px;
 }
 
-
-/* Hide old SINAPS logo from header */
-
 #homePage .brand-logo {
   display: none !important;
 }
-
-
-/* SINAPS / USERNAME */
 
 #homePage .brand-text {
   display: flex;
@@ -2474,7 +2259,6 @@ body {
 
   justify-content: center;
 }
-
 
 #homePage .brand-name {
   font-size: 11px;
@@ -2489,7 +2273,6 @@ body {
     0 0 14px rgba(71,210,255,.35);
 }
 
-
 #homePage .brand-user {
   margin-top: 3px;
 
@@ -2502,11 +2285,6 @@ body {
   text-shadow:
     0 2px 12px rgba(0,0,0,.8);
 }
-
-
-/* ============================================================
-   TON CONNECT
-   ============================================================ */
 
 #homePage .ton-connect-top {
   position: relative;
@@ -2523,7 +2301,6 @@ body {
 
   background: transparent !important;
 }
-
 
 #homePage .ton-connect-top button {
   min-width: 125px !important;
@@ -2549,11 +2326,6 @@ body {
   -webkit-backdrop-filter:
     blur(8px) !important;
 }
-
-
-/* ============================================================
-   HOME CONTENT
-   ============================================================ */
 
 #homePage .home {
   position: absolute !important;
@@ -2582,11 +2354,6 @@ body {
   z-index: 10;
 }
 
-
-/* ============================================================
-   HERO
-   ============================================================ */
-
 #homePage .home-head,
 #homePage .hero {
   position: relative;
@@ -2595,9 +2362,6 @@ body {
 
   text-align: center;
 }
-
-
-/* Keep title compact */
 
 #homePage .hero-title {
   margin-top: 0;
@@ -2609,13 +2373,14 @@ body {
 
 
 /* ============================================================
-   DAILY BUTTON
+   DAILY GIFT — FINAL POSITION
+   فقط Gift پایین‌تر شده
    ============================================================ */
 
 #homePage .daily-gift {
   position: absolute !important;
 
-  top: 88px !important;
+  top: 155px !important;
   left: 15px !important;
 
   z-index: 100;
@@ -2636,7 +2401,6 @@ body {
 
   margin-top: 8px;
 }
-
 
 #homePage .home-balance strong {
   font-size: 38px;
@@ -2688,7 +2452,6 @@ body {
   -webkit-user-select: none;
 }
 
-
 #homePage .s-coin img {
   width: 100%;
   height: 100%;
@@ -2733,7 +2496,6 @@ body {
 
 /* ============================================================
    ENERGY
-   ALWAYS VISIBLE
    ============================================================ */
 
 #homePage .energy-section {
@@ -2759,9 +2521,6 @@ body {
     );
 }
 
-
-/* Energy text */
-
 #homePage .energy-header {
   position: relative;
 
@@ -2776,7 +2535,6 @@ body {
   margin-bottom: 7px;
 }
 
-
 #homePage .energy-name {
   font-size: 14px;
 
@@ -2784,7 +2542,6 @@ body {
 
   color: rgba(255,255,255,.82);
 }
-
 
 #homePage .energy-value {
   font-size: 14px;
@@ -2796,9 +2553,6 @@ body {
   text-shadow:
     0 0 12px rgba(71,205,255,.35);
 }
-
-
-/* Energy bar */
 
 #homePage .energy-bar {
   position: relative;
@@ -2822,7 +2576,6 @@ body {
   box-shadow:
     0 0 18px rgba(0,0,0,.3);
 }
-
 
 #homePage .energy-fill {
   height: 100%;
@@ -2891,11 +2644,9 @@ body {
   box-sizing: border-box;
 }
 
-
 .page:not(#homePage).active {
   display: block;
 }
-
 
 .page:not(#homePage).inner-page {
   overflow-x: hidden;
@@ -2944,8 +2695,9 @@ body {
     height: min(210px, 60vw);
   }
 
+  /* Gift position — changed */
   #homePage .daily-gift {
-    top: 82px !important;
+    top: 155px !important;
   }
 
 }
@@ -2980,6 +2732,11 @@ body {
     height: calc(100% - 72px);
   }
 
+  /* Gift position — changed */
+  #homePage .daily-gift {
+    top: 145px !important;
+  }
+
 }
 
 
@@ -3004,6 +2761,12 @@ body {
     min-width: 112px !important;
   }
 
+  /* Gift position — changed */
+  #homePage .daily-gift {
+    left: 12px !important;
+    top: 155px !important;
+  }
+
 }
 
 
@@ -3011,20 +2774,12 @@ body {
    FINAL FIX — HOME WALLET TEXT
    ============================================================ */
 
-/*
-   TON Connect address/button text on Home.
-   Force all visible text to white.
-*/
-
 #homePage #ton-connect-top,
 #homePage #ton-connect-top *,
 #homePage .ton-connect-top,
 #homePage .ton-connect-top * {
   color: #ffffff !important;
 }
-
-
-/* Connected wallet button */
 
 #homePage #ton-connect-top button,
 #homePage .ton-connect-top button,
@@ -3035,12 +2790,12 @@ body {
 
 
 /* ============================================================
-   FINAL FIX — DAILY GIFT POSITION
-   Move Gift lower so it does not overlap Home text.
+   FINAL FIX — DAILY GIFT
+   فقط جای Gift را کنترل می‌کند
    ============================================================ */
 
 #homePage .daily-gift {
-  top: 123px !important;
+  top: 155px !important;
 }
 
 
@@ -3051,16 +2806,15 @@ body {
 @media (max-height:700px) {
 
   #homePage .daily-gift {
-    top: 117px !important;
+    top: 155px !important;
   }
 
 }
 
-
 @media (max-height:620px) {
 
   #homePage .daily-gift {
-    top: 105px !important;
+    top: 145px !important;
   }
 
 }
@@ -3074,6 +2828,7 @@ body {
 
   #homePage .daily-gift {
     left: 12px !important;
+    top: 155px !important;
   }
 
 }
