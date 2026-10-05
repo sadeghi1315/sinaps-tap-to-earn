@@ -1048,19 +1048,17 @@ function renderDaily(
     localDateKey();
 
 
-  const serverClaimedToday =
-
-    data.claimed_today === true ||
-
-    data.claimedToday === true ||
-
-    data.today_claimed === true ||
-
-    data.todayClaimed === true ||
-
-    data.claimed_today === 1 ||
-
-    data.claimedToday === 1;
+  const claimedToday =
+  lastClaimDate === today ||
+  data.claimed_today === true ||
+  data.claimedToday === true ||
+  data.today_claimed === true ||
+  data.todayClaimed === true ||
+  data.claimed === true ||
+  data.is_claimed === true ||
+  data.isClaimed === true ||
+  data.can_claim === false ||
+  data.canClaim === false;
 
 
   const claimedToday =
