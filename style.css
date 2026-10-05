@@ -1470,12 +1470,6 @@ min-width:145px
    SINAPS — FIXED MINI APP / NO HOME SCROLL
    ============================================================ */
 
-/*
-   IMPORTANT:
-   The Mini App fills the Telegram WebApp viewport,
-   but Telegram Fullscreen mode is NOT enabled.
-*/
-
 html,
 body{
   width:100%;
@@ -1729,6 +1723,8 @@ button{
   touch-action:none;
   overscroll-behavior:none;
 }
+
+
 /* ============================================================
    SINAPS — FINAL LAYOUT FIX
    Home = fixed / no scroll
@@ -2987,10 +2983,6 @@ body {
 }
 
 
-/* ============================================================
-   SMALL PHONE
-   ============================================================ */
-
 @media (max-width:390px) {
 
   #homePage .home {
@@ -3012,4 +3004,92 @@ body {
     min-width: 112px !important;
   }
 
+}
+
+
+/* ============================================================
+   FINAL FIX — HOME WALLET TEXT
+   ============================================================ */
+
+/*
+   TON Connect address/button text on Home.
+   Force all visible text to white.
+*/
+
+#homePage #ton-connect-top,
+#homePage #ton-connect-top *,
+#homePage .ton-connect-top,
+#homePage .ton-connect-top * {
+  color: #ffffff !important;
+}
+
+
+/* Connected wallet button */
+
+#homePage #ton-connect-top button,
+#homePage .ton-connect-top button,
+#homePage #ton-connect-top [role="button"],
+#homePage .ton-connect-top [role="button"] {
+  color: #ffffff !important;
+}
+
+
+/* ============================================================
+   FINAL FIX — DAILY GIFT POSITION
+   Move Gift lower so it does not overlap Home text.
+   ============================================================ */
+
+#homePage .daily-gift {
+  top: 123px !important;
+}
+
+
+/* ============================================================
+   SHORT HEIGHT — DAILY GIFT
+   ============================================================ */
+
+@media (max-height:700px) {
+
+  #homePage .daily-gift {
+    top: 117px !important;
+  }
+
+}
+
+
+@media (max-height:620px) {
+
+  #homePage .daily-gift {
+    top: 105px !important;
+  }
+
+}
+
+
+/* ============================================================
+   SMALL PHONE — DAILY GIFT
+   ============================================================ */
+
+@media (max-width:390px) {
+
+  #homePage .daily-gift {
+    left: 12px !important;
+  }
+
+}
+
+
+/* ============================================================
+   EXTRA TON CONNECT TEXT PROTECTION
+   ============================================================ */
+
+#homePage .ton-connect-top,
+#homePage .ton-connect-top > *,
+#homePage .ton-connect-top button,
+#homePage .ton-connect-top button *,
+#homePage .ton-connect-top [class*="wallet"],
+#homePage .ton-connect-top [class*="address"],
+#homePage .ton-connect-top [class*="label"],
+#homePage .ton-connect-top [class*="text"] {
+  color: #ffffff !important;
 }
