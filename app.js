@@ -274,6 +274,121 @@ function renderDaily(data = {}) {
   grid.innerHTML = "";
 
   for (let day = 1; day <= 30; day++) {
+// ============================================================
+// DAILY REWARDS
+// ============================================================
+
+function localDateKey() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+// تبدیل هر نوع تاریخ سرور به YYYY-MM-DD
+function normalizeDateKey(value) {
+  if (!value) return null;
+
+  // اگر سرور مستقیماً YYYY-MM-DD داده باشد
+  if (typeof value === "string") {
+    const match = value.match(/^(\d{4}-\d{2}-\d{2})/);
+    if (match) return match[1];
+  }
+
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return null;
+
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+
+  return `${y}-${m}-${day}`;
+}
+
+async function loadDaily() {
+  const grid = $("dailyGrid");
+  if (!grid) return;
+
+  try {
+    const user = telegramUser();
+
+    if (!user?.id) {
+      renderDaily({
+        streak: 0,
+        last_claim_date: null
+      });
+      return;
+    }
+
+    const data = await api(
+      `/api/daily?telegram_id=${encodeURIComponent(user.id)}`
+    );
+
+    console.log("DAILY SERVER DATA:", data);
+
+    renderDaily(data.daily || data);
+
+  } catch (e) {
+    console.error("Daily load error:", e);
+
+    renderDaily({
+      streak: 0,
+      last_claim_date: null
+    });
+
+    toast("Daily rewards could not be loaded");
+  }
+}
+
+function renderDaily(data = {}) {
+  const grid = $("dailyGrid");
+  if (!grid) return;
+
+  const streak = Math.max(
+    0,
+    Math.min(30, Number(data.streak || 0))
+  );
+
+  // پشتیبانی از چند نام احتمالی که بک‌اند ممکن است برگرداند
+  const rawLastClaim =
+    data.last_claim_date ??
+    data.lastClaimDate ??
+    data.last_claim ??
+    data.claimed_date ??
+    null;
+
+  const lastClaimDate = normalizeDateKey(rawLastClaim);
+  const today = localDateKey();
+
+  // آیا امروز قبلاً جایزه گرفته شده؟
+  const claimedToday =
+    Boolean(lastClaimDate) &&
+    lastClaimDate === today;
+
+  console.log("DAILY STATUS:", {
+    streak,
+    rawLastClaim,
+    lastClaimDate,
+    today,
+    claimedToday
+  });
+
+  /*
+    اگر امروز گرفته نشده:
+      روز بعدی = streak + 1
+
+    اگر امروز گرفته شده:
+      همان روز streak به عنوان دریافت‌شده نمایش داده می‌شود.
+  */
+  const currentDay = claimedToday
+    ? Math.max(1, Math.min(streak, 30))
+    : Math.min(streak + 1, 30);
+
+  grid.innerHTML = "";
+
+  for (let day = 1; day <= 30; day++) {
+
     const cell = document.createElement("button");
 
     cell.type = "button";
@@ -284,20 +399,27 @@ function renderDaily(data = {}) {
     let status = "locked";
     let icon = "🔒";
 
-    // روزهای قبلی streak دریافت شده‌اند
+    // -----------------------------------------
+    // روزهای قبلی دریافت شده
+    // -----------------------------------------
     if (day < currentDay) {
       status = "claimed";
       icon = "✓";
     }
 
-    // امروز قابل دریافت است
+    // -----------------------------------------
+    // روز فعلی که هنوز دریافت نشده
+    // -----------------------------------------
     if (!claimedToday && day === currentDay) {
       status = "current";
       icon = "CLAIM";
     }
 
-    // امروز قبلاً دریافت شده
-    if (claimedToday && day === streak) {
+    // -----------------------------------------
+    // امروز دریافت شده
+    // این قسمت باعث می‌شود تیک سبز روی همان روز بیاید
+    // -----------------------------------------
+    if (claimedToday && day === currentDay) {
       status = "claimed";
       icon = "✓";
     }
@@ -310,6 +432,7 @@ function renderDaily(data = {}) {
       <span class="daily-check">${icon}</span>
     `;
 
+    // فقط روز قابل دریافت قابل کلیک است
     if (status === "current") {
       cell.addEventListener("click", claimDaily);
     }
@@ -317,8 +440,10 @@ function renderDaily(data = {}) {
     grid.appendChild(cell);
   }
 
-  // نقطه روی آیکون هدیه:
-  // اگر امروز جایزه گرفته شده باشد مخفی می‌شود.
+  // -----------------------------------------
+  // نقطه قرمز روی هدیه
+  // اگر امروز گرفته شده باشد حذف می‌شود
+  // -----------------------------------------
   if ($("dailyDot")) {
     $("dailyDot").classList.toggle("hidden", claimedToday);
   }
@@ -326,6 +451,7 @@ function renderDaily(data = {}) {
 
 async function claimDaily() {
   try {
+
     const button = document.querySelector(".daily-day.current");
 
     if (button) {
@@ -338,12 +464,18 @@ async function claimDaily() {
       body: "{}"
     });
 
-    // موجودی را از پاسخ سرور بگیر
+    console.log("DAILY CLAIM RESPONSE:", data);
+
+    // -----------------------------------------
+    // آپدیت موجودی
+    // -----------------------------------------
     if (data.user) {
       applyUser(data.user);
+
     } else if (data.balance !== undefined) {
       state.balance = Number(data.balance);
       renderUser();
+
     } else if (data.reward !== undefined) {
       state.balance += Number(data.reward || 0);
       renderUser();
@@ -352,16 +484,28 @@ async function claimDaily() {
     const reward = Number(data.reward || 0);
     const day = Number(data.day || 1);
 
-    toast(`🎁 +${formatNumber(reward)} SNP · Day ${day}`);
+    toast(
+      `🎁 +${formatNumber(reward)} SNP · Day ${day}`
+    );
 
-    // جدول را بلافاصله به‌روزرسانی کن
+    // -----------------------------------------
+    // خیلی مهم:
+    // بعد از Claim وضعیت را دوباره از سرور بگیر
+    // تا تیک ✓ روی روز قرار بگیرد
+    // -----------------------------------------
     await loadDaily();
 
   } catch (e) {
-    console.error("Daily claim error:", e);
-    toast(e.message || "Daily reward unavailable");
 
-    const button = document.querySelector(".daily-day.current");
+    console.error("Daily claim error:", e);
+
+    toast(
+      e.message || "Daily reward unavailable"
+    );
+
+    const button =
+      document.querySelector(".daily-day.current");
+
     if (button) {
       button.disabled = false;
       button.style.pointerEvents = "";
@@ -375,7 +519,7 @@ function openDaily() {
 
   modal.classList.add("show");
 
-  // هر بار پنجره باز می‌شود، وضعیت واقعی سرور را بگیر
+  // هر بار باز شدن، وضعیت واقعی سرور را بگیر
   loadDaily();
 }
 
