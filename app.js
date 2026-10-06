@@ -1,2854 +1,981 @@
-const tg = window.Telegram?.WebApp || null;
+(function () {
+  "use strict";
 
-if (tg) {
-  tg.ready();
-  tg.setHeaderColor("#02030d");
-  tg.setBackgroundColor("#02030d");
-}
+  /* =========================================================
+     SINAPS — Telegram Mini App
+     FAST USER + BALANCE VERSION
+     ========================================================= */
 
-const API = "https://sinaps-backend.onrender.com";
+  const API = "https://sinaps-backend.onrender.com";
 
-const TON_MANIFEST =
-  "https://sadeghi1315.github.io/sinaps-tap-to-earn/tonconnect-manifest.json";
+  const MANIFEST =
+    "https://sadeghi1315.github.io/sinaps-tap-to-earn/tonconnect-manifest.json";
 
+  const TREASURY =
+    "UQDMsJu14wu-EHSjaRpufQdPb73pKVRkQvHNezgA2zF69sJX";
 
-// ============================================================
-// STATE
-// ============================================================
+  const FEE_NANO = "100000000";
+  const MAINNET = "-239";
 
-const state = {
-  balance: 0,
-  energy: 1000,
-  maxEnergy: 1000,
-  tapPower: 1,
+  let tg = null;
+  let user = null;
+  let initData = "";
 
-  rechargeMultiplier: 1,
-  tapBoostLevel: 1,
-  energyBoostLevel: 1,
-  rechargeLevel: 1,
+  let tonUI = null;
 
-  walletAddress: null,
-  username: "",
-  referralCode: "",
+  let balance = 0;
+  let energy = 1000;
+  let maxEnergy = 1000;
 
-  currentPage: "home"
-};
+  let queue = 0;
+  let pending = 0;
+  let processing = false;
 
+  let energyTimer = null;
+  let withdrawing = false;
 
-// ============================================================
-// GLOBALS
-// ============================================================
+  let bootFinished = false;
 
-let tonUI = null;
-
-let tapQueue = 0;
-let tapTimer = null;
-let energyTimer = null;
-
-let walletInitialized = false;
-let disconnectRequested = false;
-
-/*
-  مهم:
-  وقتی TON Connect کیف پول قبلی را Restore می‌کند،
-  اگر متعلق به Telegram user فعلی نباشد نباید باعث
-  /api/wallet/disconnect برای کاربر فعلی شود.
-*/
-let ignoreNextWalletDisconnect = false;
+  const $ = (id) => document.getElementById(id);
 
 
-// ============================================================
-// HELPERS
-// ============================================================
+  /* =========================================================
+     TELEGRAM
+     ========================================================= */
 
-const $ = id =>
-  document.getElementById(id);
+  function telegram() {
+    try {
+      if (!window.Telegram || !window.Telegram.WebApp) {
+        console.warn("Telegram WebApp not found");
+        return;
+      }
+
+      tg = window.Telegram.WebApp;
+
+      tg.ready();
+
+      /*
+       * Do NOT force fullscreen.
+       * Keep normal Telegram Mini App window behavior.
+       */
+
+      try {
+        if (typeof tg.disableVerticalSwipes === "function") {
+          tg.disableVerticalSwipes();
+        }
+      } catch (_) {}
+
+      try {
+        tg.setHeaderColor("#02030d");
+        tg.setBackgroundColor("#02030d");
+      } catch (_) {}
+
+      user = tg.initDataUnsafe?.user || null;
+      initData = tg.initData || "";
+
+      /*
+       * IMPORTANT:
+       * Show Telegram username immediately.
+       * This does not wait for backend.
+       */
+
+      renderTelegramUser();
+
+    } catch (e) {
+      console.error("Telegram init error:", e);
+    }
+  }
 
 
-const formatNumber = value =>
-  Number(value || 0).toLocaleString("en-US");
+  function renderTelegramUser() {
 
+    if (!user) return;
 
-const telegramUser = () =>
-  tg?.initDataUnsafe?.user || null;
+    const username =
+      user.username
+        ? "@" + user.username
+        : (user.first_name || "SINAPS User");
 
+    if ($("username")) {
+      $("username").textContent = username;
+    }
 
-const telegramUserId = () => {
-  const user = telegramUser();
+    if ($("avatarLetter")) {
+      const letter =
+        (user.first_name ||
+          user.username ||
+          "S")
+          .charAt(0)
+          .toUpperCase();
 
-  return user?.id
-    ? String(user.id)
-    : "";
-};
+      $("avatarLetter").textContent = letter;
+    }
 
+    if (user.photo_url && $("userAvatar")) {
 
-const authHeaders = () => ({
-  "Content-Type": "application/json",
-  "X-Telegram-Init-Data": tg?.initData || ""
-});
+      $("userAvatar").src = user.photo_url;
 
+      $("userAvatar").style.display = "block";
 
-async function api(path, options = {}) {
-
-  const response = await fetch(
-    API + path,
-    {
-      ...options,
-
-      headers: {
-        ...authHeaders(),
-        ...(options.headers || {})
+      if ($("avatarLetter")) {
+        $("avatarLetter").style.display = "none";
       }
     }
-  );
+  }
 
 
-  let data = {};
+  /* =========================================================
+     HELPERS
+     ========================================================= */
 
-  try {
-    data = await response.json();
-  } catch (_) {}
+  function notify(message, ok = false) {
+
+    let x = $("sinapsToast");
+
+    if (!x) {
+
+      x = document.createElement("div");
+
+      x.id = "sinapsToast";
+
+      document.body.appendChild(x);
+    }
+
+    x.textContent = message;
+
+    x.className = ok ? "ok" : "";
+
+    x.style.display = "block";
+
+    clearTimeout(x._timer);
+
+    x._timer = setTimeout(() => {
+
+      x.style.display = "none";
+
+    }, 2800);
+  }
 
 
-  if (!response.ok) {
+  function esc(s) {
 
-    throw new Error(
-      data.error || "Request failed"
+    return String(s ?? "").replace(
+      /[&<>'"]/g,
+      (c) =>
+        ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          "'": "&#39;",
+          '"': "&quot;"
+        }[c])
     );
   }
 
 
-  return data;
-}
+  /* =========================================================
+     API
+     ========================================================= */
 
+  async function api(path, options = {}) {
 
-function toast(message) {
-
-  const el = $("toast");
-
-  if (!el) return;
-
-
-  el.textContent = message;
-
-  el.classList.add("show");
-
-
-  clearTimeout(el._timer);
-
-
-  el._timer = setTimeout(() => {
-
-    el.classList.remove("show");
-
-  }, 2400);
-}
-
-
-function shortAddress(address) {
-
-  if (!address) return "";
-
-  return address.length > 15
-    ? `${address.slice(0, 5)}...${address.slice(-5)}`
-    : address;
-}
-
-
-// ============================================================
-// USER
-// ============================================================
-
-function applyUser(user) {
-
-  if (!user) return;
-
-
-  state.balance =
-    Number(user.balance || 0);
-
-
-  state.energy =
-    Number(user.energy || 0);
-
-
-  state.maxEnergy =
-    Number(user.max_energy || 1000);
-
-
-  state.tapPower =
-    Number(user.tap_power || 1);
-
-
-  state.rechargeMultiplier =
-    Number(
-      user.recharge_multiplier || 1
+    options.headers = Object.assign(
+      {
+        "Content-Type": "application/json",
+        "X-Telegram-Init-Data": initData
+      },
+      options.headers || {}
     );
-
-
-  state.tapBoostLevel =
-    Number(
-      user.tap_boost_level || 1
-    );
-
-
-  state.energyBoostLevel =
-    Number(
-      user.energy_boost_level || 1
-    );
-
-
-  state.rechargeLevel =
-    Number(
-      user.recharge_level || 1
-    );
-
-
-  /*
-    مهم:
-    آدرس کیف پول فقط از دیتابیس کاربر فعلی گرفته می‌شود.
-  */
-  state.walletAddress =
-    user.wallet_address || null;
-
-
-  state.referralCode =
-    user.referral_code ||
-    state.referralCode ||
-    "";
-
-
-  renderUser();
-
-  renderWallet();
-}
-
-
-function renderUser() {
-
-  const user =
-    telegramUser();
-
-
-  if ($("username")) {
-
-    $("username").textContent =
-      user?.username
-        ? `@${user.username}`
-        : (
-          user?.first_name ||
-          "@user"
-        );
-  }
-
-
-  if ($("balance")) {
-
-    $("balance").textContent =
-      formatNumber(
-        state.balance
-      );
-  }
-
-
-  if ($("boostBalance")) {
-
-    $("boostBalance").textContent =
-      formatNumber(
-        state.balance
-      );
-  }
-
-
-  renderEnergy();
-}
-
-
-async function loadUser() {
-
-  try {
-
-    const user =
-      telegramUser();
-
-
-    const data =
-      await api(
-        "/api/user",
-        {
-          method: "POST",
-
-          body: JSON.stringify({
-            username:
-              user?.username || "",
-
-            start_param:
-              tg?.initDataUnsafe?.start_param || ""
-          })
-        }
-      );
-
-
-    applyUser(
-      data.user
-    );
-
 
     /*
-      اینجا walletAddress متعلق به Telegram ID فعلی
-      مشخص شده است.
-    */
+     * Automatically send init_data to backend.
+     */
 
-    await Promise.allSettled([
-      loadBoosts(),
-      loadDaily(),
-      loadTasks(),
-      loadFriends(),
-      loadWallet()
-    ]);
+    if (
+      options.body &&
+      typeof options.body === "string"
+    ) {
 
+      try {
 
-    return data.user;
+        const body = JSON.parse(options.body);
 
+        body.init_data = initData;
 
-  } catch (e) {
+        options.body = JSON.stringify(body);
 
-    console.error(
-      "loadUser",
-      e
+      } catch (_) {}
+    }
+
+    const response = await fetch(
+      API + path,
+      options
     );
 
+    let data = {};
 
-    toast(
-      e.message ||
-      "Server connection failed"
-    );
+    try {
+      data = await response.json();
+    } catch (_) {}
 
+    if (!response.ok) {
 
-    return null;
-  }
-}
+      throw new Error(
+        data.error ||
+        data.message ||
+        ("HTTP " + response.status)
+      );
+    }
 
-
-// ============================================================
-// ENERGY
-// ============================================================
-
-function renderEnergy() {
-
-  const energy =
-    Math.max(
-      0,
-      Math.min(
-        Number(state.energy || 0),
-        Number(state.maxEnergy || 1000)
-      )
-    );
-
-
-  if ($("energy")) {
-
-    $("energy").textContent =
-      `${formatNumber(energy)} / ${formatNumber(state.maxEnergy)}`;
+    return data;
   }
 
 
-  if ($("energyFill")) {
+  /* =========================================================
+     RENDER
+     ========================================================= */
 
-    $("energyFill").style.width =
-      `${
-        state.maxEnergy
-          ? (energy / state.maxEnergy) * 100
-          : 0
-      }%`;
-  }
-}
+  function render() {
 
+    const safeBalance =
+      Math.max(0, Math.floor(Number(balance) || 0));
 
-function startEnergyTimer() {
+    const safeEnergy =
+      Math.max(0, Math.floor(Number(energy) || 0));
 
-  clearInterval(
-    energyTimer
-  );
-
-
-  energyTimer =
-    setInterval(() => {
-
-      if (
-        state.energy <
-        state.maxEnergy
-      ) {
-
-        state.energy =
-          Math.min(
-            state.maxEnergy,
-            state.energy + 1
-          );
-
-
-        renderEnergy();
-      }
-
-    }, Math.max(
-      500,
-      3000 /
+    const safeMaxEnergy =
       Math.max(
         1,
-        state.rechargeMultiplier
-      )
-    ));
-}
-
-
-// ============================================================
-// TAP
-// ============================================================
-
-function showTapNumber(
-  event,
-  amount
-) {
-
-  const area =
-    $("tapArea");
-
-  const container =
-    $("floaters");
-
-
-  if (!area || !container) {
-    return;
-  }
-
-
-  const rect =
-    area.getBoundingClientRect();
-
-
-  const x =
-    event?.clientX ??
-    rect.left +
-    rect.width / 2;
-
-
-  const y =
-    event?.clientY ??
-    rect.top +
-    rect.height / 2;
-
-
-  const el =
-    document.createElement(
-      "div"
-    );
-
-
-  el.className =
-    "tap-floater";
-
-
-  el.textContent =
-    `+${amount}`;
-
-
-  el.style.left =
-    `${x - rect.left}px`;
-
-
-  el.style.top =
-    `${y - rect.top}px`;
-
-
-  container.appendChild(
-    el
-  );
-
-
-  setTimeout(() => {
-
-    el.remove();
-
-  }, 800);
-}
-
-
-function tap(event) {
-
-  if (state.energy <= 0) {
-
-    return toast(
-      "No energy"
-    );
-  }
-
-
-  const reward =
-    state.tapPower;
-
-
-  state.energy -= 1;
-
-  state.balance += reward;
-
-
-  tapQueue += 1;
-
-
-  renderUser();
-
-  showTapNumber(
-    event,
-    reward
-  );
-
-
-  if (!tapTimer) {
-
-    tapTimer =
-      setTimeout(
-        flushTaps,
-        100
-      );
-  }
-}
-
-
-async function flushTaps() {
-
-  clearTimeout(
-    tapTimer
-  );
-
-  tapTimer = null;
-
-
-  if (tapQueue <= 0) {
-    return;
-  }
-
-
-  const count =
-    Math.min(
-      tapQueue,
-      50
-    );
-
-
-  tapQueue -= count;
-
-
-  try {
-
-    const data =
-      await api(
-        "/api/tap",
-        {
-          method: "POST",
-
-          body: JSON.stringify({
-            count
-          })
-        }
+        Math.floor(Number(maxEnergy) || 1000)
       );
 
 
-    applyUser(
-      data.user
-    );
+    if ($("balance")) {
 
-
-  } catch (e) {
-
-    console.error(
-      "tap",
-      e
-    );
-
-
-    await loadUser();
-  }
-
-
-  if (tapQueue > 0) {
-
-    tapTimer =
-      setTimeout(
-        flushTaps,
-        100
-      );
-  }
-}
-
-
-// ============================================================
-// BOOSTS
-// ============================================================
-
-async function loadBoosts() {
-
-  try {
-
-    const data =
-      await api(
-        "/api/boosts"
-      );
-
-
-    renderBoosts(
-      data.boosts || []
-    );
+      $("balance").textContent =
+        safeBalance.toLocaleString();
+    }
 
 
     if ($("boostBalance")) {
 
       $("boostBalance").textContent =
-        formatNumber(
-          data.balance
-        );
+        safeBalance.toLocaleString();
     }
 
 
-  } catch (e) {
+    if ($("energy")) {
 
-    console.error(
-      "boosts",
-      e
-    );
-  }
-}
-
-
-function renderBoosts(
-  boosts
-) {
-
-  const container =
-    $("boostsList");
-
-
-  if (!container) {
-    return;
-  }
-
-
-  container.innerHTML =
-    "";
-
-
-  const meta = {
-
-    tap: {
-      title: "⚡ Tap Power",
-      icon: "⚡",
-      current: state.tapPower,
-      suffix: "SNP per tap"
-    },
-
-    energy: {
-      title: "🔋 Energy Capacity",
-      icon: "🔋",
-      current: state.maxEnergy,
-      suffix: "maximum energy"
-    },
-
-    recharge: {
-      title: "🚀 Energy Recharge",
-      icon: "🚀",
-      current:
-        state.rechargeMultiplier,
-      suffix:
-        "× recharge speed"
-    }
-
-  };
-
-
-  boosts.forEach(item => {
-
-    const m =
-      meta[item.type];
-
-
-    const next =
-      item.next;
-
-
-    if (!m) return;
-
-
-    const card =
-      document.createElement(
-        "div"
-      );
-
-
-    card.className =
-      "boost-card";
-
-
-    if (!next) {
-
-      card.classList.add(
-        "maxed"
-      );
+      $("energy").textContent =
+        safeEnergy +
+        " / " +
+        safeMaxEnergy;
     }
 
 
-    const currentText =
-      item.type === "tap"
+    if ($("energyText")) {
 
-        ? `${item.current_level} SNP / tap`
-
-        : item.type === "energy"
-
-          ? `${formatNumber(
-              item.current_level * 1000
-            )} max energy`
-
-          : `${item.current_level}× faster recharge`;
+      $("energyText").textContent =
+        safeEnergy +
+        " / " +
+        safeMaxEnergy;
+    }
 
 
-    const nextText =
-      next
+    if ($("energyFill")) {
 
-        ? (
-          item.type === "tap"
-
-            ? `${next.level} SNP / tap`
-
-            : item.type === "energy"
-
-              ? `${formatNumber(
-                  next.level * 1000
-                )} max energy`
-
-              : `${next.level}× faster recharge`
-        )
-
-        : "Maximum level reached";
-
-
-    card.innerHTML = `
-
-      <div class="boost-icon">
-        ${m.icon}
-      </div>
-
-      <div class="boost-info">
-
-        <div class="boost-name">
-          ${m.title.replace(/^\S+\s/, "")}
-        </div>
-
-        <div class="boost-current">
-          Level ${item.current_level}
-          · ${currentText}
-        </div>
-
-        <div class="boost-next">
-          ${
-            next
-              ? `Next: ${nextText}`
-              : nextText
-          }
-        </div>
-
-      </div>
-
-      <button
-        class="boost-buy"
-        ${
-          next
-            ? `data-type="${item.type}"`
-            : "disabled"
-        }
-      >
-        ${
-          next
-            ? `${formatNumber(next.price)} SNP`
-            : "MAX"
-        }
-      </button>
-
-    `;
-
-
-    container.appendChild(
-      card
-    );
-  });
-
-
-  container
-    .querySelectorAll(
-      ".boost-buy[data-type]"
-    )
-    .forEach(btn => {
-
-      btn.addEventListener(
-        "click",
-        () =>
-          buyBoost(
-            btn.dataset.type
+      const percent =
+        Math.max(
+          0,
+          Math.min(
+            100,
+            (safeEnergy / safeMaxEnergy) * 100
           )
-      );
-    });
-}
+        );
+
+      $("energyFill").style.width =
+        percent + "%";
+    }
 
 
-async function buyBoost(
-  type
-) {
+    if ($("withdrawBalance")) {
 
-  try {
-
-    const data =
-      await api(
-        "/api/boosts/buy",
-        {
-          method: "POST",
-
-          body: JSON.stringify({
-            type
-          })
-        }
-      );
+      $("withdrawBalance").textContent =
+        safeBalance.toLocaleString() +
+        " SNP";
+    }
 
 
-    applyUser(
-      data.user
-    );
+    if ($("points")) {
+
+      $("points").textContent =
+        safeBalance.toLocaleString();
+    }
 
 
-    toast(
-      data.message ||
-      "Boost activated"
-    );
+    if ($("tapPower")) {
 
-
-    startEnergyTimer();
-
-
-    await loadBoosts();
-
-
-  } catch (e) {
-
-    toast(
-      e.message
-    );
-  }
-}
-
-
-// ============================================================
-// DAILY REWARDS
-// ============================================================
-
-function localDateKey() {
-
-  const d =
-    new Date();
-
-
-  const y =
-    d.getFullYear();
-
-
-  const m =
-    String(
-      d.getMonth() + 1
-    ).padStart(
-      2,
-      "0"
-    );
-
-
-  const day =
-    String(
-      d.getDate()
-    ).padStart(
-      2,
-      "0"
-    );
-
-
-  return `${y}-${m}-${day}`;
-}
-
-
-function normalizeDateKey(
-  value
-) {
-
-  if (!value) {
-    return null;
-  }
-
-
-  if (
-    typeof value ===
-    "string"
-  ) {
-
-    const match =
-      value.match(
-        /^(\d{4}-\d{2}-\d{2})/
-      );
-
-
-    if (match) {
-      return match[1];
+      $("tapPower").textContent =
+        "x1";
     }
   }
 
 
-  const d =
-    new Date(value);
+  /*
+   * Render username + balance immediately.
+   */
 
+  function renderUser() {
 
-  if (
-    Number.isNaN(
-      d.getTime()
-    )
-  ) {
+    renderTelegramUser();
 
-    return null;
+    render();
   }
 
 
-  const y =
-    d.getFullYear();
+  /* =========================================================
+     USER
+     ========================================================= */
 
-
-  const m =
-    String(
-      d.getMonth() + 1
-    ).padStart(
-      2,
-      "0"
-    );
-
-
-  const day =
-    String(
-      d.getDate()
-    ).padStart(
-      2,
-      "0"
-    );
-
-
-  return `${y}-${m}-${day}`;
-}
-
-
-// ------------------------------------------------------------
-// LOAD DAILY
-// ------------------------------------------------------------
-
-async function loadDaily() {
-
-  const grid =
-    $("dailyGrid");
-
-
-  if (!grid) {
-    return;
-  }
-
-
-  try {
-
-    const user =
-      telegramUser();
-
+  async function loadUser() {
 
     if (!user?.id) {
 
-      renderDaily({
-        streak: 0,
-        last_claim_date: null,
-        claimed_today: false
-      });
-
-      return;
-    }
-
-
-    const data =
-      await api(
-        `/api/daily?telegram_id=${encodeURIComponent(user.id)}`
+      console.warn(
+        "Telegram user not available yet"
       );
 
-
-    renderDaily(
-      data.daily || data
-    );
-
-
-  } catch (e) {
-
-    console.error(
-      "Daily load error:",
-      e
-    );
-
-
-    renderDaily({
-      streak: 0,
-      last_claim_date: null,
-      claimed_today: false
-    });
-
-
-    toast(
-      "Daily rewards could not be loaded"
-    );
-  }
-}
-
-
-// ------------------------------------------------------------
-// RENDER DAILY
-// ------------------------------------------------------------
-
-function renderDaily(
-  data = {}
-) {
-
-  const grid =
-    $("dailyGrid");
-
-
-  if (!grid) {
-    return;
-  }
-
-
-  const streak =
-    Math.max(
-      0,
-      Math.min(
-        30,
-        Number(
-          data.streak ??
-          data.daily_streak ??
-          data.current_streak ??
-          0
-        )
-      )
-    );
-
-
-  const rawLastClaim =
-
-    data.last_claim_date ??
-
-    data.last_claimed_date ??
-
-    data.last_claim_at ??
-
-    data.last_claimed_at ??
-
-    data.last_claim ??
-
-    data.claimed_date ??
-
-    data.claimed_at ??
-
-    data.lastClaimDate ??
-
-    data.claimDate ??
-
-    data.lastClaim ??
-
-    null;
-
-
-  const lastClaimDate =
-    normalizeDateKey(
-      rawLastClaim
-    );
-
-
-  const today =
-    localDateKey();
-
-
-  const serverClaimedToday =
-
-    data.claimed_today === true ||
-
-    data.claimedToday === true ||
-
-    data.today_claimed === true ||
-
-    data.todayClaimed === true ||
-
-    data.claimed === true ||
-
-    data.is_claimed === true ||
-
-    data.isClaimed === true ||
-
-    data.can_claim === false ||
-
-    data.canClaim === false;
-
-
-  const claimedToday =
-
-    serverClaimedToday ||
-
-    lastClaimDate === today;
-
-
-  let currentDay;
-
-
-  if (claimedToday) {
-
-    currentDay =
-      Math.max(
-        1,
-        Math.min(
-          streak,
-          30
-        )
-      );
-
-  } else {
-
-    currentDay =
-      Math.max(
-        1,
-        Math.min(
-          streak + 1,
-          30
-        )
-      );
-  }
-
-
-  grid.innerHTML =
-    "";
-
-
-  for (
-    let day = 1;
-    day <= 30;
-    day++
-  ) {
-
-    const cell =
-      document.createElement(
-        "button"
-      );
-
-
-    cell.type =
-      "button";
-
-
-    cell.className =
-      "daily-day";
-
-
-    const reward =
-      day * 10;
-
-
-    let status =
-      "locked";
-
-
-    let icon =
-      "🔒";
-
-
-    if (
-      day < currentDay
-    ) {
-
-      status =
-        "claimed";
-
-      icon =
-        "✓";
+      return null;
     }
-
-
-    if (
-      !claimedToday &&
-      day === currentDay
-    ) {
-
-      status =
-        "current";
-
-      icon =
-        "CLAIM";
-    }
-
-
-    if (
-      claimedToday &&
-      day === currentDay
-    ) {
-
-      status =
-        "claimed";
-
-      icon =
-        "✓";
-    }
-
-
-    cell.classList.add(
-      status
-    );
-
-
-    cell.innerHTML = `
-
-      <span class="daily-day-number">
-        DAY ${day}
-      </span>
-
-      <strong>
-        ${formatNumber(reward)} SNP
-      </strong>
-
-      <span class="daily-check">
-        ${icon}
-      </span>
-
-    `;
-
-
-    if (
-      status === "current"
-    ) {
-
-      cell.addEventListener(
-        "click",
-        claimDaily
-      );
-    }
-
-
-    grid.appendChild(
-      cell
-    );
-  }
-
-
-  if ($("dailyDot")) {
-
-    $("dailyDot").classList.toggle(
-      "hidden",
-      claimedToday
-    );
-  }
-}
-
-
-// ------------------------------------------------------------
-// CLAIM DAILY
-// ------------------------------------------------------------
-
-async function claimDaily() {
-
-  const button =
-    document.querySelector(
-      ".daily-day.current"
-    );
-
-
-  if (button) {
-
-    button.disabled =
-      true;
-
-    button.style.pointerEvents =
-      "none";
-  }
-
-
-  try {
-
-    const data =
-      await api(
-        "/api/daily/claim",
-        {
-          method: "POST",
-          body: "{}"
-        }
-      );
-
-
-    if (data.user) {
-
-      applyUser(
-        data.user
-      );
-
-    } else if (
-      data.balance !== undefined
-    ) {
-
-      state.balance =
-        Number(
-          data.balance
-        );
-
-      renderUser();
-
-    } else if (
-      data.reward !== undefined
-    ) {
-
-      state.balance +=
-        Number(
-          data.reward || 0
-        );
-
-      renderUser();
-    }
-
-
-    const reward =
-      Number(
-        data.reward || 0
-      );
-
-
-    const day =
-      Number(
-        data.day ||
-        data.streak ||
-        1
-      );
-
-
-    toast(
-      `🎁 +${formatNumber(
-        reward
-      )} SNP · Day ${day}`
-    );
-
-
-    if (button) {
-
-      button.classList.remove(
-        "current"
-      );
-
-
-      button.classList.add(
-        "claimed"
-      );
-
-
-      button.disabled =
-        true;
-
-
-      button.style.pointerEvents =
-        "none";
-
-
-      const check =
-        button.querySelector(
-          ".daily-check"
-        );
-
-
-      if (check) {
-
-        check.textContent =
-          "✓";
-      }
-    }
-
-
-    await loadDaily();
-
-
-  } catch (e) {
-
-    console.error(
-      "Daily claim error:",
-      e
-    );
-
-
-    toast(
-      e.message ||
-      "Daily reward unavailable"
-    );
-
-
-    if (button) {
-
-      button.disabled =
-        false;
-
-      button.style.pointerEvents =
-        "";
-    }
-  }
-}
-
-
-// ------------------------------------------------------------
-// OPEN / CLOSE DAILY
-// ------------------------------------------------------------
-
-function openDaily() {
-
-  const modal =
-    $("dailyModal");
-
-
-  if (!modal) {
-    return;
-  }
-
-
-  modal.classList.add(
-    "show"
-  );
-
-
-  loadDaily();
-}
-
-
-function closeDaily() {
-
-  $("dailyModal")
-    ?.classList.remove(
-      "show"
-    );
-}
-
-
-// ============================================================
-// WALLET
-// ============================================================
-
-function renderWallet() {
-
-  const address =
-    $("walletAddress");
-
-
-  const disconnect =
-    $("disconnectWallet");
-
-
-  const walletStatus =
-    $("walletStatus");
-
-
-  const connectButton =
-    $("connectWalletButton");
-
-
-  if (state.walletAddress) {
-
-    if (address) {
-
-      address.textContent =
-        state.walletAddress;
-    }
-
-
-    if (walletStatus) {
-
-      walletStatus.textContent =
-        "TON wallet connected";
-    }
-
-
-    if (disconnect) {
-
-      disconnect.style.display =
-        "block";
-    }
-
-
-    if (connectButton) {
-
-      connectButton.style.display =
-        "none";
-    }
-
-
-  } else {
-
-    if (address) {
-
-      address.textContent =
-        "Not connected";
-    }
-
-
-    if (walletStatus) {
-
-      walletStatus.textContent =
-        "Connect your TON wallet";
-    }
-
-
-    if (disconnect) {
-
-      disconnect.style.display =
-        "none";
-    }
-
-
-    if (connectButton) {
-
-      connectButton.style.display =
-        "block";
-    }
-  }
-}
-
-
-// ============================================================
-// TON CONNECT
-// ============================================================
-
-async function initWallet() {
-
-  try {
-
-    if (
-      !window.TON_CONNECT_UI?.TonConnectUI
-    ) {
-
-      console.error(
-        "TON Connect UI missing"
-      );
-
-      return;
-    }
-
-
-    tonUI =
-      new TON_CONNECT_UI.TonConnectUI({
-
-        manifestUrl:
-          TON_MANIFEST,
-
-        buttonRootId:
-          "ton-connect-top"
-
-      });
-
-
-    tonUI.onStatusChange(
-      async wallet => {
-
-        walletInitialized =
-          true;
-
-
-        const address =
-          wallet?.account?.address ||
-          null;
-
-
-        // ====================================================
-        // NO WALLET
-        // ====================================================
-
-        if (!address) {
-
-          state.walletAddress =
-            null;
-
-
-          renderWallet();
-
-
-          /*
-            اگر این disconnect نتیجه‌ی این بود که
-            TON Connect کیف پول اشتباه اکانت قبلی را
-            پاک کرده، نباید دیتابیس کاربر فعلی پاک شود.
-          */
-
-          if (
-            ignoreNextWalletDisconnect
-          ) {
-
-            ignoreNextWalletDisconnect =
-              false;
-
-            return;
-          }
-
-
-          /*
-            فقط در Disconnect واقعی کاربر،
-            کیف پول همان Telegram user را از backend
-            حذف می‌کنیم.
-          */
-
-          if (
-            disconnectRequested
-          ) {
-
-            try {
-
-              await api(
-                "/api/wallet/disconnect",
-                {
-                  method: "POST",
-                  body: "{}"
-                }
-              );
-
-            } catch (_) {}
-
-
-            disconnectRequested =
-              false;
-
-            await loadFriends();
-
-            return;
-          }
-
-
-          return;
-        }
-
-
-        // ====================================================
-        // WALLET RESTORED / CONNECTED
-        // ====================================================
-
-        /*
-          state.walletAddress در این لحظه از backend
-          و از Telegram user فعلی آمده است.
-
-          اگر کیف پول TON Connect با آن یکی نیست،
-          یعنی کیف پول مربوط به یک Telegram account
-          دیگر است.
-        */
-
-        const backendWallet =
-          state.walletAddress || null;
-
-
-        if (
-          backendWallet &&
-          backendWallet !== address
-        ) {
-
-          console.warn(
-            "Different Telegram account wallet detected.",
-            {
-              telegram_id:
-                telegramUserId(),
-
-              backendWallet,
-              tonWallet:
-                address
-            }
-          );
-
-
-          /*
-            این disconnect نباید backend wallet
-            کاربر فعلی را حذف کند.
-          */
-
-          ignoreNextWalletDisconnect =
-            true;
-
-
-          try {
-
-            await tonUI.disconnect();
-
-          } catch (e) {
-
-            console.error(
-              "Wrong wallet disconnect error:",
-              e
-            );
-
-            ignoreNextWalletDisconnect =
-              false;
-          }
-
-
-          /*
-            دوباره آدرس صحیح اکانت فعلی را نمایش بده.
-          */
-
-          renderWallet();
-
-          return;
-        }
-
-
-        /*
-          اگر کاربر فعلی در backend هیچ کیف پولی ندارد
-          ولی TON Connect کیف پول قبلی را Restore کرده،
-          نباید آن را به این اکانت وصل کنیم.
-        */
-
-        if (!backendWallet) {
-
-          console.warn(
-            "Restored wallet found but current Telegram account has no wallet."
-          );
-
-
-          ignoreNextWalletDisconnect =
-            true;
-
-
-          try {
-
-            await tonUI.disconnect();
-
-          } catch (e) {
-
-            console.error(
-              "Old wallet disconnect error:",
-              e
-            );
-
-            ignoreNextWalletDisconnect =
-              false;
-          }
-
-
-          state.walletAddress =
-            null;
-
-
-          renderWallet();
-
-          return;
-        }
-
-
-        /*
-          اگر رسیدیم اینجا یعنی:
-          backend wallet === TON Connect wallet
-        */
-
-        state.walletAddress =
-          address;
-
-
-        renderWallet();
-
-
-        /*
-          لازم نیست دوباره connect را به backend بفرستیم
-          چون همین آدرس قبلاً برای همین user ذخیره شده.
-        */
-
-        await loadFriends();
-      }
-    );
-
-
-    /*
-      connectionRestored:
-      اگر کیف پول قبلی مربوط به کاربر دیگری باشد،
-      callback بالا آن را تشخیص می‌دهد و disconnect می‌کند.
-    */
-
-    if (
-      tonUI.connectionRestored
-    ) {
-
-      await tonUI.connectionRestored;
-    }
-
-
-    renderWallet();
-
-
-  } catch (e) {
-
-    console.error(
-      "TON Connect",
-      e
-    );
-  }
-}
-
-
-// ============================================================
-// CONNECT WALLET
-// ============================================================
-
-async function connectWallet() {
-
-  if (!tonUI) {
-
-    return toast(
-      "TON Connect is not ready"
-    );
-  }
-
-
-  try {
-
-    await tonUI.openModal();
-
-  } catch (e) {
-
-    console.error(e);
-
-
-    toast(
-      "Could not open wallet"
-    );
-  }
-}
-
-
-// ============================================================
-// DISCONNECT WALLET
-// ============================================================
-
-async function disconnectWallet() {
-
-  disconnectRequested =
-    true;
-
-
-  try {
-
-    if (
-      tonUI?.disconnect
-    ) {
-
-      await tonUI.disconnect();
-    }
-
-  } catch (_) {}
-
-
-  state.walletAddress =
-    null;
-
-
-  renderWallet();
-
-
-  try {
-
-    await api(
-      "/api/wallet/disconnect",
-      {
-        method: "POST",
-        body: "{}"
-      }
-    );
-
-  } catch (_) {}
-
-
-  await loadFriends();
-
-
-  toast(
-    "Wallet disconnected"
-  );
-
-
-  disconnectRequested =
-    false;
-}
-
-
-// ============================================================
-// LOAD WALLET
-// ============================================================
-
-async function loadWallet() {
-
-  /*
-    عمداً هیچ آدرس کیف پولی از localStorage یا
-    TON Connect خوانده نمی‌شود.
-
-    منبع اصلی wallet برای هر Telegram user:
-    backend database است.
-  */
-
-  renderWallet();
-}
-
-
-// ============================================================
-// WITHDRAW
-// ============================================================
-
-async function withdraw() {
-
-  const amount =
-    Number(
-      $("withdrawAmount")?.value || 0
-    );
-
-
-  if (
-    !Number.isInteger(amount) ||
-    amount <= 0
-  ) {
-
-    return toast(
-      "Enter a valid amount"
-    );
-  }
-
-
-  if (!state.walletAddress) {
-
-    return toast(
-      "Connect your wallet first"
-    );
-  }
-
-
-  if (amount > state.balance) {
-
-    return toast(
-      "Not enough SNP"
-    );
-  }
-
-
-  try {
-
-    const data =
-      await api(
-        "/api/withdraw/create",
-        {
-          method: "POST",
-
-          body: JSON.stringify({
-            amount,
-
-            wallet_address:
-              state.walletAddress
-          })
-        }
-      );
-
-
-    state.balance =
-      Number(
-        data.balance ||
-        state.balance
-      );
-
-
-    renderUser();
-
-
-    toast(
-      "Withdrawal created"
-    );
-
-
-    if (!tonUI) {
-      return;
-    }
-
 
     try {
 
-      await tonUI.sendTransaction({
+      /*
+       * Show username before server request.
+       */
 
-        validUntil:
-          Math.floor(
-            Date.now() / 1000
-          ) + 300,
-
-        messages: [
-
-          {
-
-            address:
-              data.treasury_wallet,
-
-            amount:
-              String(
-                data.fee_nano
-              )
-
-          }
-
-        ]
-
-      });
+      renderTelegramUser();
 
 
-      await api(
-        "/api/withdraw/verify",
+      const data = await api(
+        "/api/user",
         {
           method: "POST",
 
           body: JSON.stringify({
-            withdrawal_id:
-              data.withdrawal_id
-          })
-        }
-      );
 
+            telegram_id: user.id,
 
-      toast(
-        "Fee paid. SNP payout is pending."
-      );
+            username:
+              user.username ||
+              user.first_name ||
+              "",
 
-
-      if (
-        $("withdrawAmount")
-      ) {
-
-        $("withdrawAmount").value =
-          "";
-      }
-
-
-    } catch (e) {
-
-      try {
-
-        await api(
-          "/api/withdraw/cancel",
-          {
-            method: "POST",
-
-            body: JSON.stringify({
-              withdrawal_id:
-                data.withdrawal_id
-            })
-          }
-        );
-
-      } catch (_) {}
-
-
-      await loadUser();
-
-
-      toast(
-        "Withdrawal cancelled"
-      );
-    }
-
-
-  } catch (e) {
-
-    toast(
-      e.message
-    );
-  }
-}
-
-
-// ============================================================
-// TASKS
-// ============================================================
-
-async function loadTasks() {
-
-  try {
-
-    const data =
-      await api(
-        "/api/tasks"
-      );
-
-
-    const container =
-      $("tasksList");
-
-
-    if (!container) {
-      return;
-    }
-
-
-    container.innerHTML =
-      "";
-
-
-    (data.tasks || [])
-      .forEach(task => {
-
-        const row =
-          document.createElement(
-            "div"
-          );
-
-
-        row.className =
-          "task-row";
-
-
-        row.innerHTML = `
-
-          <div class="task-icon">
-            ${task.icon}
-          </div>
-
-          <div class="task-info">
-
-            <strong>
-              ${task.name}
-            </strong>
-
-            <small>
-              +${formatNumber(
-                task.reward
-              )} SNP
-            </small>
-
-          </div>
-
-          <button
-            class="task-button"
-            ${
-              task.completed
-                ? "disabled"
-                : ""
-            }
-            data-task-id="${task.id}"
-            data-url="${task.url || "#"}"
-          >
-            ${
-              task.completed
-                ? "DONE"
-                : task.action ||
-                  "VERIFY"
-            }
-          </button>
-
-        `;
-
-
-        container.appendChild(
-          row
-        );
-      });
-
-
-    container
-      .querySelectorAll(
-        ".task-button:not(:disabled)"
-      )
-      .forEach(btn => {
-
-        btn.addEventListener(
-          "click",
-          () =>
-            claimTask(
-              btn.dataset.taskId,
-              btn.dataset.url
-            )
-        );
-      });
-
-
-  } catch (e) {
-
-    const c =
-      $("tasksList");
-
-
-    if (c) {
-
-      c.innerHTML =
-        `<div class="empty-state">
-          ${
-            e.message ||
-            "Tasks unavailable"
-          }
-        </div>`;
-    }
-  }
-}
-
-
-async function claimTask(
-  taskId,
-  url
-) {
-
-  if (
-    url &&
-    url !== "#"
-  ) {
-
-    try {
-
-      if (
-        tg?.openTelegramLink &&
-        url.includes("t.me/")
-      ) {
-
-        tg.openTelegramLink(
-          url
-        );
-
-      } else {
-
-        window.open(
-          url,
-          "_blank"
-        );
-      }
-
-
-    } catch (_) {
-
-      window.open(
-        url,
-        "_blank"
-      );
-    }
-
-
-    await new Promise(
-      resolve =>
-        setTimeout(
-          resolve,
-          1200
-        )
-    );
-  }
-
-
-  try {
-
-    const data =
-      await api(
-        "/api/tasks/claim",
-        {
-          method: "POST",
-
-          body: JSON.stringify({
-            task_id:
-              taskId,
-
-            wallet_address:
-              state.walletAddress ||
+            start_param:
+              tg?.initDataUnsafe?.start_param ||
               ""
           })
         }
       );
 
 
-    state.balance =
-      Number(
-        data.balance ||
-        state.balance
-      );
+      const serverUser =
+        data?.user || null;
 
 
-    renderUser();
+      if (!serverUser) {
 
-
-    toast(
-      `+${formatNumber(
-        data.reward
-      )} SNP`
-    );
-
-
-    await loadTasks();
-
-
-  } catch (e) {
-
-    toast(
-      e.message
-    );
-  }
-}
-
-
-// ============================================================
-// FRIENDS / REFERRAL
-// ============================================================
-
-async function loadFriends() {
-
-  try {
-
-    const data =
-      await api(
-        "/api/friends"
-      );
-
-
-    const input =
-      $("referralLink");
-
-
-    if (input) {
-
-      input.value =
-        data.referral_link ||
-        "";
-    }
-
-
-    if ($("referralCode")) {
-
-      $("referralCode").textContent =
-        data.referral_code ||
-        "—";
-    }
-
-
-    if ($("referralFriends")) {
-
-      $("referralFriends").textContent =
-        formatNumber(
-          data.total_friends || 0
-        );
-    }
-
-
-    if ($("activeReferrals")) {
-
-      $("activeReferrals").textContent =
-        formatNumber(
-          data.active_referrals || 0
-        );
-    }
-
-
-    if ($("referralIncome")) {
-
-      $("referralIncome").textContent =
-        `${formatNumber(
-          data.total_earnings || 0
-        )} SNP`;
-    }
-
-
-    if ($("inviteReward")) {
-
-      $("inviteReward").textContent =
-        `+${formatNumber(
-          data.invite_reward || 100
-        )} SNP`;
-    }
-
-
-    if ($("referralRate")) {
-
-      $("referralRate").textContent =
-        `${Math.round(
-          Number(
-            data.referral_rate ||
-            0.15
-          ) * 100
-        )}%`;
-    }
-
-
-    const list =
-      $("friendsList");
-
-
-    if (!list) {
-      return;
-    }
-
-
-    list.innerHTML =
-      "";
-
-
-    if (
-      !data.friends?.length
-    ) {
-
-      list.innerHTML =
-        `<div class="empty-state">
-          No invited friends yet.
-        </div>`;
-
-
-      return;
-    }
-
-
-    data.friends.forEach(
-      friend => {
-
-        const row =
-          document.createElement(
-            "div"
-          );
-
-
-        row.className =
-          "friend-row";
-
-
-        const balance =
-          formatNumber(
-            friend.balance || 0
-          );
-
-
-        const statusClass =
-          friend.wallet_connected
-            ? "friend-active"
-            : "friend-pending";
-
-
-        const status =
-          friend.wallet_connected
-            ? "WALLET CONNECTED"
-            : "CONNECT WALLET";
-
-
-        const reward =
-          friend.referral_rewarded
-            ? "REWARDED"
-            : friend.wallet_connected
-              ? "+100 SNP"
-              : "LOCKED";
-
-
-        row.innerHTML = `
-
-          <div class="friend-avatar">
-            ${
-              friend.wallet_connected
-                ? "✓"
-                : "👤"
-            }
-          </div>
-
-          <div class="friend-main">
-
-            <strong>
-              ${
-                friend.username
-                  ? `@${friend.username}`
-                  : "SINAPS user"
-              }
-            </strong>
-
-            <small>
-              ${
-                new Date(
-                  friend.created_at
-                ).toLocaleDateString(
-                  "en-US"
-                )
-              }
-              · Balance: ${balance} SNP
-            </small>
-
-            <span
-              class="friend-status ${statusClass}"
-            >
-              ${status}
-            </span>
-
-          </div>
-
-          <b>
-            ${reward}
-          </b>
-
-        `;
-
-
-        list.appendChild(
-          row
+        throw new Error(
+          "User data not received"
         );
       }
-    );
 
 
-  } catch (e) {
+      /*
+       * SERVER IS THE SOURCE OF TRUTH.
+       *
+       * We intentionally do NOT load balance
+       * from generic localStorage before this.
+       *
+       * This prevents Telegram account A
+       * showing balance from account B.
+       */
 
-    console.error(
-      "friends",
-      e
-    );
+      balance =
+        Number(serverUser.balance) || 0;
 
+      energy =
+        Number(serverUser.energy);
 
-    const list =
-      $("friendsList");
+      if (!Number.isFinite(energy)) {
+        energy = 1000;
+      }
 
+      maxEnergy =
+        Number(serverUser.max_energy);
 
-    if (list) {
-
-      list.innerHTML =
-        `<div class="empty-state">
-          Referral data unavailable.
-        </div>`;
-    }
-  }
-}
-
-
-async function copyReferral() {
-
-  const input =
-    $("referralLink");
-
-
-  if (!input?.value) {
-    return;
-  }
+      if (
+        !Number.isFinite(maxEnergy) ||
+        maxEnergy <= 0
+      ) {
+        maxEnergy = 1000;
+      }
 
 
-  try {
+      /*
+       * Render immediately.
+       * Do NOT wait for Daily / Tasks / Friends.
+       */
 
-    await navigator.clipboard.writeText(
-      input.value
-    );
-
-
-    toast(
-      "Referral link copied"
-    );
+      renderUser();
 
 
-  } catch (_) {
+      /*
+       * Save account-specific cache only AFTER
+       * receiving verified server data.
+       */
 
-    input.select();
-
-
-    document.execCommand(
-      "copy"
-    );
-
-
-    toast(
-      "Copied"
-    );
-  }
-}
-
-
-function shareReferral() {
-
-  const link =
-    $("referralLink")?.value;
-
-
-  if (!link) {
-    return;
-  }
-
-
-  const text =
-    encodeURIComponent(
-      "Join SINAPS and start earning SNP!"
-    );
-
-
-  const url =
-    encodeURIComponent(
-      link
-    );
-
-
-  const share =
-    `https://t.me/share/url?url=${url}&text=${text}`;
-
-
-  if (
-    tg?.openTelegramLink
-  ) {
-
-    tg.openTelegramLink(
-      share
-    );
-
-  } else {
-
-    window.open(
-      share,
-      "_blank"
-    );
-  }
-}
-
-
-// ============================================================
-// HISTORY
-// ============================================================
-
-async function loadHistory() {
-
-  try {
-
-    const data =
-      await api(
-        "/api/history"
+      saveUserCache(
+        user.id,
+        {
+          balance,
+          energy,
+          maxEnergy
+        }
       );
 
 
-    const container =
-      $("historyList");
+      /*
+       * These are background requests.
+       * They must NOT block balance display.
+       */
+
+      Promise.allSettled([
+
+        loadBoosts(),
+
+        loadDaily(),
+
+        loadTasks(),
+
+        loadFriends(),
+
+        loadWallet()
+
+      ]).catch(() => {});
 
 
-    if (!container) {
+      return serverUser;
+
+    } catch (e) {
+
+      console.error(
+        "loadUser:",
+        e
+      );
+
+      /*
+       * Keep Telegram username visible.
+       */
+
+      renderTelegramUser();
+
+      notify(
+        e.message ||
+        "Server connection failed"
+      );
+
+      return null;
+    }
+  }
+
+
+  /* =========================================================
+     ACCOUNT-SAFE CACHE
+     ========================================================= */
+
+  function cacheKey() {
+
+    if (!user?.id) {
+      return null;
+    }
+
+    return "sinaps_user_" + String(user.id);
+  }
+
+
+  function saveUserCache(id, data) {
+
+    try {
+
+      localStorage.setItem(
+        "sinaps_user_" + String(id),
+        JSON.stringify({
+
+          balance: Number(data.balance) || 0,
+
+          energy: Number(data.energy) || 0,
+
+          maxEnergy:
+            Number(data.maxEnergy) || 1000,
+
+          savedAt: Date.now()
+        })
+      );
+
+    } catch (_) {}
+  }
+
+
+  /*
+   * Cache is NOT used as the initial source of truth.
+   * It exists only for account-specific recovery.
+   */
+
+  function loadUserCache() {
+
+    try {
+
+      const key = cacheKey();
+
+      if (!key) return null;
+
+      const raw =
+        localStorage.getItem(key);
+
+      if (!raw) return null;
+
+      const data =
+        JSON.parse(raw);
+
+      if (!data) return null;
+
+      return data;
+
+    } catch (_) {
+
+      return null;
+    }
+  }
+
+
+  /* =========================================================
+     TAP
+     ========================================================= */
+
+  function tap(event) {
+
+    if (!user?.id) {
+
+      return;
+    }
+
+    if (energy <= 0) {
+
+      notify("No energy");
+
       return;
     }
 
 
-    container.innerHTML =
-      "";
+    const reward = 1;
 
 
-    (data.history || [])
-      .forEach(item => {
+    /*
+     * Optimistic UI.
+     * User sees +1 immediately.
+     */
 
-        const amount =
-          Number(
-            item.amount || 0
+    balance += reward;
+
+    energy -= 1;
+
+    queue += 1;
+
+    pending += 1;
+
+
+    render();
+
+    showTapNumber(
+      event,
+      reward
+    );
+
+
+    /*
+     * Send taps shortly after.
+     */
+
+    if (!tapTimer) {
+
+      tapTimer = setTimeout(
+        flushTaps,
+        100
+      );
+    }
+  }
+
+
+  let tapTimer = null;
+
+
+  function showTapNumber(
+    event,
+    reward
+  ) {
+
+    const area =
+      $("tapArea");
+
+    if (!area) return;
+
+
+    const rect =
+      area.getBoundingClientRect();
+
+
+    const x =
+      event?.clientX ??
+      (rect.left + rect.width / 2);
+
+
+    const y =
+      event?.clientY ??
+      (rect.top + rect.height / 2);
+
+
+    const floater =
+      document.createElement("div");
+
+
+    floater.className =
+      "floater";
+
+
+    floater.textContent =
+      "+" + reward;
+
+
+    floater.style.left =
+      (x - rect.left) + "px";
+
+
+    floater.style.top =
+      (y - rect.top) + "px";
+
+
+    if ($("floaters")) {
+
+      $("floaters")
+        .appendChild(floater);
+
+    }
+
+
+    setTimeout(
+      () => floater.remove(),
+      700
+    );
+
+
+    if ($("sCoin")) {
+
+      $("sCoin")
+        .classList.add("hit");
+
+
+      setTimeout(
+        () =>
+          $("sCoin")
+            .classList.remove("hit"),
+        120
+      );
+    }
+  }
+
+
+  async function flushTaps() {
+
+    clearTimeout(tapTimer);
+
+    tapTimer = null;
+
+
+    if (queue <= 0) {
+
+      return;
+    }
+
+
+    const count =
+      Math.min(queue, 50);
+
+
+    queue -= count;
+
+
+    try {
+
+      /*
+       * Send taps one-by-one if backend
+       * only supports count-less endpoint.
+       */
+
+      for (
+        let i = 0;
+        i < count;
+        i++
+      ) {
+
+        const data =
+          await api(
+            "/api/tap",
+            {
+              method: "POST",
+
+              body: JSON.stringify({
+                telegram_id: user.id
+              })
+            }
           );
 
 
-        const row =
-          document.createElement(
-            "div"
+        pending =
+          Math.max(
+            0,
+            pending - 1
           );
 
 
-        row.className =
-          "history-row";
+        /*
+         * Server balance is authoritative.
+         *
+         * Only update the visible balance
+         * when all pending taps have arrived.
+         */
+
+        if (
+          data?.user &&
+          pending === 0 &&
+          queue === 0
+        ) {
+
+          applyServerUser(
+            data.user
+          );
+        }
+      }
+
+    } catch (e) {
+
+      console.error(
+        "flushTaps:",
+        e
+      );
 
 
-        row.innerHTML = `
+      /*
+       * Re-sync from server.
+       */
 
-          <div>
+      pending = 0;
 
-            <strong>
-              ${
-                item.type ||
-                "Transaction"
-              }
-            </strong>
-
-            <small>
-              ${
-                item.details ||
-                ""
-              }
-            </small>
-
-          </div>
-
-          <strong
-            class="${
-              amount >= 0
-                ? "positive"
-                : "negative"
-            }"
-          >
-            ${
-              amount >= 0
-                ? "+"
-                : ""
-            }${formatNumber(amount)}
-          </strong>
-
-        `;
+      await loadUser();
+    }
 
 
-        container.appendChild(
-          row
+    if (queue > 0) {
+
+      tapTimer =
+        setTimeout(
+          flushTaps,
+          100
         );
-      });
+    }
+  }
 
+
+  function applyServerUser(serverUser) {
+
+    if (!serverUser) return;
+
+
+    balance =
+      Number(serverUser.balance) || 0;
+
+
+    energy =
+      Number(serverUser.energy);
+
+    if (!Number.isFinite(energy)) {
+      energy = 0;
+    }
+
+
+    maxEnergy =
+      Number(serverUser.max_energy);
 
     if (
-      !data.history?.length
+      !Number.isFinite(maxEnergy) ||
+      maxEnergy <= 0
     ) {
-
-      container.innerHTML =
-        `<div class="empty-state">
-          No transactions yet.
-        </div>`;
+      maxEnergy = 1000;
     }
 
 
-  } catch (e) {
-
-    console.error(
-      "history",
-      e
-    );
-  }
-}
+    render();
 
 
-// ============================================================
-// SNP MARKET
-// ============================================================
+    if (user?.id) {
 
-const SNP_CHART_URL =
-  "https://www.geckoterminal.com/ton/pools/EQAmLlerUViNn9PwFVRlR_AjDvhd5pkmeLNOu5bNDpvXV0ls";
-
-
-const SNP_BUY_URL =
-  "https://app.ston.fi/swap?chartVisible=false&ft=GRAM&tt=EQAmLlerUViNn9PwFVRlR_AjDvhd5pkmeLNOu5bNDpvXV0ls";
-
-
-function openExternalLink(
-  url
-) {
-
-  try {
-
-    if (tg?.openLink) {
-
-      tg.openLink(
-        url
+      saveUserCache(
+        user.id,
+        {
+          balance,
+          energy,
+          maxEnergy
+        }
       );
-
-      return;
     }
+  }
 
-  } catch (e) {
 
-    console.error(
-      "Telegram openLink error:",
-      e
+  /* =========================================================
+     ENERGY
+     ========================================================= */
+
+  function startEnergyTimer() {
+
+    clearInterval(
+      energyTimer
     );
-  }
 
 
-  window.open(
-    url,
-    "_blank"
-  );
-}
+    energyTimer =
+      setInterval(
+        () => {
 
+          if (
+            energy <
+            maxEnergy
+          ) {
 
-function openSnpChart() {
+            energy += 1;
 
-  openExternalLink(
-    SNP_CHART_URL
-  );
-}
+            render();
 
+            if (user?.id) {
 
-function openSnpBuy() {
+              saveUserCache(
+                user.id,
+                {
+                  balance,
+                  energy,
+                  maxEnergy
+                }
+              );
+            }
+          }
 
-  openExternalLink(
-    SNP_BUY_URL
-  );
-}
-
-
-// ============================================================
-// NAVIGATION
-// ============================================================
-
-function showPage(
-  page
-) {
-
-  state.currentPage =
-    page;
-
-
-  document
-    .querySelectorAll(
-      ".page"
-    )
-    .forEach(el => {
-
-      el.classList.toggle(
-        "active",
-        el.dataset.page === page
+        },
+        3000
       );
-    });
-
-
-  document
-    .querySelectorAll(
-      ".nav-btn"
-    )
-    .forEach(el => {
-
-      el.classList.toggle(
-        "active",
-        el.dataset.page === page
-      );
-    });
-
-
-  if (
-    page === "boost"
-  ) {
-
-    loadBoosts();
   }
 
 
-  if (
-    page === "tasks"
-  ) {
+  /* =========================================================
+     NAVIGATION
+     ========================================================= */
 
-    loadTasks();
+  function setupNavigation() {
+
+    document
+      .querySelectorAll(".nav-btn")
+      .forEach((button) => {
+
+        button.addEventListener(
+          "click",
+          () => {
+
+            const page =
+              button.dataset.page;
+
+            document
+              .querySelectorAll(".page")
+              .forEach(
+                (p) =>
+                  p.classList.remove(
+                    "active"
+                  )
+              );
+
+
+            const target =
+              $(page);
+
+            if (target) {
+
+              target.classList.add(
+                "active"
+              );
+            }
+
+
+            document
+              .querySelectorAll(
+                ".nav-btn"
+              )
+              .forEach(
+                (b) =>
+                  b.classList.remove(
+                    "active"
+                  )
+              );
+
+
+            button.classList.add(
+              "active"
+            );
+
+
+            if (page === "tasks") {
+
+              loadTasks();
+            }
+
+
+            if (page === "friends") {
+
+              loadFriends();
+            }
+
+
+            if (page === "wallet") {
+
+              loadHistory();
+            }
+          }
+        );
+      });
   }
 
 
-  if (
-    page === "friends"
-  ) {
+  /* =========================================================
+     TAP EVENT
+     ========================================================= */
 
-    loadFriends();
-  }
+  function setupTap() {
 
+    const area =
+      $("tapArea");
 
-  if (
-    page === "wallet"
-  ) {
-
-    loadWallet();
-
-    loadHistory();
-  }
-}
+    if (!area) return;
 
 
-// ============================================================
-// EVENTS
-// ============================================================
-
-function setupEvents() {
-
-  // TAP
-
-  $("sCoin")
-    ?.addEventListener(
+    area.addEventListener(
       "pointerdown",
-      event => {
+      (event) => {
 
         event.preventDefault();
 
@@ -2859,169 +986,1178 @@ function setupEvents() {
         passive: false
       }
     );
-
-
-  // DAILY
-
-  $("dailyGift")
-    ?.addEventListener(
-      "click",
-      openDaily
-    );
-
-
-  $("dailyClose")
-    ?.addEventListener(
-      "click",
-      closeDaily
-    );
-
-
-  $("dailyModal")
-    ?.querySelector(
-      ".modal-backdrop"
-    )
-    ?.addEventListener(
-      "click",
-      closeDaily
-    );
-
-
-  // NAVIGATION
-
-  document
-    .querySelectorAll(
-      ".nav-btn"
-    )
-    .forEach(btn => {
-
-      btn.addEventListener(
-        "click",
-        () =>
-          showPage(
-            btn.dataset.page
-          )
-      );
-    });
-
-
-  // WALLET
-
-  $("connectWalletButton")
-    ?.addEventListener(
-      "click",
-      connectWallet
-    );
-
-
-  $("disconnectWallet")
-    ?.addEventListener(
-      "click",
-      disconnectWallet
-    );
-
-
-  $("withdrawButton")
-    ?.addEventListener(
-      "click",
-      withdraw
-    );
-
-
-  // REFERRAL
-
-  $("copyReferral")
-    ?.addEventListener(
-      "click",
-      copyReferral
-    );
-
-
-  $("copyReferralLarge")
-    ?.addEventListener(
-      "click",
-      copyReferral
-    );
-
-
-  $("shareReferral")
-    ?.addEventListener(
-      "click",
-      shareReferral
-    );
-
-
-  // SNP MARKET
-
-  $("chartButton")
-    ?.addEventListener(
-      "click",
-      openSnpChart
-    );
-
-
-  $("buySnpButton")
-    ?.addEventListener(
-      "click",
-      openSnpBuy
-    );
-}
-
-
-// ============================================================
-// INIT
-// ============================================================
-
-async function init() {
-
-  try {
-
-    setupEvents();
-
-
-    /*
-      خیلی مهم:
-
-      قبلاً این بود:
-
-        await initWallet();
-        await loadUser();
-
-      یعنی TON Connect قبل از اینکه بدانیم
-      کاربر فعلی چه کسی است Restore می‌شد.
-
-      حالا برعکس شده:
-    */
-
-
-    // 1. اول Telegram user فعلی را از backend بگیر
-    await loadUser();
-
-
-    // 2. حالا TON Connect را راه‌اندازی کن
-    await initWallet();
-
-
-    // 3. انرژی
-    startEnergyTimer();
-
-
-  } catch (e) {
-
-    console.error(
-      "SINAPS INIT ERROR:",
-      e
-    );
-
-
-    toast(
-      "SINAPS could not start"
-    );
   }
-}
 
 
-document.addEventListener(
-  "DOMContentLoaded",
-  init
-);
+  /* =========================================================
+     BOOSTS
+     ========================================================= */
+
+  async function loadBoosts() {
+
+    try {
+
+      const data =
+        await api(
+          "/api/boosts?telegram_id=" +
+          encodeURIComponent(user.id)
+        );
+
+
+      if (
+        data?.user
+      ) {
+
+        applyServerUser(
+          data.user
+        );
+      }
+
+
+      return data;
+
+    } catch (e) {
+
+      console.warn(
+        "loadBoosts:",
+        e.message
+      );
+
+      return null;
+    }
+  }
+
+
+  /* =========================================================
+     DAILY
+     ========================================================= */
+
+  async function loadDaily() {
+
+    try {
+
+      const data =
+        await api(
+          "/api/daily?telegram_id=" +
+          encodeURIComponent(user.id)
+        );
+
+
+      const daily =
+        data?.daily || {};
+
+
+      const streak =
+        Number(
+          daily.streak || 0
+        );
+
+
+      const last =
+        daily.last_claim_date;
+
+
+      const today =
+        new Date()
+          .toISOString()
+          .slice(0, 10);
+
+
+      const grid =
+        $("daysGrid");
+
+
+      if (grid) {
+
+        grid.innerHTML =
+          Array.from(
+            {
+              length: 30
+            },
+            (_, i) => {
+
+              const day =
+                i + 1;
+
+
+              const claimed =
+                day <= streak &&
+                last === today
+                  ? "✓"
+                  : "";
+
+
+              const current =
+                day === streak + 1;
+
+
+              return `
+                <button
+                  class="day ${current ? "current" : ""}"
+                  data-day="${day}"
+                  ${current ? "" : "disabled"}
+                >
+                  <b>${day}</b>
+                  <small>${day * 10}</small>
+                  <span>${claimed}</span>
+                </button>
+              `;
+            }
+          ).join("");
+
+
+        grid
+          .querySelectorAll(
+            ".day.current"
+          )
+          .forEach(
+            (button) => {
+
+              button.onclick =
+                claimDaily;
+            }
+          );
+      }
+
+
+      if ($("dailyMsg")) {
+
+        $("dailyMsg").textContent =
+          last === today
+            ? "Today claimed. Come back tomorrow."
+            : "Claim the highlighted day.";
+      }
+
+
+      return data;
+
+    } catch (e) {
+
+      console.warn(
+        "loadDaily:",
+        e.message
+      );
+
+      if ($("dailyMsg")) {
+
+        $("dailyMsg").textContent =
+          e.message;
+      }
+
+      return null;
+    }
+  }
+
+
+  async function claimDaily(event) {
+
+    const button =
+      event.currentTarget;
+
+
+    button.disabled = true;
+
+
+    try {
+
+      const data =
+        await api(
+          "/api/daily/claim",
+          {
+            method: "POST",
+
+            body: JSON.stringify({
+              telegram_id: user.id
+            })
+          }
+        );
+
+
+      if (data?.user) {
+
+        applyServerUser(
+          data.user
+        );
+      } else if (
+        data?.user?.balance
+      ) {
+
+        balance =
+          Number(
+            data.user.balance
+          );
+
+        render();
+      }
+
+
+      notify(
+        "Day " +
+        data.day +
+        " claimed: +" +
+        data.reward +
+        " SNP",
+        true
+      );
+
+
+      await loadDaily();
+
+    } catch (e) {
+
+      button.disabled = false;
+
+      notify(
+        e.message
+      );
+    }
+  }
+
+
+  function openDaily() {
+
+    const modal =
+      $("dailyModal");
+
+    if (!modal) return;
+
+
+    modal.classList.add(
+      "show"
+    );
+
+
+    loadDaily();
+  }
+
+
+  /* =========================================================
+     TASKS
+     ========================================================= */
+
+  async function loadTasks() {
+
+    try {
+
+      const data =
+        await api(
+          "/api/tasks?telegram_id=" +
+          encodeURIComponent(user.id)
+        );
+
+
+      const list =
+        $("tasksList");
+
+
+      if (!list) return data;
+
+
+      const tasks =
+        data?.tasks || [];
+
+
+      list.innerHTML =
+        tasks.length
+          ? tasks
+              .map(
+                (task) => `
+                  <div class="task-row">
+                    <div>
+                      <b>${esc(task.title || task.name || "Task")}</b>
+                      <small>
+                        +${Number(task.reward || 0).toLocaleString()} SNP
+                      </small>
+                    </div>
+                    <button
+                      class="glow-btn task-btn"
+                      data-task="${esc(task.id || "")}"
+                    >
+                      ${task.claimed ? "Claimed" : "Open"}
+                    </button>
+                  </div>
+                `
+              )
+              .join("")
+          : '<div class="empty">No tasks available.</div>';
+
+
+      list
+        .querySelectorAll(
+          ".task-btn"
+        )
+        .forEach(
+          (button) => {
+
+            button.onclick =
+              () =>
+                claimTask(
+                  button.dataset.task
+                );
+          }
+        );
+
+
+      return data;
+
+    } catch (e) {
+
+      console.warn(
+        "loadTasks:",
+        e.message
+      );
+
+      return null;
+    }
+  }
+
+
+  async function claimTask(taskId) {
+
+    try {
+
+      const data =
+        await api(
+          "/api/tasks/claim",
+          {
+            method: "POST",
+
+            body: JSON.stringify({
+              telegram_id: user.id,
+              task_id: taskId
+            })
+          }
+        );
+
+
+      if (data?.user) {
+
+        applyServerUser(
+          data.user
+        );
+      }
+
+
+      notify(
+        "Task completed",
+        true
+      );
+
+
+      await loadTasks();
+
+    } catch (e) {
+
+      notify(
+        e.message
+      );
+    }
+  }
+
+
+  /* =========================================================
+     FRIENDS
+     ========================================================= */
+
+  async function loadFriends() {
+
+    try {
+
+      const data =
+        await api(
+          "/api/friends?telegram_id=" +
+          encodeURIComponent(user.id)
+        );
+
+
+      if ($("refCode")) {
+
+        $("refCode").textContent =
+          data.referral_code || "-";
+
+        $("refCode").dataset.code =
+          data.referral_code || "";
+      }
+
+
+      if ($("refCount")) {
+
+        $("refCount").textContent =
+          data.referral_count || 0;
+      }
+
+
+      const list =
+        data.friends || [];
+
+
+      if ($("friendsList")) {
+
+        $("friendsList").innerHTML =
+          list.length
+            ? list
+                .map(
+                  (friend) => `
+                    <div class="friend-row">
+                      <span>
+                        ${esc(
+                          friend.username ||
+                          "User"
+                        )}
+                      </span>
+
+                      <b>
+                        ${Number(
+                          friend.balance || 0
+                        ).toLocaleString()}
+                        SNP
+                      </b>
+                    </div>
+                  `
+                )
+                .join("")
+            : '<div class="empty">No invited users yet.</div>';
+      }
+
+
+      return data;
+
+    } catch (e) {
+
+      console.warn(
+        "loadFriends:",
+        e.message
+      );
+
+      return null;
+    }
+  }
+
+
+  /* =========================================================
+     HISTORY
+     ========================================================= */
+
+  async function loadHistory() {
+
+    const box =
+      $("historyList");
+
+
+    if (!box || !user) {
+      return;
+    }
+
+
+    try {
+
+      const data =
+        await api(
+          "/api/history?telegram_id=" +
+          encodeURIComponent(user.id)
+        );
+
+
+      const rows =
+        data.transactions || [];
+
+
+      box.innerHTML =
+        rows.length
+          ? rows
+              .map(
+                (row) => {
+
+                  const amount =
+                    Number(
+                      row.amount || 0
+                    );
+
+
+                  return `
+                    <div class="history-row">
+
+                      <div>
+                        <b>
+                          ${esc(
+                            String(
+                              row.type || ""
+                            )
+                              .replaceAll(
+                                "_",
+                                " "
+                              )
+                          )}
+                        </b>
+
+                        <small>
+                          ${esc(
+                            row.description ||
+                            ""
+                          )}
+                        </small>
+                      </div>
+
+                      <strong
+                        class="${
+                          amount < 0
+                            ? "neg"
+                            : "pos"
+                        }"
+                      >
+                        ${
+                          amount > 0
+                            ? "+"
+                            : ""
+                        }${amount.toLocaleString()}
+                        SNP
+                      </strong>
+
+                      <span>
+                        ${esc(
+                          row.status ||
+                          ""
+                        )}
+                      </span>
+
+                    </div>
+                  `;
+                }
+              )
+              .join("")
+          : '<div class="empty">No transactions yet.</div>';
+
+    } catch (e) {
+
+      box.textContent =
+        e.message;
+    }
+  }
+
+
+  /* =========================================================
+     WALLET
+     ========================================================= */
+
+  async function loadWallet() {
+
+    try {
+
+      const data =
+        await api(
+          "/api/wallet?telegram_id=" +
+          encodeURIComponent(user.id)
+        );
+
+
+      const wallet =
+        data?.wallet_address ||
+        data?.wallet?.wallet_address ||
+        data?.user?.wallet_address ||
+        null;
+
+
+      if (wallet) {
+
+        renderWallet(
+          wallet
+        );
+      }
+
+
+      return data;
+
+    } catch (e) {
+
+      /*
+       * Wallet endpoint may not exist in
+       * some backend versions.
+       * Do not block app startup.
+       */
+
+      console.warn(
+        "loadWallet:",
+        e.message
+      );
+
+      return null;
+    }
+  }
+
+
+  function renderWallet(address) {
+
+    if ($("walletAddress")) {
+
+      $("walletAddress").style.display =
+        address ? "block" : "none";
+    }
+
+
+    if ($("walletAddressText")) {
+
+      $("walletAddressText").textContent =
+        address || "";
+    }
+
+
+    if ($("wallet-mini")) {
+
+      $("wallet-mini").textContent =
+        address
+          ? address.slice(0, 6) +
+            "..." +
+            address.slice(-6)
+          : "Wallet not connected";
+    }
+
+
+    if ($("connectWalletBtn")) {
+
+      $("connectWalletBtn").style.display =
+        address ? "none" : "block";
+    }
+
+
+    if ($("disconnectWallet")) {
+
+      $("disconnectWallet").style.display =
+        address ? "block" : "none";
+    }
+  }
+
+
+  async function setupWallet() {
+
+    if (
+      !window.TON_CONNECT_UI
+    ) {
+
+      console.warn(
+        "TON Connect UI not loaded"
+      );
+
+      return;
+    }
+
+
+    try {
+
+      tonUI =
+        new window.TON_CONNECT_UI.TonConnectUI(
+          {
+            manifestUrl: MANIFEST,
+
+            buttonRootId:
+              "ton-connect"
+          }
+        );
+
+
+      tonUI.onStatusChange(
+        async (wallet) => {
+
+          try {
+
+            if (
+              wallet?.account?.address
+            ) {
+
+              const address =
+                wallet.account.address;
+
+
+              renderWallet(
+                address
+              );
+
+
+              /*
+               * Save wallet for current
+               * Telegram account.
+               */
+
+              await api(
+                "/api/wallet/connect",
+                {
+                  method: "POST",
+
+                  body:
+                    JSON.stringify({
+                      telegram_id:
+                        user.id,
+
+                      wallet_address:
+                        address
+                    })
+                }
+              );
+
+
+              renderWallet(
+                address
+              );
+
+
+              notify(
+                "Wallet connected",
+                true
+              );
+
+            } else {
+
+              renderWallet(
+                null
+              );
+            }
+
+          } catch (e) {
+
+            console.error(
+              "Wallet status:",
+              e
+            );
+          }
+        }
+      );
+
+
+      if ($("connectWalletBtn")) {
+
+        $("connectWalletBtn")
+          .onclick = () => {
+
+            tonUI.openModal();
+          };
+      }
+
+
+      if ($("disconnectWallet")) {
+
+        $("disconnectWallet")
+          .onclick = async () => {
+
+            try {
+
+              await tonUI.disconnect();
+
+              await api(
+                "/api/wallet/disconnect",
+                {
+                  method: "POST",
+
+                  body:
+                    JSON.stringify({
+                      telegram_id:
+                        user.id
+                    })
+                }
+              );
+
+
+              renderWallet(
+                null
+              );
+
+
+              notify(
+                "Wallet disconnected",
+                true
+              );
+
+
+            } catch (e) {
+
+              notify(
+                e.message
+              );
+            }
+          };
+      }
+
+    } catch (e) {
+
+      console.error(
+        "TON Connect error:",
+        e
+      );
+    }
+  }
+
+
+  /* =========================================================
+     WITHDRAW
+     ========================================================= */
+
+  async function setupWithdraw() {
+
+    const button =
+      $("withdrawBtn");
+
+
+    if (!button) {
+      return;
+    }
+
+
+    button.onclick =
+      async () => {
+
+        if (withdrawing) {
+          return;
+        }
+
+
+        withdrawing = true;
+
+        button.disabled = true;
+
+
+        try {
+
+          /*
+           * Flush pending taps first.
+           */
+
+          if (
+            queue > 0
+          ) {
+
+            await flushTaps();
+          }
+
+
+          if (
+            !tonUI ||
+            !tonUI.wallet
+          ) {
+
+            throw new Error(
+              "First connect your TON wallet."
+            );
+          }
+
+
+          const amount =
+            Number(
+              $("withdrawAmount")
+                ?.value
+            );
+
+
+          if (
+            !Number.isInteger(
+              amount
+            ) ||
+            amount <= 0
+          ) {
+
+            throw new Error(
+              "Invalid SNP amount."
+            );
+          }
+
+
+          if (
+            amount > balance
+          ) {
+
+            throw new Error(
+              "Insufficient SNP balance."
+            );
+          }
+
+
+          /*
+           * Create withdrawal request.
+           */
+
+          const data =
+            await api(
+              "/api/withdraw/request",
+              {
+                method: "POST",
+
+                body:
+                  JSON.stringify({
+                    telegram_id:
+                      user.id,
+
+                    amount,
+
+                    wallet_address:
+                      tonUI.wallet.account
+                        .address
+                  })
+              }
+            );
+
+
+          if (
+            data?.balance !== undefined
+          ) {
+
+            balance =
+              Number(
+                data.balance
+              ) || balance;
+
+            render();
+          }
+
+
+          notify(
+            "Withdrawal request created. Send 0.1 TON fee.",
+            true
+          );
+
+
+        } catch (e) {
+
+          console.error(
+            "withdraw:",
+            e
+          );
+
+          notify(
+            e.message
+          );
+
+        } finally {
+
+          withdrawing =
+            false;
+
+          button.disabled =
+            false;
+        }
+      };
+  }
+
+
+  /* =========================================================
+     COPY REFERRAL
+     ========================================================= */
+
+  function setupReferralCopy() {
+
+    const button =
+      $("copyRef");
+
+
+    if (!button) {
+      return;
+    }
+
+
+    button.onclick =
+      async () => {
+
+        const code =
+          $("refCode")
+            ?.dataset
+            ?.code ||
+          $("refCode")
+            ?.textContent ||
+          "";
+
+
+        if (!code || code === "-") {
+
+          notify(
+            "Referral code not ready"
+          );
+
+          return;
+        }
+
+
+        const link =
+          "https://t.me/SNPCOINBot?startapp=" +
+          encodeURIComponent(code);
+
+
+        try {
+
+          await navigator.clipboard.writeText(
+            link
+          );
+
+
+          notify(
+            "Invite link copied",
+            true
+          );
+
+        } catch (_) {
+
+          notify(
+            link
+          );
+        }
+      };
+  }
+
+
+  /* =========================================================
+     DAILY GIFT
+     ========================================================= */
+
+  function setupDailyGift() {
+
+    const gift =
+      $("dailyGift");
+
+
+    if (!gift) {
+      return;
+    }
+
+
+    gift.onclick =
+      openDaily;
+  }
+
+
+  /* =========================================================
+     INIT
+     ========================================================= */
+
+  async function init() {
+
+    try {
+
+      /*
+       * STEP 1
+       * Telegram user is initialized FIRST.
+       */
+
+      telegram();
+
+
+      /*
+       * STEP 2
+       * Immediately show username.
+       */
+
+      renderTelegramUser();
+
+
+      /*
+       * STEP 3
+       * Render initial UI.
+       */
+
+      render();
+
+
+      /*
+       * STEP 4
+       * Setup buttons/events.
+       */
+
+      setupNavigation();
+
+      setupTap();
+
+      setupReferralCopy();
+
+      setupDailyGift();
+
+      await setupWithdraw();
+
+
+      /*
+       * STEP 5
+       * Load real server balance.
+       *
+       * IMPORTANT:
+       * We await ONLY the user request here.
+       *
+       * Daily / Tasks / Friends / Wallet
+       * are already running in background.
+       */
+
+      await loadUser();
+
+
+      /*
+       * STEP 6
+       * Wallet starts AFTER current Telegram
+       * user has been identified.
+       */
+
+      await setupWallet();
+
+
+      /*
+       * STEP 7
+       * Energy starts.
+       */
+
+      startEnergyTimer();
+
+
+      bootFinished = true;
+
+
+      console.log(
+        "SINAPS initialized",
+        {
+          telegram_id:
+            user?.id,
+
+          username:
+            user?.username,
+
+          balance,
+
+          energy
+        }
+      );
+
+
+    } catch (e) {
+
+      console.error(
+        "SINAPS INIT ERROR:",
+        e
+      );
+
+
+      /*
+       * Even if backend has an issue,
+       * Telegram username should remain visible.
+       */
+
+      renderTelegramUser();
+
+      render();
+
+      notify(
+        "SINAPS could not fully start"
+      );
+    }
+  }
+
+
+  /* =========================================================
+     DOM READY
+     ========================================================= */
+
+  if (
+    document.readyState ===
+    "loading"
+  ) {
+
+    document.addEventListener(
+      "DOMContentLoaded",
+      init
+    );
+
+  } else {
+
+    init();
+  }
+
+})();
