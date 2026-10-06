@@ -48,6 +48,14 @@ let energyTimer = null;
 let walletInitialized = false;
 let disconnectRequested = false;
 
+/*
+  مهم:
+  وقتی TON Connect کیف پول قبلی را Restore می‌کند،
+  اگر متعلق به Telegram user فعلی نباشد نباید باعث
+  /api/wallet/disconnect برای کاربر فعلی شود.
+*/
+let ignoreNextWalletDisconnect = false;
+
 
 // ============================================================
 // HELPERS
@@ -63,6 +71,15 @@ const formatNumber = value =>
 
 const telegramUser = () =>
   tg?.initDataUnsafe?.user || null;
+
+
+const telegramUserId = () => {
+  const user = telegramUser();
+
+  return user?.id
+    ? String(user.id)
+    : "";
+};
 
 
 const authHeaders = () => ({
@@ -94,6 +111,7 @@ async function api(path, options = {}) {
 
 
   if (!response.ok) {
+
     throw new Error(
       data.error || "Request failed"
     );
@@ -120,7 +138,9 @@ function toast(message) {
 
 
   el._timer = setTimeout(() => {
+
     el.classList.remove("show");
+
   }, 2400);
 }
 
@@ -184,6 +204,10 @@ function applyUser(user) {
     );
 
 
+  /*
+    مهم:
+    آدرس کیف پول فقط از دیتابیس کاربر فعلی گرفته می‌شود.
+  */
   state.walletAddress =
     user.wallet_address || null;
 
@@ -270,6 +294,11 @@ async function loadUser() {
     );
 
 
+    /*
+      اینجا walletAddress متعلق به Telegram ID فعلی
+      مشخص شده است.
+    */
+
     await Promise.allSettled([
       loadBoosts(),
       loadDaily(),
@@ -277,6 +306,9 @@ async function loadUser() {
       loadFriends(),
       loadWallet()
     ]);
+
+
+    return data.user;
 
 
   } catch (e) {
@@ -291,6 +323,9 @@ async function loadUser() {
       e.message ||
       "Server connection failed"
     );
+
+
+    return null;
   }
 }
 
@@ -948,12 +983,6 @@ async function loadDaily() {
       );
 
 
-    console.log(
-      "DAILY SERVER DATA:",
-      data
-    );
-
-
     renderDaily(
       data.daily || data
     );
@@ -1048,7 +1077,6 @@ function renderDaily(
     localDateKey();
 
 
-  // وضعیت Claim از سمت سرور
   const serverClaimedToday =
 
     data.claimed_today === true ||
@@ -1070,25 +1098,11 @@ function renderDaily(
     data.canClaim === false;
 
 
-  // وضعیت نهایی امروز
   const claimedToday =
 
     serverClaimedToday ||
 
     lastClaimDate === today;
-
-
-  console.log(
-    "DAILY STATUS:",
-    {
-      streak,
-      rawLastClaim,
-      lastClaimDate,
-      today,
-      serverClaimedToday,
-      claimedToday
-    }
-  );
 
 
   let currentDay;
@@ -1154,7 +1168,6 @@ function renderDaily(
       "🔒";
 
 
-    // روزهای قبلی دریافت شده
     if (
       day < currentDay
     ) {
@@ -1167,7 +1180,6 @@ function renderDaily(
     }
 
 
-    // روز قابل دریافت
     if (
       !claimedToday &&
       day === currentDay
@@ -1181,7 +1193,6 @@ function renderDaily(
     }
 
 
-    // امروز دریافت شده
     if (
       claimedToday &&
       day === currentDay
@@ -1278,14 +1289,6 @@ async function claimDaily() {
       );
 
 
-    console.log(
-      "DAILY CLAIM RESPONSE:",
-      data
-    );
-
-
-    // UPDATE BALANCE
-
     if (data.user) {
 
       applyUser(
@@ -1337,8 +1340,6 @@ async function claimDaily() {
     );
 
 
-    // نمایش فوری تیک سبز
-
     if (button) {
 
       button.classList.remove(
@@ -1372,8 +1373,6 @@ async function claimDaily() {
       }
     }
 
-
-    // دریافت وضعیت جدید از سرور
 
     await loadDaily();
 
@@ -1521,6 +1520,10 @@ function renderWallet() {
 }
 
 
+// ============================================================
+// TON CONNECT
+// ============================================================
+
 async function initWallet() {
 
   try {
@@ -1561,6 +1564,190 @@ async function initWallet() {
           null;
 
 
+        // ====================================================
+        // NO WALLET
+        // ====================================================
+
+        if (!address) {
+
+          state.walletAddress =
+            null;
+
+
+          renderWallet();
+
+
+          /*
+            اگر این disconnect نتیجه‌ی این بود که
+            TON Connect کیف پول اشتباه اکانت قبلی را
+            پاک کرده، نباید دیتابیس کاربر فعلی پاک شود.
+          */
+
+          if (
+            ignoreNextWalletDisconnect
+          ) {
+
+            ignoreNextWalletDisconnect =
+              false;
+
+            return;
+          }
+
+
+          /*
+            فقط در Disconnect واقعی کاربر،
+            کیف پول همان Telegram user را از backend
+            حذف می‌کنیم.
+          */
+
+          if (
+            disconnectRequested
+          ) {
+
+            try {
+
+              await api(
+                "/api/wallet/disconnect",
+                {
+                  method: "POST",
+                  body: "{}"
+                }
+              );
+
+            } catch (_) {}
+
+
+            disconnectRequested =
+              false;
+
+            await loadFriends();
+
+            return;
+          }
+
+
+          return;
+        }
+
+
+        // ====================================================
+        // WALLET RESTORED / CONNECTED
+        // ====================================================
+
+        /*
+          state.walletAddress در این لحظه از backend
+          و از Telegram user فعلی آمده است.
+
+          اگر کیف پول TON Connect با آن یکی نیست،
+          یعنی کیف پول مربوط به یک Telegram account
+          دیگر است.
+        */
+
+        const backendWallet =
+          state.walletAddress || null;
+
+
+        if (
+          backendWallet &&
+          backendWallet !== address
+        ) {
+
+          console.warn(
+            "Different Telegram account wallet detected.",
+            {
+              telegram_id:
+                telegramUserId(),
+
+              backendWallet,
+              tonWallet:
+                address
+            }
+          );
+
+
+          /*
+            این disconnect نباید backend wallet
+            کاربر فعلی را حذف کند.
+          */
+
+          ignoreNextWalletDisconnect =
+            true;
+
+
+          try {
+
+            await tonUI.disconnect();
+
+          } catch (e) {
+
+            console.error(
+              "Wrong wallet disconnect error:",
+              e
+            );
+
+            ignoreNextWalletDisconnect =
+              false;
+          }
+
+
+          /*
+            دوباره آدرس صحیح اکانت فعلی را نمایش بده.
+          */
+
+          renderWallet();
+
+          return;
+        }
+
+
+        /*
+          اگر کاربر فعلی در backend هیچ کیف پولی ندارد
+          ولی TON Connect کیف پول قبلی را Restore کرده،
+          نباید آن را به این اکانت وصل کنیم.
+        */
+
+        if (!backendWallet) {
+
+          console.warn(
+            "Restored wallet found but current Telegram account has no wallet."
+          );
+
+
+          ignoreNextWalletDisconnect =
+            true;
+
+
+          try {
+
+            await tonUI.disconnect();
+
+          } catch (e) {
+
+            console.error(
+              "Old wallet disconnect error:",
+              e
+            );
+
+            ignoreNextWalletDisconnect =
+              false;
+          }
+
+
+          state.walletAddress =
+            null;
+
+
+          renderWallet();
+
+          return;
+        }
+
+
+        /*
+          اگر رسیدیم اینجا یعنی:
+          backend wallet === TON Connect wallet
+        */
+
         state.walletAddress =
           address;
 
@@ -1568,89 +1755,21 @@ async function initWallet() {
         renderWallet();
 
 
-        if (address) {
+        /*
+          لازم نیست دوباره connect را به backend بفرستیم
+          چون همین آدرس قبلاً برای همین user ذخیره شده.
+        */
 
-          try {
-
-            const data =
-              await api(
-                "/api/wallet/connect",
-                {
-                  method: "POST",
-
-                  body: JSON.stringify({
-                    wallet_address:
-                      address
-                  })
-                }
-              );
-
-
-            applyUser(
-              data.user
-            );
-
-
-            if (
-              Number(
-                data.referral_reward || 0
-              ) > 0
-            ) {
-
-              toast(
-                `Referral activated: +${formatNumber(
-                  data.referral_reward
-                )} SNP`
-              );
-            }
-
-
-            await loadFriends();
-
-
-          } catch (e) {
-
-            console.error(
-              "Wallet save error:",
-              e
-            );
-
-
-            toast(
-              "Wallet connected, but could not be saved"
-            );
-          }
-
-
-        } else {
-
-          try {
-
-            await api(
-              "/api/wallet/disconnect",
-              {
-                method: "POST",
-                body: "{}"
-              }
-            );
-
-          } catch (_) {}
-
-
-          await loadFriends();
-
-
-          if (
-            disconnectRequested
-          ) {
-
-            disconnectRequested =
-              false;
-          }
-        }
+        await loadFriends();
       }
     );
 
+
+    /*
+      connectionRestored:
+      اگر کیف پول قبلی مربوط به کاربر دیگری باشد،
+      callback بالا آن را تشخیص می‌دهد و disconnect می‌کند.
+    */
 
     if (
       tonUI.connectionRestored
@@ -1672,6 +1791,10 @@ async function initWallet() {
   }
 }
 
+
+// ============================================================
+// CONNECT WALLET
+// ============================================================
 
 async function connectWallet() {
 
@@ -1698,6 +1821,10 @@ async function connectWallet() {
   }
 }
 
+
+// ============================================================
+// DISCONNECT WALLET
+// ============================================================
 
 async function disconnectWallet() {
 
@@ -1750,7 +1877,19 @@ async function disconnectWallet() {
 }
 
 
+// ============================================================
+// LOAD WALLET
+// ============================================================
+
 async function loadWallet() {
+
+  /*
+    عمداً هیچ آدرس کیف پولی از localStorage یا
+    TON Connect خوانده نمی‌شود.
+
+    منبع اصلی wallet برای هر Telegram user:
+    backend database است.
+  */
 
   renderWallet();
 }
@@ -2839,11 +2978,33 @@ async function init() {
 
     setupEvents();
 
-    await initWallet();
 
+    /*
+      خیلی مهم:
+
+      قبلاً این بود:
+
+        await initWallet();
+        await loadUser();
+
+      یعنی TON Connect قبل از اینکه بدانیم
+      کاربر فعلی چه کسی است Restore می‌شد.
+
+      حالا برعکس شده:
+    */
+
+
+    // 1. اول Telegram user فعلی را از backend بگیر
     await loadUser();
 
+
+    // 2. حالا TON Connect را راه‌اندازی کن
+    await initWallet();
+
+
+    // 3. انرژی
     startEnergyTimer();
+
 
   } catch (e) {
 
@@ -2851,6 +3012,7 @@ async function init() {
       "SINAPS INIT ERROR:",
       e
     );
+
 
     toast(
       "SINAPS could not start"
