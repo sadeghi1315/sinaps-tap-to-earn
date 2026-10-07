@@ -128,23 +128,44 @@ async function loadUser() {
   const user = telegramUser();
   currentTelegramId = user?.id ? String(user.id) : "";
 
-  // Render Telegram identity immediately. Do not wait for Render/Turso or TON Connect.
   loadFastCache();
   renderUser();
 
   try {
     const data = await api("/api/user", {
       method: "POST",
-      body: JSON.stringify({ username: user?.username || "", start_param: tg?.initDataUnsafe?.start_param || "" })
+      body: JSON.stringify({
+        username: user?.username || "",
+        start_param: tg?.initDataUnsafe?.start_param || ""
+      })
     });
+
     applyUser(data.user);
 
-    // These are secondary screens. They must never delay Home/username/balance.
-    Promise.allSettled([loadBoosts(), loadDaily(), loadTasks(), loadFriends(), loadWallet()]).catch(() => {});
+    // مهم:
+    // اول آدرس ولت ذخیره‌شده برای همین کاربر را از سرور بگیر
+    // تا TON Connect قبل از آن state.walletAddress را null نبیند.
+    try {
+      await loadWallet();
+    } catch (_) {}
+
+    // صفحات فرعی را بعداً بارگذاری کن
+    Promise.allSettled([
+      loadBoosts(),
+      loadDaily(),
+      loadTasks(),
+      loadFriends()
+    ]).catch(() => {});
+
     return data.user;
+
   } catch (e) {
     console.error("loadUser", e);
-    toast(e.message || "Server connection failed");
+
+    // حتی اگر API خطا داد، Home را خالی نگذار
+    renderUser();
+    renderWallet();
+
     return null;
   }
 }
