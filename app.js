@@ -421,8 +421,16 @@ async function disconnectWallet() {
 }
 
 async function loadWallet() {
-  // Do not restore an old database address. The active TON Connect session is authoritative.
-  renderWallet();
+  try {
+    const data = await api("/api/wallet/get", { method: "POST", body: "{}" });
+    const saved = data.wallet_address || null;
+    // If TON Connect is already connected, never replace it with the DB value.
+    if (!state.walletAddress && saved) state.walletAddress = saved;
+    renderWallet();
+  } catch (e) {
+    console.error("wallet get", e);
+    renderWallet();
+  }
 }
 
 // ============================================================
@@ -456,6 +464,8 @@ async function withdraw() {
 // TASKS
 // ============================================================
 async function loadTasks() {
+  const immediate = $("tasksList");
+  if (immediate && !immediate.children.length) immediate.innerHTML = `<div class="empty-state">Loading tasks...</div>`;
   try {
     const data = await api("/api/tasks");
     const container = $("tasksList");
@@ -491,6 +501,8 @@ async function claimTask(taskId, url) {
 // FRIENDS / REFERRAL
 // ============================================================
 async function loadFriends() {
+  const immediate = $("friendsList");
+  if (immediate && !immediate.children.length) immediate.innerHTML = `<div class="empty-state">Loading referrals...</div>`;
   try {
     const data = await api("/api/friends");
     const input = $("referralLink");
@@ -569,6 +581,34 @@ function playGame() {
 }
 
 // ============================================================
+// EXTERNAL MARKET LINKS
+// ============================================================
+const SNP_CHART_URL = "https://www.geckoterminal.com/ton/pools/EQAmLlerUViNn9PwFVRlR_AjDvhd5pkmeLNOu5bNDpvXV0ls";
+const SNP_BUY_URL = "https://app.ston.fi/swap?chartVisible=false&ft=GRAM&tt=EQAmLlerUViNn9PwFVRlR_AjDvhd5pkmeLNOu5bNDpvXV0ls&fa=%2210%22";
+
+function openExternal(url) {
+  try {
+    if (tg?.openLink) {
+      tg.openLink(url);
+      return;
+    }
+  } catch (_) {}
+  try {
+    window.open(url, "_blank", "noopener,noreferrer");
+  } catch (_) {
+    window.location.href = url;
+  }
+}
+
+function openChart() {
+  openExternal(SNP_CHART_URL);
+}
+
+function openBuySnp() {
+  openExternal(SNP_BUY_URL);
+}
+
+// ============================================================
 // NAVIGATION / EVENTS
 // ============================================================
 function showPage(page) {
@@ -594,6 +634,8 @@ function setupEvents() {
   $("copyReferralLarge")?.addEventListener("click", copyReferral);
   $("shareReferral")?.addEventListener("click", shareReferral);
   $("playGame")?.addEventListener("click", playGame);
+  $("chartButton")?.addEventListener("click", openChart);
+  $("buySnpButton")?.addEventListener("click", openBuySnp);
 }
 
 async function init() {
