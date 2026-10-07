@@ -151,11 +151,15 @@ async function loadUser() {
 
     // صفحات فرعی را بعداً بارگذاری کن
     Promise.allSettled([
-      loadBoosts(),
-      loadDaily(),
-      loadTasks(),
-      loadFriends()
-    ]).catch(() => {});
+  loadBoosts(),
+  loadDaily(),
+  loadTasks(),
+  loadFriends()
+]).catch(() => {});
+
+try {
+  await loadWallet();
+} catch (_) {}
 
     return data.user;
 
@@ -484,40 +488,440 @@ async function withdraw() {
 // ============================================================
 // TASKS
 // ============================================================
+
 async function loadTasks() {
+
   const immediate = $("tasksList");
-  if (immediate && !immediate.children.length) immediate.innerHTML = `<div class="empty-state">Loading tasks...</div>`;
+
+  if (
+    immediate &&
+    !immediate.children.length
+  ) {
+    immediate.innerHTML =
+      `<div class="empty-state">Loading tasks...</div>`;
+  }
+
   try {
-    const data = await api("/api/tasks");
-    const container = $("tasksList");
+
+    const data =
+      await api("/api/tasks");
+
+    const container =
+      $("tasksList");
+
     if (!container) return;
+
     container.innerHTML = "";
-    data.tasks.forEach(task => {
-      const row = document.createElement("div");
-      row.className = "task-row";
-      row.innerHTML = `<div class="task-icon">${task.icon}</div><div class="task-info"><strong>${task.name}</strong><small>+${formatNumber(task.reward)} SNP</small></div><button class="task-button" ${task.completed ? "disabled" : ""} data-task-id="${task.id}" data-url="${task.url || "#"}">${task.completed ? "DONE" : task.action || "VERIFY"}</button>`;
+
+    const tasks =
+      Array.isArray(data.tasks)
+        ? data.tasks
+        : [];
+
+    if (!tasks.length) {
+
+      container.innerHTML =
+        `<div class="empty-state">
+          No tasks available.
+        </div>`;
+
+      return;
+    }
+
+    tasks.forEach(task => {
+
+      const row =
+        document.createElement("div");
+
+      row.className =
+        "task-row";
+
+      const completed =
+        Boolean(task.completed);
+
+      let buttonText =
+        completed
+          ? "DONE"
+          : "VERIFY";
+
+      if (
+        task.id === "twitter"
+      ) {
+        buttonText =
+          completed
+            ? "DONE"
+            : "FOLLOW";
+      }
+
+      if (
+        task.id === "like_retweet"
+      ) {
+        buttonText =
+          completed
+            ? "DONE"
+            : "OPEN";
+      }
+
+      if (
+        task.id === "connect_wallet"
+      ) {
+        buttonText =
+          completed
+            ? "DONE"
+            : state.walletAddress
+              ? "VERIFY"
+              : "CONNECT";
+      }
+
+      if (
+        task.id === "invite_3" ||
+        task.id === "invite_10" ||
+        task.id === "invite_15"
+      ) {
+        buttonText =
+          completed
+            ? "DONE"
+            : "VERIFY";
+      }
+
+      row.innerHTML = `
+        <div class="task-icon">
+          ${task.icon || "🎯"}
+        </div>
+
+        <div class="task-info">
+
+          <strong>
+            ${task.name}
+          </strong>
+
+          <small>
+            +${formatNumber(task.reward)} SNP
+          </small>
+
+        </div>
+
+        <button
+          class="task-button"
+          ${completed ? "disabled" : ""}
+          data-task-id="${task.id}"
+          data-url="${task.url || "#"}"
+          data-type="${task.type || ""}"
+        >
+          ${buttonText}
+        </button>
+      `;
+
       container.appendChild(row);
+
     });
-    container.querySelectorAll(".task-button:not(:disabled)").forEach(btn => btn.addEventListener("click", () => claimTask(btn.dataset.taskId, btn.dataset.url)));
+
+    container
+      .querySelectorAll(
+        ".task-button:not(:disabled)"
+      )
+      .forEach(button => {
+
+        button.addEventListener(
+          "click",
+          () => {
+
+            claimTask(
+              button.dataset.taskId,
+              button.dataset.url,
+              button.dataset.type
+            );
+
+          }
+        );
+
+      });
+
   } catch (e) {
-    const c = $("tasksList"); if (c) c.innerHTML = `<div class="empty-state">${e.message || "Tasks unavailable"}</div>`;
+
+    console.error(
+      "loadTasks",
+      e
+    );
+
+    const container =
+      $("tasksList");
+
+    if (container) {
+
+      container.innerHTML =
+        `<div class="empty-state">
+          ${e.message || "Tasks unavailable"}
+        </div>`;
+
+    }
+
   }
-}
-async function claimTask(taskId, url) {
-  const task = { url };
-  if (url && url !== "#") {
-    try { if (tg?.openTelegramLink && url.includes("t.me/")) tg.openTelegramLink(url); else window.open(url, "_blank"); } catch (_) { window.open(url, "_blank"); }
-    await new Promise(r => setTimeout(r, 1200));
-  }
-  try {
-    const data = await api("/api/tasks/claim", { method: "POST", body: JSON.stringify({ task_id: taskId, wallet_address: state.walletAddress || "" }) });
-    state.balance = Number(data.balance || state.balance);
-    renderUser();
-    toast(`+${formatNumber(data.reward)} SNP`);
-    await loadTasks();
-  } catch (e) { toast(e.message); }
+
 }
 
+
+async function claimTask(
+  taskId,
+  url,
+  type
+) {
+
+  /*
+   * ==========================================================
+   * WALLET TASK
+   * ==========================================================
+   */
+
+  if (
+    taskId === "connect_wallet"
+  ) {
+
+    if (!state.walletAddress) {
+
+      if (!tonUI) {
+
+        toast(
+          "TON Connect is not ready"
+        );
+
+        return;
+
+      }
+
+      try {
+
+        await tonUI.openModal();
+
+      } catch (e) {
+
+        console.error(
+          "open wallet",
+          e
+        );
+
+        toast(
+          "Could not open wallet"
+        );
+
+      }
+
+      return;
+
+    }
+
+  }
+
+
+  /*
+   * ==========================================================
+   * EXTERNAL TASKS
+   * ==========================================================
+   */
+
+  if (
+    type === "external" &&
+    url &&
+    url !== "#"
+  ) {
+
+    try {
+
+      openExternal(url);
+
+    } catch (_) {
+
+      try {
+        window.open(
+          url,
+          "_blank"
+        );
+      } catch (_) {}
+
+    }
+
+    await new Promise(
+      resolve =>
+        setTimeout(
+          resolve,
+          1200
+        )
+    );
+
+  }
+
+
+  /*
+   * ==========================================================
+   * TELEGRAM TASKS
+   * ==========================================================
+   */
+
+  if (
+    type === "telegram" &&
+    url &&
+    url !== "#"
+  ) {
+
+    try {
+
+      if (
+        tg?.openTelegramLink
+      ) {
+
+        tg.openTelegramLink(
+          url
+        );
+
+      } else {
+
+        window.open(
+          url,
+          "_blank"
+        );
+
+      }
+
+    } catch (_) {
+
+      try {
+
+        window.open(
+          url,
+          "_blank"
+        );
+
+      } catch (_) {}
+
+    }
+
+    await new Promise(
+      resolve =>
+        setTimeout(
+          resolve,
+          1200
+        )
+    );
+
+  }
+
+
+  /*
+   * ==========================================================
+   * REFERRAL TASKS
+   * ==========================================================
+   */
+
+  if (
+    type === "referral"
+  ) {
+
+    /*
+     * Backend خودش تعداد دوستان
+     * را بررسی می‌کند.
+     *
+     * بنابراین فقط VERIFY را
+     * به سرور ارسال می‌کنیم.
+     */
+
+  }
+
+
+  /*
+   * ==========================================================
+   * VERIFY
+   * ==========================================================
+   */
+
+  try {
+
+    const data =
+      await api(
+        "/api/tasks/claim",
+        {
+          method: "POST",
+
+          body: JSON.stringify({
+
+            task_id:
+              taskId,
+
+            wallet_address:
+              state.walletAddress || ""
+
+          })
+
+        }
+      );
+
+
+    /*
+     * Update balance
+     */
+
+    if (
+      data.balance !== undefined
+    ) {
+
+      state.balance =
+        Number(
+          data.balance
+        );
+
+    }
+
+
+    renderUser();
+
+    saveFastCache();
+
+
+    /*
+     * Reward message
+     */
+
+    toast(
+      `+${formatNumber(
+        data.reward || 0
+      )} SNP`
+    );
+
+
+    /*
+     * Refresh tasks
+     */
+
+    await loadTasks();
+
+
+    /*
+     * Refresh friends for
+     * referral tasks.
+     */
+
+    if (
+      type === "referral"
+    ) {
+
+      await loadFriends();
+
+    }
+
+  } catch (e) {
+
+    console.error(
+      "claimTask",
+      e
+    );
+
+    toast(
+      e.message ||
+      "Task verification failed"
+    );
+
+  }
+
+}
 // ============================================================
 // FRIENDS / REFERRAL
 // ============================================================
