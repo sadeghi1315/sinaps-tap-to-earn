@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+  <title>SINAPS COIN — Tap • Earn • Grow</title>
+
+  <meta name="description"
+        content="Join SINAPS COIN on Telegram. Tap, earn SNP, complete tasks and grow with the community.">
+
+  <!-- Telegram / Social Preview -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="SINAPS COIN — Tap • Earn • Grow">
+  <meta property="og:description"
+        content="Turn your taps into real rewards. Join SINAPS on Telegram and start earning SNP.">
+
+  <meta property="og:image"
+        content="https://sadeghi1315.github.io/sinaps-tap-to-earn/assets/sinaps-promo.png">
+
+  <meta property="og:image:width" content="1536">
+  <meta property="og:image:height" content="1024">
+
+  <meta property="og:url"
+        content="https://sadeghi1315.github.io/sinaps-tap-to-earn/invite.html">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="SINAPS COIN — Tap • Earn • Grow">
+  <meta name="twitter:description"
+        content="Join SINAPS and start earning SNP.">
+  <meta name="twitter:image"
+        content="https://sadeghi1315.github.io/sinaps-tap-to-earn/assets/sinaps-promo.png">
+
+  <style>
+    html,body {
+      margin:0;
+      padding:0;
+      width:100%;
+      min-height:100%;
+      background:#02030d;
+      color:white;
+      font-family:Arial,sans-serif;
+    }
+
+    body {
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+    }
+
+    .box {
+      max-width:420px;
+      padding:30px 20px;
+    }
+
+    img {
+      width:100%;
+      border-radius:20px;
+      display:block;
+      margin-bottom:25px;
+    }
+
+    h1 {
+      margin:0 0 10px;
+      font-size:28px;
+    }
+
+    p {
+      color:#aeb8d8;
+      line-height:1.6;
+    }
+
+    .btn {
+      display:inline-block;
+      margin-top:15px;
+      padding:15px 28px;
+      border-radius:30px;
+      background:linear-gradient(90deg,#08a8ff,#704cff);
+      color:white;
+      text-decoration:none;
+      font-weight:bold;
+      font-size:17px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="box">
+
+    <img
+      src="https://sadeghi1315.github.io/sinaps-tap-to-earn/assets/sinaps-promo.png"
+      alt="SINAPS COIN">
+
+    <h1>SINAPS COIN</h1>
+
+    <p>
+      Tap • Earn • Grow
+      <br>
+      Join SINAPS and start earning SNP.
+    </p>
+
+    <a id="openApp"
+       class="btn"
+       href="#">
+      🚀 Open SINAPS
+    </a>
+
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+
+    const ref = params.get("ref") || "";
+
+    const botUrl =
+      "https://t.me/SNPCOINBot?startapp=" +
+      encodeURIComponent(ref);
+
+    document.getElementById("openApp").href = botUrl;
+
+    // Automatically open the Mini App after a short delay
+    setTimeout(() => {
+      window.location.href = botUrl;
+    }, 1800);
+  </script>
+
+</body>
+</html>
