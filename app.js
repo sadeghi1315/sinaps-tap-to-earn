@@ -31,6 +31,7 @@ let spinFreeReady = true;
 let spinTickets = 0;
 let spinCount = 0;
 let spinBusy = false;
+let spinNeedsStatusCheck = false;
 let balanceRefreshTimer = null;
 
 const $ = id => document.getElementById(id);
@@ -49,6 +50,17 @@ async function api(path, options = {}) {
     throw error;
   }
   return data;
+}
+
+// Bound requests that control the Spin UI so a stalled network cannot leave it frozen.
+async function apiWithTimeout(path, options = {}, timeoutMs = 12000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await api(path, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 function toast(message) {
@@ -676,35 +688,47 @@ async function withdraw() {
 // ============================================================
 async function loadSpinStatus() {
   try {
-    const data = await api("/api/spin/status");
+    const data = await apiWithTimeout("/api/spin/status", {}, 10000);
     spinFreeReady = Boolean(data.free_ready);
     spinTickets = Number(data.tickets || 0);
     spinCount = Number(data.spin_count || 0);
     spinClaimedToday = !spinFreeReady;
+    spinNeedsStatusCheck = false;
     if ($("spinTicketCount")) $("spinTicketCount").textContent = formatNumber(spinTickets);
     if ($("spinCount")) $("spinCount").textContent = formatNumber(spinCount);
     const button = $("spinNowButton"), status = $("spinStatus"), dot = $("spinDot");
     const canSpin = spinFreeReady || spinTickets > 0;
-    if (button) { button.disabled = !canSpin || spinBusy; button.textContent = spinBusy ? "SPINNING…" : spinFreeReady ? "FREE SPIN" : spinTickets > 0 ? "USE BONUS TICKET" : "NO SPINS AVAILABLE"; }
+    if (button) {
+      button.disabled = !canSpin || spinBusy;
+      button.textContent = spinBusy ? "SPINNING…" : spinFreeReady ? "FREE SPIN" : spinTickets > 0 ? "USE BONUS TICKET" : "NO SPINS AVAILABLE";
+    }
     if (status) status.textContent = spinFreeReady ? "Your free spin is ready!" : spinTickets > 0 ? `Free spin cooldown active · ${spinTickets} bonus ticket(s) ready.` : `Free spin available again ${data.next_free_at ? new Date(data.next_free_at).toLocaleString() : "in 24 hours"}. Invite a friend who connects a TON wallet to earn a ticket.`;
     if (dot) dot.classList.toggle("hidden", !canSpin);
   } catch (error) {
     console.error("spin status", error);
-    if ($("spinStatus")) $("spinStatus").textContent = "Could not load spin status. Try again.";
+    const button = $("spinNowButton");
+    if (spinNeedsStatusCheck && button) {
+      button.disabled = false;
+      button.textContent = "CHECK RESULT";
+      if ($("spinStatus")) $("spinStatus").textContent = "We couldn't confirm the last spin. Tap CHECK RESULT to safely refresh its status before trying again.";
+    } else if ($("spinStatus")) {
+      $("spinStatus").textContent = "Could not load spin status. Reopen Spin and try again.";
+    }
   }
 }
-function openSpin() { $("spinModal")?.classList.add("show"); loadSpinStatus(); }
+function openSpin() { $("spinModal")?.classList.add("show"); void loadSpinStatus(); }
 function closeSpin() { if (!spinBusy) $("spinModal")?.classList.remove("show"); }
 async function spinNow() {
+  if (spinNeedsStatusCheck) { void loadSpinStatus(); return; }
   if (spinBusy || (!spinFreeReady && spinTickets <= 0)) return;
   const button = $("spinNowButton"), wheel = $("spinWheel");
   spinBusy = true;
   if (button) { button.disabled = true; button.textContent = "SPINNING…"; }
-  if ($("spinStatus")) $("spinStatus").textContent = "Good luck!";
+  if ($("spinStatus")) $("spinStatus").textContent = "Connecting to SINAPS…";
+  let claimAccepted = false;
   try {
-    const data = await api("/api/spin/claim", { method: "POST", body: JSON.stringify({}) });
-    // The wheel has nine sectors: six SNP prizes, one gold 0.1 TON sector,
-    // and two no-prize sectors. The server returns the authoritative sector index.
+    const data = await apiWithTimeout("/api/spin/claim", { method: "POST", body: JSON.stringify({}) }, 20000);
+    claimAccepted = true;
     const sectorCount = 9;
     const rawIndex = Number(data.prize_index);
     const index = Number.isInteger(rawIndex) ? Math.max(0, Math.min(sectorCount - 1, rawIndex)) : 8;
@@ -715,6 +739,7 @@ async function spinNow() {
       wheel.style.transition = "transform 4.8s cubic-bezier(.12,.72,.12,1)";
       wheel.style.transform = `rotate(${360 * 6 - index * (360 / sectorCount)}deg)`;
     }
+    if ($("spinStatus")) $("spinStatus").textContent = "The result is confirmed. Spinning…";
     await new Promise(resolve => setTimeout(resolve, 4900));
     if (data.user) applyUser(data.user);
     const tonStatus = String(data.ton_payout_status || "pending");
@@ -732,10 +757,31 @@ async function spinNow() {
         : "⬜ No prize this time. Good luck on your next spin!";
     if ($("spinStatus")) $("spinStatus").textContent = resultText;
     toast(data.prize_type === "TON" ? `0.1 TON jackpot · ${tonStatus.replaceAll("_", " ")}` : Number(data.reward) > 0 ? `+${formatNumber(data.reward)} SNP · Spin` : "No prize this time");
-    await Promise.allSettled([loadHistoryPage(true), loadSpinStatus()]);
+    void Promise.allSettled([loadHistoryPage(true), loadSpinStatus()]);
   } catch (error) {
-    console.error("spin claim", error); toast(error.message || "Spin failed"); await loadSpinStatus();
-  } finally { spinBusy = false; await loadSpinStatus(); }
+    console.error("spin claim", error);
+    // A network timeout does not prove the server failed to commit the spin.
+    // Require a status refresh before another attempt to avoid double-spending a ticket.
+    if (!claimAccepted && (!error.status || error.name === "AbortError" || error.name === "TypeError")) {
+      spinNeedsStatusCheck = true;
+      if ($("spinStatus")) $("spinStatus").textContent = "The server response timed out. Checking the result before allowing another spin…";
+    } else {
+      toast(error.message || "Spin failed");
+    }
+    void loadSpinStatus();
+  } finally {
+    spinBusy = false;
+    if (button && spinNeedsStatusCheck) {
+      button.disabled = false;
+      button.textContent = "CHECK RESULT";
+    } else if (button) {
+      const canSpin = spinFreeReady || spinTickets > 0;
+      button.disabled = !canSpin;
+      button.textContent = spinFreeReady ? "FREE SPIN" : spinTickets > 0 ? "USE BONUS TICKET" : "NO SPINS AVAILABLE";
+    }
+    // Never await this refresh in finally: a stalled status request must not freeze the UI.
+    void loadSpinStatus();
+  }
 }
 
 // ============================================================
@@ -1376,6 +1422,8 @@ async function init() {
     loadFastCache();
     renderUser();
 
+    // Start local regeneration immediately, even if the backend/wallet request is slow.
+    startEnergyTimer();
     await loadUser();
     startEnergyTimer();
 
