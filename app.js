@@ -27,6 +27,9 @@ let historyOffset = 0;
 let historyHasMore = false;
 let historyLoading = false;
 let spinClaimedToday = false;
+let spinFreeReady = true;
+let spinTickets = 0;
+let spinCount = 0;
 let spinBusy = false;
 let balanceRefreshTimer = null;
 
@@ -657,72 +660,50 @@ async function withdraw() {
 // ============================================================
 // DAILY SPIN
 // ============================================================
-const SPIN_PRIZES = [10, 20, 30, 50, 100, 200, 500, 1000];
-
 async function loadSpinStatus() {
   try {
     const data = await api("/api/spin/status");
-    spinClaimedToday = Boolean(data.claimed_today);
-    const button = $("spinNowButton");
-    const status = $("spinStatus");
-    const dot = $("spinDot");
-    if (button) {
-      button.disabled = spinClaimedToday;
-      button.textContent = spinClaimedToday ? "COME BACK TOMORROW" : "SPIN NOW";
-    }
-    if (status) status.textContent = spinClaimedToday
-      ? `Today's spin is used${Number(data.reward || 0) ? ` · You won ${formatNumber(data.reward)} SNP` : ""}.`
-      : "Your daily spin is ready.";
-    if (dot) dot.classList.toggle("hidden", spinClaimedToday);
+    spinFreeReady = Boolean(data.free_ready);
+    spinTickets = Number(data.tickets || 0);
+    spinCount = Number(data.spin_count || 0);
+    spinClaimedToday = !spinFreeReady;
+    if ($("spinTicketCount")) $("spinTicketCount").textContent = formatNumber(spinTickets);
+    if ($("spinCount")) $("spinCount").textContent = formatNumber(spinCount);
+    const button = $("spinNowButton"), status = $("spinStatus"), dot = $("spinDot");
+    const canSpin = spinFreeReady || spinTickets > 0;
+    if (button) { button.disabled = !canSpin || spinBusy; button.textContent = spinBusy ? "SPINNING…" : spinFreeReady ? "FREE SPIN" : spinTickets > 0 ? "USE BONUS TICKET" : "NO SPINS AVAILABLE"; }
+    if (status) status.textContent = spinFreeReady ? "Your free spin is ready!" : spinTickets > 0 ? `Free spin cooldown active · ${spinTickets} bonus ticket(s) ready.` : `Free spin available again ${data.next_free_at ? new Date(data.next_free_at).toLocaleString() : "in 24 hours"}. Invite a friend who connects a TON wallet to earn a ticket.`;
+    if (dot) dot.classList.toggle("hidden", !canSpin);
   } catch (error) {
     console.error("spin status", error);
     if ($("spinStatus")) $("spinStatus").textContent = "Could not load spin status. Try again.";
   }
 }
-
-function openSpin() {
-  $("spinModal")?.classList.add("show");
-  loadSpinStatus();
-}
-
-function closeSpin() {
-  if (spinBusy) return;
-  $("spinModal")?.classList.remove("show");
-}
-
+function openSpin() { $("spinModal")?.classList.add("show"); loadSpinStatus(); }
+function closeSpin() { if (!spinBusy) $("spinModal")?.classList.remove("show"); }
 async function spinNow() {
-  if (spinBusy || spinClaimedToday) return;
-  const button = $("spinNowButton");
-  const wheel = $("spinWheel");
+  if (spinBusy || (!spinFreeReady && spinTickets <= 0)) return;
+  const button = $("spinNowButton"), wheel = $("spinWheel");
   spinBusy = true;
   if (button) { button.disabled = true; button.textContent = "SPINNING…"; }
   if ($("spinStatus")) $("spinStatus").textContent = "Good luck!";
   try {
-    const data = await api("/api/spin/claim", { method: "POST", body: "{}" });
+    const data = await api("/api/spin/claim", { method: "POST", body: JSON.stringify({}) });
     const index = Math.max(0, Math.min(7, Number(data.prize_index || 0)));
     if (wheel) {
-      wheel.style.transition = "none";
-      wheel.style.transform = "rotate(0deg)";
-      void wheel.offsetWidth;
+      wheel.style.transition = "none"; wheel.style.transform = "rotate(0deg)"; void wheel.offsetWidth;
       wheel.style.transition = "transform 4.2s cubic-bezier(.12,.72,.12,1)";
       wheel.style.transform = `rotate(${360 * 5 - index * 45}deg)`;
     }
     await new Promise(resolve => setTimeout(resolve, 4300));
-    applyUser(data.user);
-    spinClaimedToday = true;
-    if ($("spinStatus")) $("spinStatus").textContent = `🎉 You won ${formatNumber(data.reward)} SNP! Added to your balance.`;
-    if (button) button.textContent = "COME BACK TOMORROW";
-    if ($("spinDot")) $("spinDot").classList.add("hidden");
-    toast(`+${formatNumber(data.reward)} SNP · Daily Spin`);
+    if (data.user) applyUser(data.user);
+    const resultText = data.prize_type === "TON" ? "💎 JACKPOT! You won 0.1 TON. Payout is pending verification." : Number(data.reward) > 0 ? `🎉 You won ${formatNumber(data.reward)} SNP! Added to your balance.` : "⬜ No prize this time. Good luck on your next spin!";
+    if ($("spinStatus")) $("spinStatus").textContent = resultText;
+    toast(data.prize_type === "TON" ? "0.1 TON jackpot won · payout pending" : Number(data.reward) > 0 ? `+${formatNumber(data.reward)} SNP · Spin` : "No prize this time");
     await Promise.allSettled([loadHistoryPage(true), loadSpinStatus()]);
   } catch (error) {
-    console.error("spin claim", error);
-    toast(error.message || "Spin failed");
-    await loadSpinStatus();
-  } finally {
-    spinBusy = false;
-    if (button && !spinClaimedToday) { button.disabled = false; button.textContent = "SPIN NOW"; }
-  }
+    console.error("spin claim", error); toast(error.message || "Spin failed"); await loadSpinStatus();
+  } finally { spinBusy = false; await loadSpinStatus(); }
 }
 
 // ============================================================

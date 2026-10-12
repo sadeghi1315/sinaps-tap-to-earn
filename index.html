@@ -1449,22 +1449,24 @@
     <div class="spin-modal-card">
       <button id="spinClose" class="modal-close" type="button" aria-label="Close spin">×</button>
       <div class="spin-modal-eyebrow">SINAPS BONUS</div>
-      <div class="spin-modal-title">DAILY SPIN</div>
-      <div class="spin-modal-subtitle">One free spin every day. Rewards are added directly to your SNP balance.</div>
+      <div class="spin-modal-title">SINAPS SPIN</div>
+      <div class="spin-modal-subtitle">One free spin every 24 hours. Earn one extra ticket for each new invited friend who opens the mini app and connects a TON wallet. Each friend grants one ticket only.</div>
+      <div class="spin-stats"><span>🎟️ Tickets: <b id="spinTicketCount">0</b></span><span>🎯 Spins: <b id="spinCount">0</b></span></div>
       <div id="spinWheel" class="spin-wheel" aria-label="Spin reward wheel">
-        <span class="spin-wheel-label" style="--i:0">10</span>
-        <span class="spin-wheel-label" style="--i:1">20</span>
-        <span class="spin-wheel-label" style="--i:2">30</span>
-        <span class="spin-wheel-label" style="--i:3">50</span>
-        <span class="spin-wheel-label" style="--i:4">100</span>
-        <span class="spin-wheel-label" style="--i:5">200</span>
-        <span class="spin-wheel-label" style="--i:6">500</span>
-        <span class="spin-wheel-label" style="--i:7">1000</span>
+        <span class="spin-wheel-label" style="--i:0">10<br><small>SNP</small></span>
+        <span class="spin-wheel-label" style="--i:1">25<br><small>SNP</small></span>
+        <span class="spin-wheel-label" style="--i:2">50<br><small>SNP</small></span>
+        <span class="spin-wheel-label" style="--i:3">100<br><small>SNP</small></span>
+        <span class="spin-wheel-label" style="--i:4">250<br><small>SNP</small></span>
+        <span class="spin-wheel-label" style="--i:5">500<br><small>SNP</small></span>
+        <span class="spin-wheel-label" style="--i:6">NO<br><small>PRIZE</small></span>
+        <span class="spin-wheel-label" style="--i:7">NO<br><small>PRIZE</small></span>
         <div class="spin-wheel-center">SNP</div>
       </div>
-      <div id="spinStatus" class="spin-status">Your daily spin is ready.</div>
+      <div class="spin-jackpot-note">💎 0.1 TON jackpot · 1% chance from spin #10 onward · not guaranteed</div>
+      <div id="spinStatus" class="spin-status">Checking your spins…</div>
       <button id="spinNowButton" class="spin-now-button" type="button">SPIN NOW</button>
-      <div class="spin-modal-footnote">Daily reset: 00:00 UTC</div>
+      <div class="spin-modal-footnote">Free spin cooldown: 24 hours. Extra tickets are earned from qualified referrals.</div>
     </div>
   </div>
 
