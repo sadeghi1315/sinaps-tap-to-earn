@@ -11,7 +11,7 @@
 
   <title>SINAPS — Tap to Earn</title>
 
-  <link rel="stylesheet" href="style.css?v=125">
+  <link rel="stylesheet" href="style.css?v=126">
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
@@ -1452,16 +1452,20 @@
       <div class="spin-modal-title">SINAPS SPIN</div>
       <div class="spin-modal-subtitle">One free spin every 24 hours. Earn one extra ticket for each new invited friend who opens the mini app and connects a TON wallet. Each friend grants one ticket only.</div>
       <div class="spin-stats"><span>🎟️ Tickets: <b id="spinTicketCount">0</b></span><span>🎯 Spins: <b id="spinCount">0</b></span></div>
-      <div id="spinWheel" class="spin-wheel" aria-label="Spin reward wheel">
-        <span class="spin-wheel-label" style="--i:0">10<br><small>SNP</small></span>
-        <span class="spin-wheel-label" style="--i:1">25<br><small>SNP</small></span>
-        <span class="spin-wheel-label" style="--i:2">50<br><small>SNP</small></span>
-        <span class="spin-wheel-label" style="--i:3">100<br><small>SNP</small></span>
-        <span class="spin-wheel-label" style="--i:4">250<br><small>SNP</small></span>
-        <span class="spin-wheel-label" style="--i:5">500<br><small>SNP</small></span>
-        <span class="spin-wheel-label" style="--i:6">NO<br><small>PRIZE</small></span>
-        <span class="spin-wheel-label" style="--i:7">NO<br><small>PRIZE</small></span>
-        <div class="spin-wheel-center">SNP</div>
+      <div class="spin-wheel-wrap">
+        <span class="spin-pointer" aria-hidden="true"></span>
+        <div id="spinWheel" class="spin-wheel" aria-label="Spin reward wheel">
+          <span class="spin-wheel-label" style="--angle:0deg;--counter-angle:0deg"><b>10</b><small><img class="spin-prize-logo" src="sinaps-coin.png" alt=""> SNP</small></span>
+          <span class="spin-wheel-label" style="--angle:40deg;--counter-angle:-40deg"><b>25</b><small><img class="spin-prize-logo" src="sinaps-coin.png" alt=""> SNP</small></span>
+          <span class="spin-wheel-label" style="--angle:80deg;--counter-angle:-80deg"><b>50</b><small><img class="spin-prize-logo" src="sinaps-coin.png" alt=""> SNP</small></span>
+          <span class="spin-wheel-label" style="--angle:120deg;--counter-angle:-120deg"><b>100</b><small><img class="spin-prize-logo" src="sinaps-coin.png" alt=""> SNP</small></span>
+          <span class="spin-wheel-label" style="--angle:160deg;--counter-angle:-160deg"><b>250</b><small><img class="spin-prize-logo" src="sinaps-coin.png" alt=""> SNP</small></span>
+          <span class="spin-wheel-label" style="--angle:200deg;--counter-angle:-200deg"><b>500</b><small><img class="spin-prize-logo" src="sinaps-coin.png" alt=""> SNP</small></span>
+          <span class="spin-wheel-label ton-prize" style="--angle:240deg;--counter-angle:-240deg"><b>0.1</b><small>💎 TON</small></span>
+          <span class="spin-wheel-label no-prize" style="--angle:280deg;--counter-angle:-280deg"><b>NO</b><small>PRIZE</small></span>
+          <span class="spin-wheel-label no-prize" style="--angle:320deg;--counter-angle:-320deg"><b>NO</b><small>PRIZE</small></span>
+          <div class="spin-wheel-center"><img class="spin-center-logo" src="sinaps-coin.png" alt="SINAPS"></div>
+        </div>
       </div>
       <div class="spin-jackpot-note">💎 0.1 TON jackpot · 1% chance from spin #10 onward · not guaranteed</div>
       <div id="spinStatus" class="spin-status">Checking your spins…</div>
@@ -1593,7 +1597,7 @@
      APP JS
      ========================================================= -->
 
-<script src="app.js?v=129"></script>
+<script src="app.js?v=130"></script>
 
 
 <!-- =========================================================

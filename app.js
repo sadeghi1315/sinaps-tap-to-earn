@@ -689,15 +689,25 @@ async function spinNow() {
   if ($("spinStatus")) $("spinStatus").textContent = "Good luck!";
   try {
     const data = await api("/api/spin/claim", { method: "POST", body: JSON.stringify({}) });
-    const index = Math.max(0, Math.min(7, Number(data.prize_index || 0)));
+    // The wheel has nine sectors: six SNP prizes, one gold 0.1 TON sector,
+    // and two no-prize sectors. The server returns the authoritative sector index.
+    const sectorCount = 9;
+    const rawIndex = Number(data.prize_index);
+    const index = Number.isInteger(rawIndex) ? Math.max(0, Math.min(sectorCount - 1, rawIndex)) : 8;
     if (wheel) {
-      wheel.style.transition = "none"; wheel.style.transform = "rotate(0deg)"; void wheel.offsetWidth;
-      wheel.style.transition = "transform 4.2s cubic-bezier(.12,.72,.12,1)";
-      wheel.style.transform = `rotate(${360 * 5 - index * 45}deg)`;
+      wheel.style.transition = "none";
+      wheel.style.transform = "rotate(0deg)";
+      void wheel.offsetWidth;
+      wheel.style.transition = "transform 4.8s cubic-bezier(.12,.72,.12,1)";
+      wheel.style.transform = `rotate(${360 * 6 - index * (360 / sectorCount)}deg)`;
     }
-    await new Promise(resolve => setTimeout(resolve, 4300));
+    await new Promise(resolve => setTimeout(resolve, 4900));
     if (data.user) applyUser(data.user);
-    const resultText = data.prize_type === "TON" ? "💎 JACKPOT! You won 0.1 TON. Payout is pending verification." : Number(data.reward) > 0 ? `🎉 You won ${formatNumber(data.reward)} SNP! Added to your balance.` : "⬜ No prize this time. Good luck on your next spin!";
+    const resultText = data.prize_type === "TON"
+      ? "💎 JACKPOT! You won 0.1 TON. Payout is pending manual/treasury processing."
+      : Number(data.reward) > 0
+        ? `🎉 You won ${formatNumber(data.reward)} SNP! Added to your balance.`
+        : "⬜ No prize this time. Good luck on your next spin!";
     if ($("spinStatus")) $("spinStatus").textContent = resultText;
     toast(data.prize_type === "TON" ? "0.1 TON jackpot won · payout pending" : Number(data.reward) > 0 ? `+${formatNumber(data.reward)} SNP · Spin` : "No prize this time");
     await Promise.allSettled([loadHistoryPage(true), loadSpinStatus()]);

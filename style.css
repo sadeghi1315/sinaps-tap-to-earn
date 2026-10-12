@@ -3130,3 +3130,63 @@ body{color:#f7f8ff;letter-spacing:.05px}
 
 /* SINAPS Spin rules and wheel label polish */
 .spin-stats{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin:-5px 0 13px;color:#d9d8ff;font-size:11px}.spin-stats span{padding:7px 11px;border:1px solid rgba(160,150,255,.2);border-radius:12px;background:rgba(255,255,255,.04)}.spin-stats b{color:#fff}.spin-jackpot-note{margin:10px 0 6px;color:#f3d68c;font-size:10px;line-height:1.45;font-weight:800}.spin-wheel{background:conic-gradient(#29b7ff 0deg 45deg,#6f59ff 45deg 90deg,#25c8a0 90deg 135deg,#a64fff 135deg 180deg,#e9a83d 180deg 225deg,#4384ff 225deg 270deg,#4b5067 270deg 315deg,#33394f 315deg 360deg)!important}.spin-wheel-label{width:52px;text-align:center;line-height:1.05;font-size:12px!important;z-index:2}.spin-wheel-label small{font-size:7px;letter-spacing:.4px}.spin-modal-subtitle{max-width:315px!important}.spin-modal-footnote{line-height:1.5}
+
+
+/* =========================================================
+   SINAPS SPIN WHEEL — 9 aligned sectors / metallic 3D finish
+   Append-only overrides; the rest of the app styles stay intact.
+   ========================================================= */
+.spin-modal-card{
+  border:1px solid rgba(170,194,255,.36)!important;
+  background:radial-gradient(ellipse at 50% 0%,rgba(105,90,255,.28),transparent 44%),linear-gradient(155deg,#151b39 0%,#090d1d 66%,#050711 100%)!important;
+  box-shadow:0 28px 80px rgba(0,0,0,.58),0 0 36px rgba(89,105,255,.18),inset 0 1px 0 rgba(255,255,255,.09)!important;
+}
+.spin-wheel{
+  width:min(82vw,292px)!important;height:min(82vw,292px)!important;
+  border:8px solid #aeb9d8!important;border-radius:50%!important;
+  background:conic-gradient(from -20deg,
+    #20c9ed 0deg 40deg,#7056ff 40deg 80deg,#22cda0 80deg 120deg,
+    #a34eff 120deg 160deg,#ff994c 160deg 200deg,#398cff 200deg 240deg,
+    #f4c65c 240deg 280deg,#343c59 280deg 320deg,#222a42 320deg 360deg
+  )!important;
+  box-shadow:0 0 0 3px #353e5e,0 0 0 7px rgba(117,139,255,.17),
+    0 0 35px rgba(75,136,255,.27),0 18px 34px rgba(0,0,0,.55),
+    inset 0 0 0 2px rgba(255,255,255,.24),inset 0 0 22px rgba(0,0,0,.2)!important;
+  position:relative;overflow:visible;
+}
+.spin-wheel::after{content:"";position:absolute;inset:7px;border-radius:50%;pointer-events:none;
+  border:1px solid rgba(255,255,255,.28);box-shadow:inset 0 0 0 1px rgba(7,12,35,.25);z-index:1}
+.spin-wheel::before{content:none!important;display:none!important}
+.spin-wheel-label{
+  width:56px!important;min-height:40px;display:flex!important;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  color:#fff!important;font-size:15px!important;font-weight:1000!important;line-height:1!important;
+  text-align:center;text-shadow:0 2px 5px rgba(0,0,0,.7),0 0 8px rgba(255,255,255,.14)!important;
+  z-index:4!important;transform:translate(-50%,-50%) rotate(var(--angle)) translateY(-91px) rotate(var(--counter-angle))!important;
+}
+.spin-wheel-label small{display:flex;align-items:center;justify-content:center;gap:3px;font-size:7px!important;font-weight:950;letter-spacing:.45px;color:rgba(255,255,255,.95)}
+.spin-prize-logo{width:13px;height:13px;object-fit:contain;filter:drop-shadow(0 1px 2px rgba(0,0,0,.65));vertical-align:middle}
+.spin-wheel-label.ton-prize{color:#fff7c4!important;text-shadow:0 0 8px rgba(255,209,74,.95),0 2px 4px rgba(0,0,0,.75)!important}
+.spin-wheel-label.ton-prize small{color:#fff1a3!important;font-size:8px!important}
+.spin-wheel-label.no-prize{font-size:10px!important;letter-spacing:.4px}
+.spin-wheel-center{width:64px!important;height:64px!important;border:5px solid #d9e5ff!important;
+  background:radial-gradient(circle at 30% 20%,#273b70,#080e24 68%)!important;color:#a9f4ff!important;
+  font-size:10px!important;letter-spacing:1px;box-shadow:0 0 0 3px rgba(12,18,43,.75),0 0 20px rgba(75,198,255,.48),inset 0 2px 7px rgba(255,255,255,.16)!important;z-index:6}
+.spin-now-button{border:1px solid rgba(196,202,255,.55)!important;background:linear-gradient(110deg,#356eff,#8250ff 55%,#a14dff)!important;
+  box-shadow:0 8px 0 #27265e,0 12px 27px rgba(92,82,255,.32),inset 0 1px 0 rgba(255,255,255,.28)!important;
+  transform:translateY(-2px);transition:transform .15s ease,filter .15s ease}
+.spin-now-button:active{transform:translateY(2px);box-shadow:0 4px 0 #27265e,0 7px 18px rgba(92,82,255,.25)!important}
+.spin-now-button:disabled{transform:none;box-shadow:0 4px 12px rgba(0,0,0,.18)!important}
+.spin-jackpot-note{color:#ffe18a!important;text-shadow:0 0 12px rgba(255,197,66,.14)}
+@media(max-width:390px){
+  .spin-wheel{width:min(78vw,270px)!important;height:min(78vw,270px)!important}
+  .spin-wheel-label{width:49px!important;transform:translate(-50%,-50%) rotate(var(--angle)) translateY(-79px) rotate(var(--counter-angle))!important;font-size:13px!important}
+  .spin-wheel-label small{font-size:6px!important}
+  .spin-wheel-label.no-prize{font-size:9px!important}
+  .spin-wheel-center{width:58px!important;height:58px!important}
+}
+
+.spin-wheel-wrap{width:min(82vw,292px);aspect-ratio:1;position:relative;margin:18px auto 0;isolation:isolate}
+.spin-wheel-wrap .spin-wheel{width:100%!important;height:100%!important;margin:0!important}
+.spin-pointer{position:absolute;left:50%;top:-11px;transform:translateX(-50%);width:0;height:0;border-left:11px solid transparent;border-right:11px solid transparent;border-top:24px solid #f7fbff;filter:drop-shadow(0 2px 3px rgba(0,0,0,.85)) drop-shadow(0 0 7px rgba(130,224,255,.72));z-index:15;pointer-events:none}
+.spin-center-logo{width:38px;height:38px;object-fit:contain;filter:drop-shadow(0 0 7px rgba(89,220,255,.5))}
+@media(max-width:390px){.spin-wheel-wrap{width:min(78vw,270px)}.spin-center-logo{width:32px;height:32px}}
