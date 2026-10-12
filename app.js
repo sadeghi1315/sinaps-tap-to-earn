@@ -436,6 +436,20 @@ async function initWallet() {
           if (Number(data.referral_reward || 0) > 0) {
             toast(`Referral activated: +${formatNumber(data.referral_reward)} SNP`);
           }
+          // If this user previously won 0.1 TON before connecting a wallet,
+          // safely ask the backend to submit that one-time payout now.
+          try {
+            const payout = await api("/api/spin/ton-payout/claim", {
+              method: "POST",
+              body: JSON.stringify({})
+            });
+            if (payout?.ok && payout.status === "submitted") {
+              toast("Your 0.1 TON spin prize was submitted for payment");
+            }
+          } catch (payoutError) {
+            // 404 simply means the user has no unsubmitted TON spin prize.
+            if (payoutError?.status !== 404) console.warn("spin TON payout check", payoutError);
+          }
           await Promise.allSettled([loadFriends(), loadTasks()]);
         } catch (e) {
           console.error("wallet connect", e);
@@ -703,13 +717,21 @@ async function spinNow() {
     }
     await new Promise(resolve => setTimeout(resolve, 4900));
     if (data.user) applyUser(data.user);
+    const tonStatus = String(data.ton_payout_status || "pending");
+    const tonMessage = tonStatus === "submitted"
+      ? "Payout submitted to the TON network; confirmation is pending."
+      : tonStatus === "wallet_required"
+        ? "Connect your TON wallet to receive this prize."
+        : tonStatus === "review_required"
+          ? "Payout needs treasury review. Please contact support; do not spin again to retry it."
+          : "Payout is queued and will be processed by the treasury.";
     const resultText = data.prize_type === "TON"
-      ? "💎 JACKPOT! You won 0.1 TON. Payout is pending manual/treasury processing."
+      ? `💎 JACKPOT! You won 0.1 TON. ${tonMessage}`
       : Number(data.reward) > 0
         ? `🎉 You won ${formatNumber(data.reward)} SNP! Added to your balance.`
         : "⬜ No prize this time. Good luck on your next spin!";
     if ($("spinStatus")) $("spinStatus").textContent = resultText;
-    toast(data.prize_type === "TON" ? "0.1 TON jackpot won · payout pending" : Number(data.reward) > 0 ? `+${formatNumber(data.reward)} SNP · Spin` : "No prize this time");
+    toast(data.prize_type === "TON" ? `0.1 TON jackpot · ${tonStatus.replaceAll("_", " ")}` : Number(data.reward) > 0 ? `+${formatNumber(data.reward)} SNP · Spin` : "No prize this time");
     await Promise.allSettled([loadHistoryPage(true), loadSpinStatus()]);
   } catch (error) {
     console.error("spin claim", error); toast(error.message || "Spin failed"); await loadSpinStatus();
