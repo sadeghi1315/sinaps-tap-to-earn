@@ -1009,7 +1009,7 @@ function playGame() {
 // EXTERNAL MARKET LINKS
 // ============================================================
 const SNP_CHART_URL = "https://www.geckoterminal.com/ton/pools/EQAmLlerUViNn9PwFVRlR_AjDvhd5pkmeLNOu5bNDpvXV0ls";
-const SNP_BUY_URL = "https://app.ston.fi/swap?chartVisible=false&ft=GRAM&tt=EQAmLlerUViNn9PwFVRlR_AjDvhd5pkmeLNOu5bNDpvXV0ls&fa=%2210%22";
+const SNP_BUY_URL = "https://app.tonkeeper.com/dapp/https%3A%2F%2Fdedust.io%2Fswap%2FGRAM%2FEQAmLlerUViNn9PwFVRlR_AjDvhd5pkmeLNOu5bNDpvXV0ls";
 
 function openExternal(url) {
   try {
