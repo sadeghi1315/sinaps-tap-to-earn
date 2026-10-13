@@ -1432,8 +1432,7 @@ function ensureAdsUI() {
   if (!$("sinapsAdsStyles")) document.head.appendChild(style);
 
   const heading = document.createElement("div");
-  heading.innerHTML = `
-    <div style="font-size:19px;font-weight:800">📢 SINAPS Ads</div>
+  heading.innerHTML = '<div style="font-size:19px;font-weight:800">📢 SINAPS Ads</div>';
     <div style="font-size:12px;color:#aeb5d5;margin-top:6px">
       Promote your channel, website or social page.
     </div>
