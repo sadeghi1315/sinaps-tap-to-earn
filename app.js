@@ -18,6 +18,7 @@ let tonUI = null;
 let tapQueue = 0;
 let tapTimer = null;
 let tapFlushInFlight = false;
+let tapInFlightBatch = null;
 let energyTimer = null;
 let walletInitialized = false;
 let disconnectRequested = false;
@@ -241,54 +242,73 @@ function tap(event) {
 }
 
 
+
 async function flushTaps() {
   clearTimeout(tapTimer);
   tapTimer = null;
 
-  // Only one tap request may run at a time.
-  if (tapFlushInFlight || tapQueue <= 0) return;
+  if (tapFlushInFlight) return;
+
+  // Retry the same batch with the same request_id.
+  // Create a new batch only when there is no uncertain request.
+  if (!tapInFlightBatch) {
+    if (tapQueue <= 0) return;
+
+    const count = Math.min(tapQueue, 50);
+    tapQueue -= count;
+
+    const requestId =
+      globalThis.crypto?.randomUUID?.() ||
+      `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+    tapInFlightBatch = {
+      count,
+      request_id: requestId
+    };
+  }
 
   tapFlushInFlight = true;
-
-  const count = Math.min(tapQueue, 50);
-  tapQueue -= count;
 
   try {
     const data = await api("/api/tap", {
       method: "POST",
-      body: JSON.stringify({ count })
+      body: JSON.stringify(tapInFlightBatch)
     });
 
     if (data.user) {
-      // Apply the server-confirmed balance and energy.
+      // The server has confirmed this batch.
+      tapInFlightBatch = null;
+
       applyUser(data.user);
 
-      // Preserve taps made while this request was in flight.
+      // Keep taps made while the request was running visible.
       const pending = tapQueue;
 
       if (pending > 0) {
         state.balance += pending * state.tapPower;
-        state.energy = Math.max(0, state.energy - pending);
+        state.energy = Math.max(
+          0,
+          state.energy - pending
+        );
       }
 
       renderUser();
       saveFastCache();
+    } else {
+      throw new Error("Tap response did not include user data");
     }
   } catch (e) {
     console.error("tap request failed", e);
-    toast("Connection issue. Checking your balance…");
+    toast("Connection issue. Retrying taps…");
 
-    // Do not blindly resend the same batch:
-    // the server may already have processed it.
-    if (tapQueue === 0) {
-      void refreshUserBalance();
-    }
+    // IMPORTANT:
+    // Keep tapInFlightBatch unchanged.
+    // The next attempt must reuse the same request_id.
   } finally {
     tapFlushInFlight = false;
 
-    // Process the next batch only after the previous one finishes.
-    if (tapQueue > 0) {
-      tapTimer = setTimeout(flushTaps, 50);
+    if (tapInFlightBatch || tapQueue > 0) {
+      tapTimer = setTimeout(flushTaps, 1000);
     }
   }
 }
