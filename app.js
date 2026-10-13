@@ -35,10 +35,6 @@ let tapTimer = null;
 let tapFlushInFlight = false;
 let tapInFlightBatch = null;
 let energyTimer = null;
-let walletInitialized = false;
-let disconnectRequested = false;
-let walletRestoring = false;
-let ignoreWalletStatus = false;
 let currentTelegramId = "";
 let historyOffset = 0;
 let historyHasMore = false;
@@ -55,6 +51,9 @@ const AD_PRICE_PER_CLICK = 0.001;
 const AD_MIN_CLICKS = 100;
 const AD_MAX_CLICKS = 100000;
 let adsLoading = false;
+
+let withdrawBusy = false;
+let currentWithdrawalId = null;
 
 const $ = id => document.getElementById(id);
 const formatNumber = value => Number(value || 0).toLocaleString("en-US");
@@ -112,7 +111,7 @@ function toast(message) {
 
   el._timer = setTimeout(() => {
     el.classList.remove("show");
-  }, 2400);
+  }, 3000);
 }
 
 function shortAddress(address) {
@@ -181,7 +180,7 @@ function applyUser(user) {
   state.tapBoostLevel = Number(user.tap_boost_level || 1);
   state.energyBoostLevel = Number(user.energy_boost_level || 1);
   state.rechargeLevel = Number(user.recharge_level || 1);
-  state.walletAddress = user.wallet_address || null;
+  state.walletAddress = user.wallet_address || state.walletAddress || null;
   state.referralCode = user.referral_code || state.referralCode || "";
 
   saveFastCache();
@@ -378,6 +377,10 @@ async function flushTaps() {
   }
 }
 
+/* =========================================================
+   BOOSTS
+========================================================= */
+
 async function loadBoosts() {
   try {
     const data = await api("/api/boosts");
@@ -450,6 +453,10 @@ async function buyBoost(type) {
   }
 }
 
+/* =========================================================
+   DAILY REWARDS
+========================================================= */
+
 async function loadDaily() {
   try {
     renderDaily(await api("/api/daily/status"));
@@ -504,7 +511,10 @@ async function claimDaily() {
       body: "{}"
     });
 
-    state.balance = Number(data.balance || state.balance);
+    if (data.balance !== undefined) {
+      state.balance = Number(data.balance);
+    }
+
     renderUser();
 
     toast(`+${formatNumber(data.reward)} SNP · Day ${data.day}`);
@@ -516,12 +526,16 @@ async function claimDaily() {
 
 function openDaily() {
   $("dailyModal")?.classList.add("show");
-  loadDaily();
+  void loadDaily();
 }
 
 function closeDaily() {
   $("dailyModal")?.classList.remove("show");
 }
+
+/* =========================================================
+   WALLET
+========================================================= */
 
 function renderHomeWallet() {
   const el = $("homeWalletAddress");
@@ -569,7 +583,10 @@ function renderWallet() {
 
 async function initWallet() {
   try {
-    if (!window.TON_CONNECT_UI?.TonConnectUI) return;
+    if (!window.TON_CONNECT_UI?.TonConnectUI) {
+      console.error("TON Connect UI library is unavailable");
+      return;
+    }
 
     tonUI = new TON_CONNECT_UI.TonConnectUI({
       manifestUrl: TON_MANIFEST,
@@ -578,16 +595,25 @@ async function initWallet() {
 
     tonUI.onStatusChange(async wallet => {
       const address = wallet?.account?.address || null;
-      state.walletAddress = address || state.walletAddress;
-      renderWallet();
 
       if (address) {
+        state.walletAddress = address;
+        renderWallet();
+
         try {
           await api("/api/wallet/connect", {
             method: "POST",
             body: JSON.stringify({ wallet_address: address })
           });
-        } catch (_) {}
+
+          await refreshUserAfterWithdrawal();
+        } catch (error) {
+          console.error("Save connected wallet:", error);
+          toast("Could not save wallet connection");
+        }
+      } else if (!tonUI?.wallet?.account?.address) {
+        state.walletAddress = null;
+        renderWallet();
       }
     });
   } catch (e) {
@@ -604,14 +630,12 @@ async function connectWallet() {
   try {
     await tonUI.openModal();
   } catch (e) {
+    console.error("connectWallet:", e);
     toast("Could not open wallet");
   }
 }
 
 async function disconnectWallet() {
-  state.walletAddress = null;
-  renderWallet();
-
   try {
     if (tonUI?.disconnect) {
       await tonUI.disconnect();
@@ -621,14 +645,404 @@ async function disconnectWallet() {
       method: "POST",
       body: "{}"
     });
-  } catch (_) {}
 
-  toast("Wallet disconnected");
+    state.walletAddress = null;
+    renderWallet();
+
+    toast("Wallet disconnected");
+  } catch (e) {
+    console.error("disconnectWallet:", e);
+    toast(e.message || "Could not disconnect wallet");
+  }
 }
 
 async function loadWallet() {
   renderWallet();
 }
+
+/* =========================================================
+   WITHDRAWAL
+========================================================= */
+
+function getWithdrawFeedback() {
+  const card = document.querySelector(".withdraw-card");
+  if (!card) return null;
+
+  let box = $("withdrawFeedback");
+
+  if (!box) {
+    box = document.createElement("div");
+    box.id = "withdrawFeedback";
+    box.style.cssText = [
+      "margin-top:14px",
+      "padding:12px",
+      "border-radius:12px",
+      "background:rgba(255,255,255,.05)",
+      "color:#fff",
+      "font-size:12px",
+      "line-height:1.6",
+      "overflow-wrap:anywhere"
+    ].join(";");
+
+    card.appendChild(box);
+  }
+
+  return box;
+}
+
+function showWithdrawFeedback(message, withdrawalId = null) {
+  const box = getWithdrawFeedback();
+
+  if (!box) {
+    toast(message);
+    return;
+  }
+
+  box.replaceChildren();
+
+  const text = document.createElement("p");
+  text.textContent = message;
+  text.style.margin = "0 0 10px";
+  box.appendChild(text);
+
+  if (!withdrawalId) return;
+
+  const idText = document.createElement("small");
+  idText.textContent = `Request ID: ${withdrawalId}`;
+  idText.style.cssText = "display:block;opacity:.7;margin-bottom:10px";
+  box.appendChild(idText);
+
+  const verifyButton = document.createElement("button");
+  verifyButton.type = "button";
+  verifyButton.textContent = "VERIFY STATUS";
+  verifyButton.style.cssText =
+    "padding:10px 12px;margin:0 8px 6px 0;border:0;border-radius:8px;background:#43c9ff;color:#00101c;font-weight:800";
+
+  verifyButton.addEventListener("click", () => {
+    void verifyWithdrawal(withdrawalId);
+  });
+
+  box.appendChild(verifyButton);
+
+  const cancelButton = document.createElement("button");
+  cancelButton.type = "button";
+  cancelButton.textContent = "CANCEL REQUEST";
+  cancelButton.style.cssText =
+    "padding:10px 12px;margin:0 0 6px;border:1px solid rgba(255,255,255,.2);border-radius:8px;background:transparent;color:#fff;font-weight:700";
+
+  cancelButton.addEventListener("click", () => {
+    void cancelWithdrawal(withdrawalId);
+  });
+
+  box.appendChild(cancelButton);
+}
+
+function getActiveWalletAddress() {
+  return tonUI?.wallet?.account?.address || null;
+}
+
+async function handleWithdraw() {
+  if (withdrawBusy) return;
+
+  const button = $("withdrawButton");
+  const amountInput = $("withdrawAmount");
+  const amount = Number(amountInput?.value || 0);
+  const walletAddress = getActiveWalletAddress();
+
+  if (!Number.isSafeInteger(amount) || amount <= 0) {
+    toast("Enter a valid whole-number SNP amount");
+    amountInput?.focus();
+    return;
+  }
+
+  if (!tonUI) {
+    toast("TON Connect is not ready. Please reopen the app.");
+    return;
+  }
+
+  if (!walletAddress) {
+    toast("Connect your TON wallet first");
+    return;
+  }
+
+  if (amount > state.balance) {
+    toast("Not enough SNP");
+    return;
+  }
+
+  withdrawBusy = true;
+
+  if (button) {
+    button.disabled = true;
+    button.textContent = "PROCESSING...";
+  }
+
+  try {
+    showWithdrawFeedback("Creating your withdrawal request...");
+
+    const created = await apiWithTimeout(
+      "/api/withdraw/create",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          amount,
+          wallet_address: walletAddress
+        })
+      },
+      20000
+    );
+
+    if (!created.ok || !created.withdrawal_id) {
+      throw new Error(
+        created.error || "Could not create withdrawal request"
+      );
+    }
+
+    const withdrawalId = String(created.withdrawal_id);
+    currentWithdrawalId = withdrawalId;
+
+    if (created.balance !== undefined) {
+      state.balance = Number(created.balance);
+      renderUser();
+      saveFastCache();
+    } else {
+      await refreshUserAfterWithdrawal();
+    }
+
+    await loadHistory();
+
+    showWithdrawFeedback(
+      "Withdrawal request created. The 0.1 TON fee must be sent from your connected wallet. Your SNP remains reserved until the request is cancelled or completed.",
+      withdrawalId
+    );
+
+    if (!created.treasury_wallet || !created.fee_nano) {
+      throw new Error(
+        "The request was created, but the fee payment details are missing. Verify the request status before trying again."
+      );
+    }
+
+    if (typeof tonUI.sendTransaction !== "function") {
+      throw new Error(
+        "Wallet payment is unavailable. Verify your request status before trying again."
+      );
+    }
+
+    let paymentResult;
+
+    try {
+      paymentResult = await tonUI.sendTransaction({
+        validUntil: Math.floor(Date.now() / 1000) + 300,
+        messages: [
+          {
+            address: created.treasury_wallet,
+            amount: String(created.fee_nano)
+          }
+        ]
+      });
+    } catch (paymentError) {
+      console.error("Withdrawal fee payment:", paymentError);
+
+      showWithdrawFeedback(
+        "The wallet did not confirm the fee payment. If you cancelled the wallet prompt, you may verify the request or cancel it if the fee has not been paid.",
+        withdrawalId
+      );
+
+      toast("TON fee payment was not confirmed");
+      return;
+    }
+
+    // TON Connect returning successfully means the wallet accepted the
+    // transaction request; the backend must still confirm it on-chain.
+    if (!paymentResult) {
+      showWithdrawFeedback(
+        "The wallet did not return a payment result. Verify the request before attempting another payment.",
+        withdrawalId
+      );
+      return;
+    }
+
+    showWithdrawFeedback(
+      "Wallet transaction submitted. Checking blockchain confirmation...",
+      withdrawalId
+    );
+
+    toast("Fee submitted; checking confirmation");
+
+    await new Promise(resolve => setTimeout(resolve, 3000));
+
+    await verifyWithdrawal(withdrawalId);
+
+  } catch (error) {
+    console.error("handleWithdraw:", error);
+
+    showWithdrawFeedback(
+      error.message || "Withdrawal request failed",
+      currentWithdrawalId
+    );
+
+    toast(error.message || "Withdrawal failed");
+  } finally {
+    withdrawBusy = false;
+
+    if (button) {
+      button.disabled = false;
+      button.textContent = "WITHDRAW";
+    }
+  }
+}
+
+async function verifyWithdrawal(withdrawalId) {
+  if (!withdrawalId) {
+    toast("Withdrawal request ID is missing");
+    return;
+  }
+
+  try {
+    showWithdrawFeedback(
+      "Checking fee payment and withdrawal status...",
+      withdrawalId
+    );
+
+    const data = await apiWithTimeout(
+      "/api/withdraw/verify",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          withdrawal_id: withdrawalId
+        })
+      },
+      75000
+    );
+
+    const withdrawal = data.withdrawal || {};
+    const status = String(withdrawal.status || "");
+
+    const messages = {
+      payment_pending:
+        "Waiting for confirmation of the 0.1 TON fee. If you have just paid, wait a little and verify again.",
+      fee_submitted:
+        "Fee payment detected. Your SNP payout is being prepared.",
+      fee_paid_pending_payout:
+        "Fee received. SNP payout is pending. Verify again later.",
+      processing:
+        "Your withdrawal is being processed.",
+      payout_submitted:
+        "SNP payout submitted. Waiting for blockchain confirmation.",
+      paid:
+        "Withdrawal completed. The SNP payout is confirmed.",
+      cancelled:
+        "Withdrawal cancelled.",
+      failed:
+        "Withdrawal failed. Contact support before submitting another request."
+    };
+
+    const terminal = ["paid", "cancelled"].includes(status);
+
+    showWithdrawFeedback(
+      messages[status] || `Withdrawal status: ${status || "unknown"}`,
+      terminal ? null : withdrawalId
+    );
+
+    if (terminal) {
+      currentWithdrawalId = null;
+    }
+
+    await refreshUserAfterWithdrawal();
+    await loadHistory();
+
+    if (status === "paid") {
+      toast("SNP withdrawal confirmed");
+    } else if (status === "payment_pending") {
+      toast("TON fee is not confirmed yet");
+    } else {
+      toast(`Withdrawal: ${status.replace(/_/g, " ") || "unknown"}`);
+    }
+
+  } catch (error) {
+    console.error("verifyWithdrawal:", error);
+
+    showWithdrawFeedback(
+      `${error.message || "Could not verify withdrawal"}. Please retry verification.`,
+      withdrawalId
+    );
+
+    toast(error.message || "Verification failed");
+  }
+}
+
+async function cancelWithdrawal(withdrawalId) {
+  if (!withdrawalId) return;
+
+  const confirmed = window.confirm(
+    "Cancel this withdrawal? This is only possible before the fee payment is confirmed."
+  );
+
+  if (!confirmed) return;
+
+  try {
+    const data = await apiWithTimeout(
+      "/api/withdraw/cancel",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          withdrawal_id: withdrawalId
+        })
+      },
+      20000
+    );
+
+    if (data.balance !== undefined) {
+      state.balance = Number(data.balance);
+      renderUser();
+      saveFastCache();
+    }
+
+    currentWithdrawalId = null;
+
+    showWithdrawFeedback(
+      "Withdrawal cancelled. Your reserved SNP has been returned."
+    );
+
+    await refreshUserAfterWithdrawal();
+    await loadHistory();
+
+    toast("Withdrawal cancelled; SNP refunded");
+
+  } catch (error) {
+    console.error("cancelWithdrawal:", error);
+
+    showWithdrawFeedback(
+      `${error.message || "Could not cancel withdrawal"}. If the fee was already paid, cancellation may not be available.`,
+      withdrawalId
+    );
+
+    toast(error.message || "Cancellation failed");
+  }
+}
+
+async function refreshUserAfterWithdrawal() {
+  try {
+    const data = await apiWithTimeout(
+      "/api/user",
+      {
+        method: "POST",
+        body: JSON.stringify({}),
+      },
+      12000
+    );
+
+    if (data.user) {
+      applyUser(data.user);
+    }
+  } catch (error) {
+    console.error("refreshUserAfterWithdrawal:", error);
+  }
+}
+
+/* =========================================================
+   TASKS
+========================================================= */
 
 async function loadTasks() {
   const container = $("tasksList");
@@ -670,6 +1084,7 @@ async function loadTasks() {
       });
     });
   } catch (e) {
+    console.error("loadTasks:", e);
     container.innerHTML = `<div class="empty-state">Tasks unavailable</div>`;
   }
 }
@@ -684,7 +1099,10 @@ async function claimTask(taskId, url, type) {
       })
     });
 
-    state.balance = Number(data.balance);
+    if (data.balance !== undefined) {
+      state.balance = Number(data.balance);
+    }
+
     renderUser();
 
     toast(`+${formatNumber(data.reward || 0)} SNP`);
@@ -693,6 +1111,10 @@ async function claimTask(taskId, url, type) {
     toast(e.message || "Task verification failed");
   }
 }
+
+/* =========================================================
+   REFERRALS
+========================================================= */
 
 async function loadFriends() {
   const list = $("friendsList");
@@ -733,28 +1155,64 @@ async function loadFriends() {
       const row = document.createElement("div");
       row.className = "friend-row";
 
-      row.innerHTML = `
-        <div class="friend-avatar">✓</div>
-        <div class="friend-main">
-          <strong>${friend.username ? `@${friend.username}` : "SINAPS user"}</strong>
-          <small>Balance: ${formatNumber(friend.balance || 0)} SNP</small>
-        </div>
-      `;
+      const avatar = document.createElement("div");
+      avatar.className = "friend-avatar";
+      avatar.textContent = "✓";
 
+      const main = document.createElement("div");
+      main.className = "friend-main";
+
+      const name = document.createElement("strong");
+      name.textContent = friend.username
+        ? `@${friend.username}`
+        : "SINAPS user";
+
+      const balance = document.createElement("small");
+      balance.textContent =
+        `Balance: ${formatNumber(friend.balance || 0)} SNP`;
+
+      main.append(name, balance);
+      row.append(avatar, main);
       list.appendChild(row);
     });
   } catch (e) {
+    console.error("loadFriends:", e);
     list.innerHTML = `<div class="empty-state">Referral data unavailable.</div>`;
   }
 }
 
 function copyReferral() {
   const input = $("referralLink");
-  if (!input?.value) return;
+  if (!input?.value) {
+    toast("Referral link is not ready");
+    return;
+  }
 
-  navigator.clipboard.writeText(input.value)
-    .then(() => toast("Referral link copied"))
-    .catch(() => toast("Could not copy referral link"));
+  if (navigator.clipboard?.writeText) {
+    navigator.clipboard.writeText(input.value)
+      .then(() => toast("Referral link copied"))
+      .catch(() => fallbackCopy(input.value));
+  } else {
+    fallbackCopy(input.value);
+  }
+}
+
+function fallbackCopy(text) {
+  const input = document.createElement("textarea");
+  input.value = text;
+  input.style.position = "fixed";
+  input.style.opacity = "0";
+  document.body.appendChild(input);
+  input.select();
+
+  try {
+    document.execCommand("copy");
+    toast("Referral link copied");
+  } catch (_) {
+    toast("Could not copy referral link");
+  }
+
+  input.remove();
 }
 
 function shareReferral() {
@@ -790,7 +1248,15 @@ async function loadSpinStatus() {
     if ($("spinCount")) {
       $("spinCount").textContent = formatNumber(spinCount);
     }
-  } catch (_) {}
+
+    if ($("spinStatus")) {
+      $("spinStatus").textContent = spinFreeReady
+        ? "Your free spin is ready."
+        : `Tickets available: ${formatNumber(spinTickets)}`;
+    }
+  } catch (e) {
+    console.error("loadSpinStatus:", e);
+  }
 }
 
 function openSpin() {
@@ -808,7 +1274,10 @@ async function spinNow() {
   spinBusy = true;
 
   const button = $("spinNowButton");
-  if (button) button.disabled = true;
+  if (button) {
+    button.disabled = true;
+    button.textContent = "SPINNING...";
+  }
 
   try {
     const data = await api("/api/spin/claim", {
@@ -817,6 +1286,13 @@ async function spinNow() {
     });
 
     if (data.user) applyUser(data.user);
+
+    if ($("spinStatus")) {
+      $("spinStatus").textContent =
+        Number(data.reward) > 0
+          ? `You won ${formatNumber(data.reward)} SNP!`
+          : "No prize this time.";
+    }
 
     toast(
       Number(data.reward) > 0
@@ -829,7 +1305,11 @@ async function spinNow() {
     toast(e.message || "Spin failed");
   } finally {
     spinBusy = false;
-    if (button) button.disabled = false;
+
+    if (button) {
+      button.disabled = false;
+      button.textContent = "SPIN NOW";
+    }
   }
 }
 
@@ -839,12 +1319,14 @@ async function spinNow() {
 
 async function loadHistoryPage(reset = false) {
   const container = $("historyList");
-  if (!container) return;
+  if (!container || historyLoading) return;
 
   if (reset) {
     historyOffset = 0;
     container.innerHTML = "";
   }
+
+  historyLoading = true;
 
   try {
     const data = await api(
@@ -878,7 +1360,17 @@ async function loadHistoryPage(reset = false) {
     historyOffset = Number(
       data.next_offset ?? historyOffset + rows.length
     );
-  } catch (_) {}
+
+    historyHasMore = rows.length === 10;
+
+    if ($("historyLoadMore")) {
+      $("historyLoadMore").hidden = !historyHasMore;
+    }
+  } catch (e) {
+    console.error("loadHistoryPage:", e);
+  } finally {
+    historyLoading = false;
+  }
 }
 
 async function loadHistory() {
@@ -923,7 +1415,8 @@ function updateAdCost() {
     clicks <= AD_MAX_CLICKS;
 
   if (!valid) {
-    output.textContent = `Choose ${AD_MIN_CLICKS}–${formatNumber(AD_MAX_CLICKS)} clicks`;
+    output.textContent =
+      `Choose ${AD_MIN_CLICKS}–${formatNumber(AD_MAX_CLICKS)} clicks`;
     return;
   }
 
@@ -1001,17 +1494,12 @@ function createAdCard(ad, isMine = false) {
       `Budget: ${Number(ad.price_gram || 0).toFixed(3)} TON`;
     card.appendChild(price);
 
-    if (Number(ad.payment_verified) === 1) {
-      const paid = document.createElement("p");
-      paid.className = "ad-payment-status";
-      paid.textContent = "Payment verified";
-      card.appendChild(paid);
-    } else {
-      const pending = document.createElement("p");
-      pending.className = "ad-payment-status";
-      pending.textContent = "Awaiting payment verification";
-      card.appendChild(pending);
-    }
+    const payment = document.createElement("p");
+    payment.className = "ad-payment-status";
+    payment.textContent = Number(ad.payment_verified) === 1
+      ? "Payment verified"
+      : "Awaiting payment verification";
+    card.appendChild(payment);
   } else {
     const button = document.createElement("button");
     button.type = "button";
@@ -1050,9 +1538,7 @@ function createAdCard(ad, isMine = false) {
 
 async function loadAvailableAds() {
   const container = $("activeAdsList");
-  if (!container) return;
-
-  if (adsLoading) return;
+  if (!container || adsLoading) return;
 
   adsLoading = true;
   setAdsMessage(container, "Loading advertising tasks...");
@@ -1164,8 +1650,6 @@ async function createAd() {
     return;
   }
 
-  // The backend currently accepts telegram, website, youtube,
-  // instagram, x and other. Map the UI's social option to other.
   const platform =
     platformInput === "social" ? "other" : platformInput;
 
@@ -1203,7 +1687,6 @@ async function createAd() {
     if ($("adClicks")) $("adClicks").value = "100";
 
     updateAdCost();
-
     await loadMyAds();
     switchAdsTab("mine");
   } catch (error) {
@@ -1299,9 +1782,19 @@ function setupEvents() {
 
   $("connectWalletButton")?.addEventListener("click", connectWallet);
   $("disconnectWallet")?.addEventListener("click", disconnectWallet);
+
+  // WITHDRAW BUTTON: this was missing from the previous app.js.
+  $("withdrawButton")?.addEventListener("click", handleWithdraw);
+
   $("copyReferral")?.addEventListener("click", copyReferral);
   $("copyReferralLarge")?.addEventListener("click", copyReferral);
   $("shareReferral")?.addEventListener("click", shareReferral);
+
+  $("historyLoadMore")?.addEventListener("click", () => {
+    if (historyHasMore) {
+      void loadHistoryPage(false);
+    }
+  });
 
   $("chartButton")?.addEventListener("click", () => {
     window.open("https://geckoterminal.com", "_blank", "noopener,noreferrer");
@@ -1325,22 +1818,18 @@ async function init() {
   renderWallet();
   startEnergyTimer();
 
-  // Initialize TON Connect independently.
   void initWallet().catch(error => {
     console.error("Wallet init error:", error);
   });
 
-  // Load user data without blocking page initialization.
   void loadUser().catch(error => {
     console.error("User init error:", error);
   });
 
-  // Load ads independently so the Home page is not blocked.
   void loadAds().catch(error => {
     console.error("Advertising initialization error:", error);
   });
 
-  // Refresh user balance periodically.
   balanceRefreshTimer = setInterval(async () => {
     try {
       const data = await apiWithTimeout(
