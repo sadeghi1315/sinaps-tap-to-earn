@@ -895,7 +895,91 @@
       id="tasksList"
       class="tasks-list">
     </div>
+    
+<!-- AD TASKS MARKETPLACE -->
 
+<div class="ads-marketplace">
+
+  <div class="ads-marketplace-heading">
+    <span class="ads-heading-icon">📢</span>
+    <div>
+      <h3>Advertising Tasks</h3>
+      <p>Complete ad tasks or promote your own project.</p>
+    </div>
+  </div>
+
+  <div class="ads-price-banner">
+    <strong>Promote your project</strong>
+    <span>100 clicks = 0.1 TON</span>
+    <button id="openCreateAdButton" type="button">
+      CREATE AD
+    </button>
+  </div>
+
+  <div class="ads-marketplace-tabs">
+    <button type="button" class="ads-tab active" data-ads-tab="available">
+      Available Ads
+    </button>
+    <button type="button" class="ads-tab" data-ads-tab="mine">
+      My Ads
+    </button>
+  </div>
+
+  <div id="activeAdsList" class="ads-list">
+    <p class="ads-empty">Loading advertising tasks...</p>
+  </div>
+
+  <div id="myAdsList" class="ads-list" hidden>
+    <p class="ads-empty">Your ads will appear here.</p>
+  </div>
+
+  <div id="createAdPanel" class="ads-form-card" hidden>
+
+    <h3>Create an advertising task</h3>
+
+    <label for="adTitle">Title</label>
+    <input id="adTitle" type="text" maxlength="80"
+      placeholder="Your project or channel">
+
+    <label for="adDescription">Description</label>
+    <textarea id="adDescription" maxlength="300"
+      placeholder="Describe your project"></textarea>
+
+    <label for="adPlatform">Platform</label>
+    <select id="adPlatform">
+      <option value="telegram">Telegram</option>
+      <option value="website">Website</option>
+      <option value="social">Social media</option>
+    </select>
+
+    <label for="adUrl">Destination link</label>
+    <input id="adUrl" type="url"
+      placeholder="https://t.me/your_channel">
+
+    <label for="adClicks">Target clicks</label>
+    <input id="adClicks" type="number" min="100" max="100000"
+      step="100" value="100" inputmode="numeric">
+
+    <div class="ads-cost-row">
+      <span>Total price</span>
+      <strong id="adEstimatedCost">0.1 TON</strong>
+    </div>
+
+    <button id="createAdButton" type="button" class="ads-primary-button">
+      CONTINUE
+    </button>
+
+    <button id="cancelCreateAdButton" type="button" class="ads-cancel-button">
+      CANCEL
+    </button>
+
+    <p class="ads-disclaimer">
+      Your ad will remain pending until payment is verified and the ad is approved.
+    </p>
+
+  </div>
+
+</div>
   </section>
 
 
