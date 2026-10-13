@@ -1543,107 +1543,204 @@ root.id = "sinapsAdsSection";
 root.style.cssText = "margin:20px 0; padding:16px; border:1px solid rgba(130,110,255,.3); border-radius:18px; background:linear-gradient(145deg,rgba(23,20,55,.96),rgba(5,8,25,.98)); color:#fff;";
 
 const style = document.createElement("style");
-style.id = "sinapsAdsStyles";
-style.textContent = "#sinapsAdsSection button { cursor:pointer; border:1px solid rgba(143,126,255,.35); border-radius:10px; padding:10px 7px; color:#fff; background:rgba(91,74,190,.22); font-weight:700; font-size:12px; } #sinapsAdsSection button:disabled { opacity:.5; cursor:not-allowed; } #sinapsAdsSection .ads-tab-active { background:linear-gradient(135deg,#7857ff,#4b38ba); border-color:#9a87ff; } #sinapsAdsSection .ads-field { width:100%; box-sizing:border-box; margin:6px 0 12px; padding:12px; border:1px solid rgba(151,143,211,.35); border-radius:10px; background:#090d20; color:#fff; font-size:14px; outline:none; } #sinapsAdsSection .ads-label { display:block; font-size:12px; color:#c5c9e5; margin-top:8px; } #sinapsAdsSection .ads-panel { display:none; } #sinapsAdsSection .ads-panel.active { display:block; } #sinapsAdsSection .ads-card { padding:13px; margin:10px 0; border-radius:12px; background:rgba(255,255,255,.045); border:1px solid rgba(255,255,255,.08); overflow-wrap:anywhere; } #sinapsAdsSection .ads-muted { color:#aeb5d5; font-size:12px; line-height:1.6; } #sinapsAdsSection .ads-price { padding:12px; margin:10px 0; border-radius:10px; background:rgba(90,72,190,.18); color:#d8ceff; font-weight:800; } #sinapsAdsSection .ads-primary { width:100%; padding:13px !important; background:linear-gradient(135deg,#7958ff,#4c36bc) !important; border:0 !important; }";
+function ensureAdsUI() {
+  const tasksPage = document.querySelector('.page[data-page="tasks"]');
+  if (!tasksPage) return null;
 
-if (!document.getElementById("sinapsAdsStyles")) {
-document.head.appendChild(style);
-}
+  let root = $("sinapsAdsSection");
+  if (root) return root;
 
-const heading = document.createElement("div");
-heading.innerHTML = "<div style="font-size:19px;font-weight:800">📢 SINAPS Ads</div> <div style="font-size:12px;color:#aeb5d5;margin-top:6px"> Promote your channel, website or social page. </div>";
+  root = document.createElement("section");
+  root.id = "sinapsAdsSection";
 
-const tabs = document.createElement("div");
-tabs.style.cssText = "display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:7px; margin:16px 0;";
-tabs.innerHTML = "<button type="button" id="adsBrowseTab" class="ads-tab-active">Browse Ads</button> <button type="button" id="adsMyTab">My Ads</button> <button type="button" id="adsCreateTab">Create Ad</button>";
+  root.style.cssText = `
+    margin:20px 0;
+    padding:16px;
+    border:1px solid rgba(130,110,255,.3);
+    border-radius:18px;
+    background:linear-gradient(145deg,rgba(23,20,55,.96),rgba(5,8,25,.98));
+    color:#fff;
+  `;
 
-const browsePanel = document.createElement("div");
-browsePanel.id = "adsBrowsePanel";
-browsePanel.className = "ads-panel active";
-browsePanel.innerHTML = "<div class="ads-muted">Active paid advertisements will appear here.</div> <div id="activeAdsList"> <div class="empty-state">Loading ads...</div> </div>";
+  const style = document.createElement("style");
+  style.id = "sinapsAdsStyles";
+  style.textContent = `
+    #sinapsAdsSection button {
+      cursor:pointer;
+      border:1px solid rgba(143,126,255,.35);
+      border-radius:10px;
+      padding:10px 7px;
+      color:#fff;
+      background:rgba(91,74,190,.22);
+      font-weight:700;
+      font-size:12px;
+    }
+    #sinapsAdsSection button:disabled {
+      opacity:.5;
+      cursor:not-allowed;
+    }
+    #sinapsAdsSection .ads-tab-active {
+      background:linear-gradient(135deg,#7857ff,#4b38ba);
+      border-color:#9a87ff;
+    }
+    #sinapsAdsSection .ads-field {
+      width:100%;
+      box-sizing:border-box;
+      margin:6px 0 12px;
+      padding:12px;
+      border:1px solid rgba(151,143,211,.35);
+      border-radius:10px;
+      background:#090d20;
+      color:#fff;
+      font-size:14px;
+      outline:none;
+    }
+    #sinapsAdsSection .ads-label {
+      display:block;
+      font-size:12px;
+      color:#c5c9e5;
+      margin-top:8px;
+    }
+    #sinapsAdsSection .ads-panel { display:none; }
+    #sinapsAdsSection .ads-panel.active { display:block; }
+    #sinapsAdsSection .ads-card {
+      padding:13px;
+      margin:10px 0;
+      border-radius:12px;
+      background:rgba(255,255,255,.045);
+      border:1px solid rgba(255,255,255,.08);
+      overflow-wrap:anywhere;
+    }
+    #sinapsAdsSection .ads-muted {
+      color:#aeb5d5;
+      font-size:12px;
+      line-height:1.6;
+    }
+    #sinapsAdsSection .ads-price {
+      padding:12px;
+      margin:10px 0;
+      border-radius:10px;
+      background:rgba(90,72,190,.18);
+      color:#d8ceff;
+      font-weight:800;
+    }
+    #sinapsAdsSection .ads-primary {
+      width:100%;
+      padding:13px !important;
+      background:linear-gradient(135deg,#7958ff,#4c36bc) !important;
+      border:0 !important;
+    }
+  `;
 
-const myPanel = document.createElement("div");
-myPanel.id = "adsMyPanel";
-myPanel.className = "ads-panel";
-myPanel.innerHTML = "<div class="ads-muted">View your advertisements and their status.</div> <div id="myAdsList"> <div class="empty-state">Loading your ads...</div> </div>";
+  if (!$("sinapsAdsStyles")) document.head.appendChild(style);
 
-const createPanel = document.createElement("div");
-createPanel.id = "adsCreatePanel";
-createPanel.className = "ads-panel";
-createPanel.innerHTML = `
-<form id="adCreateForm">
-<label class="ads-label" for="adTitle">Advertisement title *</label>
-<input id="adTitle" class="ads-field" type="text" maxlength="100"
-placeholder="e.g. Join my Telegram channel" required>
+  const heading = document.createElement("div");
+  heading.innerHTML = `
+    <div style="font-size:19px;font-weight:800">📢 SINAPS Ads</div>
+    <div style="font-size:12px;color:#aeb5d5;margin-top:6px">
+      Promote your channel, website or social page.
+    </div>
+  `;
 
-  <label class="ads-label" for="adPlatform">Platform *</label>
-  <select id="adPlatform" class="ads-field" required>
-    <option value="telegram">Telegram</option>
-    <option value="website">Website</option>
-    <option value="x">X / Twitter</option>
-    <option value="other">Other</option>
-  </select>
+  const tabs = document.createElement("div");
+  tabs.style.cssText = `
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:7px;
+    margin:16px 0;
+  `;
 
-  <label class="ads-label" for="adTargetUrl">Destination URL *</label>
-  <input id="adTargetUrl" class="ads-field" type="url" maxlength="1000"
-    placeholder="https://..." required>
+  tabs.innerHTML = `
+    <button type="button" id="adsBrowseTab" class="ads-tab-active">Browse Ads</button>
+    <button type="button" id="adsMyTab">My Ads</button>
+    <button type="button" id="adsCreateTab">Create Ad</button>
+  `;
 
-  <label class="ads-label" for="adDescription">Description (optional)</label>
-  <textarea id="adDescription" class="ads-field" maxlength="500" rows="3"
-    placeholder="Describe your advertisement"></textarea>
+  const browsePanel = document.createElement("div");
+  browsePanel.id = "adsBrowsePanel";
+  browsePanel.className = "ads-panel active";
+  browsePanel.innerHTML = `
+    <div class="ads-muted">Active paid advertisements will appear here.</div>
+    <div id="activeAdsList">
+      <div class="empty-state">Loading ads...</div>
+    </div>
+  `;
 
-  <label class="ads-label" for="adTargetClicks">Target clicks (100–100,000)</label>
-  <input id="adTargetClicks" class="ads-field" type="number"
-    min="100" max="100000" step="100" value="100" required>
+  const myPanel = document.createElement("div");
+  myPanel.id = "adsMyPanel";
+  myPanel.className = "ads-panel";
+  myPanel.innerHTML = `
+    <div class="ads-muted">View your advertisements and their status.</div>
+    <div id="myAdsList">
+      <div class="empty-state">Loading your ads...</div>
+    </div>
+  `;
 
-  <div id="adPricePreview" class="ads-price">
-    Advertising cost: 0.100 TON
-  </div>
+  const createPanel = document.createElement("div");
+  createPanel.id = "adsCreatePanel";
+  createPanel.className = "ads-panel";
+  createPanel.innerHTML = `
+    <form id="adCreateForm">
+      <label class="ads-label" for="adTitle">Advertisement title *</label>
+      <input id="adTitle" class="ads-field" type="text" maxlength="100"
+        placeholder="e.g. Join my Telegram channel" required>
 
-  <div class="ads-muted">
-    Price: 0.001 TON per target click. Native TON only, not SNP.
-  </div>
+      <label class="ads-label" for="adPlatform">Platform *</label>
+      <select id="adPlatform" class="ads-field" required>
+        <option value="telegram">Telegram</option>
+        <option value="website">Website</option>
+        <option value="x">X / Twitter</option>
+        <option value="other">Other</option>
+      </select>
 
-  <button type="submit" id="adCreateButton" class="ads-primary">
-    CREATE AD
-  </button>
+      <label class="ads-label" for="adTargetUrl">Destination URL *</label>
+      <input id="adTargetUrl" class="ads-field" type="url" maxlength="1000"
+        placeholder="https://..." required>
 
-  <div id="adCreateMessage" class="ads-muted" style="margin-top:10px"></div>
-</form>
+      <label class="ads-label" for="adDescription">Description (optional)</label>
+      <textarea id="adDescription" class="ads-field" maxlength="500" rows="3"
+        placeholder="Describe your advertisement"></textarea>
 
-`;
+      <label class="ads-label" for="adTargetClicks">Target clicks (100–100,000)</label>
+      <input id="adTargetClicks" class="ads-field" type="number"
+        min="100" max="100000" step="100" value="100" required>
 
-root.append(heading, tabs, browsePanel, myPanel, createPanel);
+      <div id="adPricePreview" class="ads-price">
+        Advertising cost: 0.100 TON
+      </div>
 
-const tasksList = document.getElementById("tasksList");
+      <div class="ads-muted">
+        Price: 0.001 TON per target click. Native TON only, not SNP.
+      </div>
 
-if (tasksList?.parentNode) {
-tasksList.parentNode.insertBefore(root, tasksList);
-} else {
-tasksPage.appendChild(root);
-}
+      <button type="submit" id="adCreateButton" class="ads-primary">
+        CREATE AD
+      </button>
 
-document.getElementById("adsBrowseTab").addEventListener(
-"click", () => showAdsTab("browse")
-);
-document.getElementById("adsMyTab").addEventListener(
-"click", () => showAdsTab("my")
-);
-document.getElementById("adsCreateTab").addEventListener(
-"click", () => showAdsTab("create")
-);
-document.getElementById("adTargetClicks").addEventListener(
-"input", updateAdPrice
-);
-document.getElementById("adCreateForm").addEventListener(
-"submit", async event => {
-event.preventDefault();
-await createAd();
-}
-);
+      <div id="adCreateMessage" class="ads-muted" style="margin-top:10px"></div>
+    </form>
+  `;
 
-updateAdPrice();
-return root;
+  root.append(heading, tabs, browsePanel, myPanel, createPanel);
+
+  const tasksList = $("tasksList");
+  if (tasksList?.parentNode) {
+    tasksList.parentNode.insertBefore(root, tasksList);
+  } else {
+    tasksPage.appendChild(root);
+  }
+
+  $("adsBrowseTab").addEventListener("click", () => showAdsTab("browse"));
+  $("adsMyTab").addEventListener("click", () => showAdsTab("my"));
+  $("adsCreateTab").addEventListener("click", () => showAdsTab("create"));
+  $("adTargetClicks").addEventListener("input", updateAdPrice);
+  $("adCreateForm").addEventListener("submit", async event => {
+    event.preventDefault();
+    await createAd();
+  });
+
+  updateAdPrice();
+  return root;
 }
 
 function showAdsTab(tab) {
