@@ -17,6 +17,7 @@ const state = {
 let tonUI = null;
 let tapQueue = 0;
 let tapTimer = null;
+let tapFlushInFlight = false;
 let energyTimer = null;
 let walletInitialized = false;
 let disconnectRequested = false;
@@ -239,19 +240,57 @@ function tap(event) {
   if (!tapTimer) tapTimer = setTimeout(flushTaps, 100);
 }
 
+
 async function flushTaps() {
-  clearTimeout(tapTimer); tapTimer = null;
-  if (tapQueue <= 0) return;
+  clearTimeout(tapTimer);
+  tapTimer = null;
+
+  // Only one tap request may run at a time.
+  if (tapFlushInFlight || tapQueue <= 0) return;
+
+  tapFlushInFlight = true;
+
   const count = Math.min(tapQueue, 50);
   tapQueue -= count;
+
   try {
-    const data = await api("/api/tap", { method: "POST", body: JSON.stringify({ count }) });
-    applyUser(data.user);
+    const data = await api("/api/tap", {
+      method: "POST",
+      body: JSON.stringify({ count })
+    });
+
+    if (data.user) {
+      // Apply the server-confirmed balance and energy.
+      applyUser(data.user);
+
+      // Preserve taps made while this request was in flight.
+      const pending = tapQueue;
+
+      if (pending > 0) {
+        state.balance += pending * state.tapPower;
+        state.energy = Math.max(0, state.energy - pending);
+      }
+
+      renderUser();
+      saveFastCache();
+    }
   } catch (e) {
-    console.error("tap", e);
-    await loadUser();
+    console.error("tap request failed", e);
+    toast("Connection issue. Checking your balance…");
+
+    // Do not blindly resend the same batch:
+    // the server may already have processed it.
+    if (tapQueue === 0) {
+      void refreshUserBalance();
+    }
+  } finally {
+    tapFlushInFlight = false;
+
+    // Process the next batch only after the previous one finishes.
+    if (tapQueue > 0) {
+      tapTimer = setTimeout(flushTaps, 50);
+    }
   }
-  if (tapQueue > 0) tapTimer = setTimeout(flushTaps, 100);
 }
 
 // ============================================================
@@ -1354,6 +1393,9 @@ function openBuySnp() {
 // NAVIGATION / EVENTS
 // ============================================================
 async function refreshUserBalance() {
+  if (tapQueue > 0 || tapFlushInFlight) return;
+
+  // بقیه کد فعلی تابع بدون تغییر باقی بماند
   try {
     const user = telegramUser();
     const data = await api("/api/user", {
