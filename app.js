@@ -705,40 +705,339 @@ async function withdraw() {
     try {
       await tonUI.sendTransaction({
         validUntil: Math.floor(Date.now() / 1000) + 300,
-        messages: [{ address: data.treasury_wallet, amount: String(data.fee_nano) }]
+
+ // ============================================================
+ // WITHDRAW — TON CONNECT SAFE VERSION
+ // ============================================================
+
+function pendingWithdrawalKey() {
+  return currentTelegramId
+    ? `sinaps_${currentTelegramId}_pending_withdrawal`
+    : "";
+}
+
+function getPendingWithdrawalId() {
+  const key = pendingWithdrawalKey();
+  if (!key) return "";
+
+  try {
+    return localStorage.getItem(key) || "";
+  } catch (_) {
+    return "";
+  }
+}
+
+function setPendingWithdrawalId(id) {
+  const key = pendingWithdrawalKey();
+  if (!key) return;
+
+  try {
+    if (id) localStorage.setItem(key, id);
+    else localStorage.removeItem(key);
+  } catch (_) {}
+}
+
+const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+async function verifyWithdrawalWithRetry(withdrawalId, silent = false) {
+  let lastError = null;
+
+  for (let attempt = 0; attempt < 4; attempt++) {
+    try {
+      const data = await api("/api/withdraw/verify", {
+        method: "POST",
+        body: JSON.stringify({
+          withdrawal_id: withdrawalId
+        })
       });
-      if ($("withdrawAmount")) $("withdrawAmount").value = "";
-    } catch (sendError) {
-      // Only cancel when TON Connect reports that the user explicitly rejected
-      // the transaction. Other errors can be ambiguous, so keep it recoverable.
-      const rejected = Number(sendError?.code) === 300 || /reject|cancel by user|user declined/i.test(String(sendError?.message || ""));
-      if (rejected) {
-        try {
-          const cancelled = await api("/api/withdraw/cancel", {
-            method: "POST",
-            body: JSON.stringify({ withdrawal_id: withdrawalId })
-          });
-          state.balance = Number(cancelled.balance ?? state.balance);
-          setPendingWithdrawalId("");
-          renderUser();
-          toast("Transaction cancelled. Your SNP balance was restored.");
-        } catch (cancelError) {
-          console.error("withdraw cancel", cancelError);
-          toast("Could not confirm cancellation. Keep this withdrawal pending and do not create another.");
+
+      const withdrawal = data.withdrawal || {};
+      const status = String(withdrawal.status || "");
+
+      if (status === "paid") {
+        setPendingWithdrawalId("");
+        await loadUser();
+        await loadHistory();
+
+        if (!silent) {
+          toast("SNP withdrawal completed successfully.");
         }
-      } else {
-        console.error("TON fee send", sendError);
-        toast("TON Connect could not confirm the fee. Withdrawal kept pending; do not create another withdrawal.");
+
+        return status;
       }
+
+      if (
+        status === "payout_submitted" ||
+        status === "fee_paid_pending_payout" ||
+        status === "processing" ||
+        status === "fee_submitted"
+      ) {
+        if (!silent) {
+          toast(
+            "Fee status received. Check the withdrawal status before retrying."
+          );
+        }
+
+        return status;
+      }
+
+      if (status === "cancelled") {
+        setPendingWithdrawalId("");
+        await loadUser();
+
+        if (!silent) {
+          toast("Withdrawal was cancelled.");
+        }
+
+        return status;
+      }
+
+      lastError = new Error(
+        `Withdrawal status: ${status || "unknown"}`
+      );
+    } catch (error) {
+      lastError = error;
+
+      if (error.status === 401 || error.status === 404) {
+        break;
+      }
+    }
+
+    if (attempt < 3) {
+      await wait(2500);
+    }
+  }
+
+  if (!silent) {
+    toast(
+      "Withdrawal status is not confirmed. Do not pay the fee again."
+    );
+  }
+
+  console.warn(
+    "Withdrawal verification pending:",
+    withdrawalId,
+    lastError?.message || ""
+  );
+
+  return "payment_pending";
+}
+
+async function resumePendingWithdrawal() {
+  const id = getPendingWithdrawalId();
+
+  if (!id) return;
+
+  await verifyWithdrawalWithRetry(id, true);
+}
+
+async function withdraw() {
+  // Prevent duplicate clicks from creating multiple requests.
+  const button = $("withdrawButton");
+
+  if (button?.disabled) return;
+
+  if (button) button.disabled = true;
+
+  let withdrawalId = "";
+  let requestCreated = false;
+
+  try {
+    const existingPending = getPendingWithdrawalId();
+
+    if (existingPending) {
+      toast("Checking your existing withdrawal. Do not pay again.");
+
+      await verifyWithdrawalWithRetry(existingPending, false);
       return;
     }
 
-    // Once sendTransaction resolves, never auto-cancel on a delayed indexer/API
-    // response: the fee may already be on-chain.
+    const amount = Number($("withdrawAmount")?.value || 0);
+
+    if (!Number.isSafeInteger(amount) || amount <= 0) {
+      toast("Enter a valid withdrawal amount");
+      return;
+    }
+
+    if (amount > state.balance) {
+      toast("Not enough SNP");
+      return;
+    }
+
+    if (!tonUI) {
+      toast("TON Connect is not ready. Reopen the app.");
+      return;
+    }
+
+    const liveWallet = tonUI.wallet?.account?.address;
+
+    if (!liveWallet) {
+      toast("Reconnect your TON wallet first.");
+
+      try {
+        await tonUI.openModal();
+      } catch (error) {
+        console.error("TON Connect modal error:", error);
+      }
+
+      return;
+    }
+
+    if (
+      comparableWalletAddress(liveWallet) !==
+      comparableWalletAddress(state.walletAddress)
+    ) {
+      toast("Wallet mismatch. Reconnect the saved wallet.");
+      return;
+    }
+
+    // Create withdrawal on the backend.
+    const data = await api("/api/withdraw/create", {
+      method: "POST",
+      body: JSON.stringify({
+        amount,
+        wallet_address: liveWallet
+      })
+    });
+
+    withdrawalId = String(data.withdrawal_id || "");
+
+    if (!withdrawalId) {
+      throw new Error(
+        "The server did not return a withdrawal ID."
+      );
+    }
+
+    requestCreated = true;
+    setPendingWithdrawalId(withdrawalId);
+
+    if (data.balance !== undefined) {
+      state.balance = Number(data.balance);
+      renderUser();
+    }
+
+    // Validate transaction fields before opening the wallet.
+    const treasuryWallet = String(
+      data.treasury_wallet || ""
+    ).trim();
+
+    const feeNano = String(data.fee_nano ?? "");
+
+    if (!treasuryWallet) {
+      throw new Error(
+        "Missing fee recipient address. Contact support; do not retry payment."
+      );
+    }
+
+    if (
+      !/^\d+$/.test(feeNano) ||
+      BigInt(feeNano) <= 0n
+    ) {
+      throw new Error(
+        "Invalid fee amount returned by the server."
+      );
+    }
+
+    console.log("SINAPS withdrawal prepared:", {
+      withdrawalId,
+      treasuryWallet,
+      feeNano,
+      walletAddress: liveWallet
+    });
+
+    toast("Opening TON wallet for fee approval…");
+
+    try {
+      // The wallet opens and asks the user to approve the fee.
+      await tonUI.sendTransaction({
+        validUntil: Math.floor(Date.now() / 1000) + 300,
+        messages: [{
+          address: treasuryWallet,
+          amount: feeNano
+        }]
+      });
+
+      if ($("withdrawAmount")) {
+        $("withdrawAmount").value = "";
+      }
+
+    } catch (sendError) {
+      console.error(
+        "SINAPS TON fee transaction failed:",
+        {
+          message: sendError?.message,
+          code: sendError?.code,
+          data: sendError?.data,
+          withdrawalId
+        }
+      );
+
+      const rejected =
+        Number(sendError?.code) === 300 ||
+        /reject|cancel by user|user declined/i.test(
+          String(sendError?.message || "")
+        );
+
+      if (rejected) {
+        // Cancel only on a clearly identified user rejection.
+        try {
+          const cancelled = await api("/api/withdraw/cancel", {
+            method: "POST",
+            body: JSON.stringify({
+              withdrawal_id: withdrawalId
+            })
+          });
+
+          if (cancelled.balance !== undefined) {
+            state.balance = Number(cancelled.balance);
+            renderUser();
+          }
+
+          setPendingWithdrawalId("");
+
+          toast("Transaction rejected. Check your balance.");
+        } catch (cancelError) {
+          console.error(
+            "Withdrawal cancellation failed:",
+            cancelError
+          );
+
+          toast(
+            "Cancellation is not confirmed. Do not create another withdrawal."
+          );
+        }
+      } else {
+        // The wallet error can be ambiguous. Never auto-cancel here:
+        // the transaction may have been submitted despite the error.
+        toast(
+          "Wallet transaction failed or is unconfirmed. Do not pay again; check withdrawal status."
+        );
+      }
+
+      return;
+    }
+
+    // sendTransaction resolved, but that alone does not prove the fee
+    // has been confirmed on-chain.
+    toast("Fee transaction submitted. Checking confirmation…");
+
     await verifyWithdrawalWithRetry(withdrawalId, false);
+
   } catch (error) {
-    console.error("withdraw", error);
-    if (!withdrawalId) toast(error.message || "Withdrawal creation failed");
+    console.error("SINAPS withdraw error:", error);
+
+    if (!requestCreated) {
+      toast(error.message || "Withdrawal creation failed");
+    } else {
+      // Keep the ID for recovery if the withdrawal was created.
+      toast(
+        error.message ||
+        "Withdrawal remains pending. Do not create another one."
+      );
+    }
+
+  } finally {
+    if (button) button.disabled = false;
   }
 }
 
