@@ -791,22 +791,47 @@ function setupEvents() {
   $("buySnpButton")?.addEventListener("click", () => window.open("https://dedust.io", "_blank"));
 }
 
+
 async function init() {
-  try {
-    setupEvents();
-    loadFastCache();
-    renderUser();
-    startEnergyTimer();
+  setupEvents();
+  loadFastCache();
+  renderUser();
+  renderWallet();
+  startEnergyTimer();
 
-    await loadUser();
-    await initWallet();
+  // Initialize TON Connect independently
+  void initWallet().catch(error => {
+    console.error("Wallet init error:", error);
+  });
 
-    setInterval(() => {
-      api("/api/user", { method: "POST", body: "{}" }).then(d => { if (d.user) applyUser(d.user); }).catch(() => {});
-    }, 30000);
-  } catch (e) {
-    console.error("Init error", e);
-  }
+  // Load user data without blocking page initialization
+  void loadUser().catch(error => {
+    console.error("User init error:", error);
+  });
+
+  // Refresh balance periodically
+  setInterval(async () => {
+    try {
+      const data = await apiWithTimeout(
+        "/api/user",
+        {
+          method: "POST",
+          body: JSON.stringify({})
+        },
+        10000
+      );
+
+      if (data.user) {
+        applyUser(data.user);
+      }
+    } catch (error) {
+      console.error("User refresh failed:", error);
+    }
+  }, 30000);
 }
 
-document.addEventListener("DOMContentLoaded", init);
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", init, { once: true });
+} else {
+  void init();
+}
