@@ -3229,3 +3229,181 @@ body{color:#f7f8ff;letter-spacing:.05px}
   line-height: 1.2 !important;
   letter-spacing: 2px !important;
 }
+/* ADS SECTION INSIDE TASKS */
+
+.ads-marketplace {
+margin-top: 26px;
+padding-bottom: 18px;
+}
+
+.ads-marketplace-heading {
+display: flex;
+align-items: center;
+gap: 12px;
+margin-bottom: 15px;
+color: #fff;
+}
+
+.ads-heading-icon {
+width: 48px;
+height: 48px;
+display: grid;
+place-items: center;
+border-radius: 15px;
+background: rgba(61, 174, 255, .12);
+font-size: 25px;
+}
+
+.ads-marketplace-heading h3,
+.ads-form-card h3 {
+margin: 0;
+font-size: 16px;
+font-weight: 900;
+}
+
+.ads-marketplace-heading p {
+margin: 5px 0 0;
+color: rgba(255,255,255,.55);
+font-size: 11px;
+line-height: 1.5;
+}
+
+.ads-price-banner,
+.ads-form-card,
+.ads-list .ad-card {
+padding: 15px;
+margin: 12px 0;
+border: 1px solid rgba(80, 180, 255, .18);
+border-radius: 17px;
+background: linear-gradient(145deg, #101d35, #070d1b);
+color: #fff;
+}
+
+.ads-price-banner strong,
+.ads-price-banner span {
+display: block;
+}
+
+.ads-price-banner span {
+margin-top: 7px;
+color: #65e5b2;
+font-weight: 800;
+font-size: 13px;
+}
+
+.ads-price-banner button,
+.ads-primary-button {
+width: 100%;
+min-height: 44px;
+margin-top: 13px;
+border: 0;
+border-radius: 12px;
+background: linear-gradient(90deg, #287dff, #36c8f4);
+color: white;
+font-weight: 900;
+}
+
+.ads-marketplace-tabs {
+display: flex;
+gap: 8px;
+margin: 18px 0 12px;
+}
+
+.ads-tab {
+flex: 1;
+min-height: 40px;
+border: 1px solid rgba(255,255,255,.1);
+border-radius: 11px;
+background: #0b1222;
+color: rgba(255,255,255,.65);
+font-size: 12px;
+font-weight: 800;
+}
+
+.ads-tab.active {
+background: rgba(45, 130, 255, .2);
+border-color: #398dff;
+color: #fff;
+}
+
+.ads-form-card label {
+display: block;
+margin: 14px 0 7px;
+color: rgba(255,255,255,.7);
+font-size: 12px;
+}
+
+.ads-form-card input,
+.ads-form-card textarea,
+.ads-form-card select {
+box-sizing: border-box;
+width: 100%;
+min-height: 43px;
+padding: 11px;
+border: 1px solid rgba(100,170,255,.2);
+border-radius: 10px;
+background: #050b18;
+color: white;
+font-size: 13px;
+}
+
+.ads-form-card textarea {
+min-height: 75px;
+}
+
+.ads-cost-row {
+display: flex;
+justify-content: space-between;
+gap: 10px;
+margin-top: 18px;
+color: rgba(255,255,255,.7);
+font-size: 13px;
+}
+
+.ads-cost-row strong {
+color: #65e5b2;
+}
+
+.ads-cancel-button {
+width: 100%;
+min-height: 40px;
+margin-top: 8px;
+border: 1px solid rgba(255,255,255,.12);
+border-radius: 11px;
+background: transparent;
+color: white;
+}
+
+.ads-disclaimer,
+.ads-empty {
+color: rgba(255,255,255,.5);
+font-size: 11px;
+line-height: 1.6;
+}
+
+.ads-list .ad-card h4 {
+margin: 0 0 8px;
+color: white;
+}
+
+.ads-list .ad-card p {
+color: rgba(255,255,255,.65);
+font-size: 12px;
+line-height: 1.6;
+overflow-wrap: anywhere;
+}
+
+.ads-list .ad-card a {
+color: #65d9ff;
+overflow-wrap: anywhere;
+}
+
+.ads-list .ad-card button {
+min-height: 38px;
+padding: 0 14px;
+border: 0;
+border-radius: 10px;
+background: #247dff;
+color: white;
+font-weight: 800;
+}
