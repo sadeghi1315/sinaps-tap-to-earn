@@ -1497,49 +1497,154 @@ function ensureAdsUI() {
       <label class="ads-label" for="adDescription">Description (optional)</label>
       <textarea id="adDescription" class="ads-field" maxlength="500" rows="3"
         placeholder="Describe your advertisement"></textarea>
+function ensureAdsUI() {
+const tasksPage = document.querySelector('.page[data-page="tasks"]');
+if (!tasksPage) return null;
 
-      <label class="ads-label" for="adTargetClicks">Target clicks (100–100,000)</label>
-      <input id="adTargetClicks" class="ads-field" type="number"
-        min="100" max="100000" step="100" value="100" required>
+let root = document.getElementById("sinapsAdsSection");
 
-      <div id="adPricePreview" class="ads-price">
-        Advertising cost: 0.100 TON
-      </div>
+// Remove duplicate ad sections left by previous HTML/code versions.
+tasksPage.querySelectorAll(
+'[id="adsSection"], [id="paidAdsSection"], [id="advertisementSection"], [id="sinapsPaidAds"], .duplicate-ads-section'
+).forEach(el => {
+if (el !== root && !root?.contains(el)) el.remove();
+});
 
-      <div class="ads-muted">
-        Price: 0.001 TON per target click. Native TON only, not SNP.
-      </div>
+// Remove other ad panels outside the working section.
+tasksPage.querySelectorAll("section, .ads-section, .paid-ads-section").forEach(el => {
+if (el === root || root?.contains(el)) return;
 
-      <button type="submit" id="adCreateButton" class="ads-primary">
-        CREATE AD
-      </button>
+const heading = el.querySelector("h1, h2, h3, h4, strong");
+const headingText = (heading?.textContent || "").trim();
 
-      <div id="adCreateMessage" class="ads-muted" style="margin-top:10px"></div>
-    </form>
-  `;
+if (/SINAPS\s*Ads|Paid\s*Ads|Create\s*Ad/i.test(headingText)) {
+  el.remove();
+}
 
-  root.append(heading, tabs, browsePanel, myPanel, createPanel);
+});
 
-  const existingTasks = $("tasksList");
+if (root) {
+const tasksList = document.getElementById("tasksList");
 
-  if (existingTasks?.parentNode) {
-    existingTasks.parentNode.insertBefore(root, existingTasks);
-  } else {
-    tasksPage.appendChild(root);
-  }
+// Keep the working ad panel above the regular task list.
+if (
+  tasksList?.parentNode &&
+  root.parentNode === tasksList.parentNode &&
+  root.nextElementSibling !== tasksList
+) {
+  tasksList.parentNode.insertBefore(root, tasksList);
+}
 
-  $("adsBrowseTab").addEventListener("click", () => showAdsTab("browse"));
-  $("adsMyTab").addEventListener("click", () => showAdsTab("my"));
-  $("adsCreateTab").addEventListener("click", () => showAdsTab("create"));
-  $("adTargetClicks").addEventListener("input", updateAdPrice);
+return root;
 
-  $("adCreateForm").addEventListener("submit", async event => {
-    event.preventDefault();
-    await createAd();
-  });
+}
 
-  updateAdPrice();
-  return root;
+root = document.createElement("section");
+root.id = "sinapsAdsSection";
+root.style.cssText = "margin:20px 0; padding:16px; border:1px solid rgba(130,110,255,.3); border-radius:18px; background:linear-gradient(145deg,rgba(23,20,55,.96),rgba(5,8,25,.98)); color:#fff;";
+
+const style = document.createElement("style");
+style.id = "sinapsAdsStyles";
+style.textContent = "#sinapsAdsSection button { cursor:pointer; border:1px solid rgba(143,126,255,.35); border-radius:10px; padding:10px 7px; color:#fff; background:rgba(91,74,190,.22); font-weight:700; font-size:12px; } #sinapsAdsSection button:disabled { opacity:.5; cursor:not-allowed; } #sinapsAdsSection .ads-tab-active { background:linear-gradient(135deg,#7857ff,#4b38ba); border-color:#9a87ff; } #sinapsAdsSection .ads-field { width:100%; box-sizing:border-box; margin:6px 0 12px; padding:12px; border:1px solid rgba(151,143,211,.35); border-radius:10px; background:#090d20; color:#fff; font-size:14px; outline:none; } #sinapsAdsSection .ads-label { display:block; font-size:12px; color:#c5c9e5; margin-top:8px; } #sinapsAdsSection .ads-panel { display:none; } #sinapsAdsSection .ads-panel.active { display:block; } #sinapsAdsSection .ads-card { padding:13px; margin:10px 0; border-radius:12px; background:rgba(255,255,255,.045); border:1px solid rgba(255,255,255,.08); overflow-wrap:anywhere; } #sinapsAdsSection .ads-muted { color:#aeb5d5; font-size:12px; line-height:1.6; } #sinapsAdsSection .ads-price { padding:12px; margin:10px 0; border-radius:10px; background:rgba(90,72,190,.18); color:#d8ceff; font-weight:800; } #sinapsAdsSection .ads-primary { width:100%; padding:13px !important; background:linear-gradient(135deg,#7958ff,#4c36bc) !important; border:0 !important; }";
+
+if (!document.getElementById("sinapsAdsStyles")) {
+document.head.appendChild(style);
+}
+
+const heading = document.createElement("div");
+heading.innerHTML = "<div style="font-size:19px;font-weight:800">📢 SINAPS Ads</div> <div style="font-size:12px;color:#aeb5d5;margin-top:6px"> Promote your channel, website or social page. </div>";
+
+const tabs = document.createElement("div");
+tabs.style.cssText = "display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:7px; margin:16px 0;";
+tabs.innerHTML = "<button type="button" id="adsBrowseTab" class="ads-tab-active">Browse Ads</button> <button type="button" id="adsMyTab">My Ads</button> <button type="button" id="adsCreateTab">Create Ad</button>";
+
+const browsePanel = document.createElement("div");
+browsePanel.id = "adsBrowsePanel";
+browsePanel.className = "ads-panel active";
+browsePanel.innerHTML = "<div class="ads-muted">Active paid advertisements will appear here.</div> <div id="activeAdsList"> <div class="empty-state">Loading ads...</div> </div>";
+
+const myPanel = document.createElement("div");
+myPanel.id = "adsMyPanel";
+myPanel.className = "ads-panel";
+myPanel.innerHTML = "<div class="ads-muted">View your advertisements and their status.</div> <div id="myAdsList"> <div class="empty-state">Loading your ads...</div> </div>";
+
+const createPanel = document.createElement("div");
+createPanel.id = "adsCreatePanel";
+createPanel.className = "ads-panel";
+createPanel.innerHTML = `
+<form id="adCreateForm">
+<label class="ads-label" for="adTitle">Advertisement title *</label>
+<input id="adTitle" class="ads-field" type="text" maxlength="100"
+placeholder="e.g. Join my Telegram channel" required>
+
+  <label class="ads-label" for="adPlatform">Platform *</label>
+  <select id="adPlatform" class="ads-field" required>
+    <option value="telegram">Telegram</option>
+    <option value="website">Website</option>
+    <option value="x">X / Twitter</option>
+    <option value="other">Other</option>
+  </select>
+
+  <label class="ads-label" for="adTargetUrl">Destination URL *</label>
+  <input id="adTargetUrl" class="ads-field" type="url" maxlength="1000"
+    placeholder="https://..." required>
+
+  <label class="ads-label" for="adDescription">Description (optional)</label>
+  <textarea id="adDescription" class="ads-field" maxlength="500" rows="3"
+    placeholder="Describe your advertisement"></textarea>
+
+  <label class="ads-label" for="adTargetClicks">Target clicks (100–100,000)</label>
+  <input id="adTargetClicks" class="ads-field" type="number"
+    min="100" max="100000" step="100" value="100" required>
+
+  <div id="adPricePreview" class="ads-price">
+    Advertising cost: 0.100 TON
+  </div>
+
+  <div class="ads-muted">
+    Price: 0.001 TON per target click. Native TON only, not SNP.
+  </div>
+
+  <button type="submit" id="adCreateButton" class="ads-primary">
+    CREATE AD
+  </button>
+
+  <div id="adCreateMessage" class="ads-muted" style="margin-top:10px"></div>
+</form>
+
+`;
+
+root.append(heading, tabs, browsePanel, myPanel, createPanel);
+
+const tasksList = document.getElementById("tasksList");
+
+if (tasksList?.parentNode) {
+tasksList.parentNode.insertBefore(root, tasksList);
+} else {
+tasksPage.appendChild(root);
+}
+
+document.getElementById("adsBrowseTab").addEventListener(
+"click", () => showAdsTab("browse")
+);
+document.getElementById("adsMyTab").addEventListener(
+"click", () => showAdsTab("my")
+);
+document.getElementById("adsCreateTab").addEventListener(
+"click", () => showAdsTab("create")
+);
+document.getElementById("adTargetClicks").addEventListener(
+"input", updateAdPrice
+);
+document.getElementById("adCreateForm").addEventListener(
+"submit", async event => {
+event.preventDefault();
+await createAd();
+}
+);
+
+updateAdPrice();
+return root;
 }
 
 function showAdsTab(tab) {
