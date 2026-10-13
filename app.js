@@ -1,4 +1,3 @@
-
 "use strict";
 
 const tg = window.Telegram?.WebApp || null;
@@ -54,6 +53,7 @@ let adsLoading = false;
 
 let withdrawBusy = false;
 let currentWithdrawalId = null;
+let cancellableWithdrawalsLoading = false;
 
 const $ = id => document.getElementById(id);
 const formatNumber = value => Number(value || 0).toLocaleString("en-US");
@@ -508,7 +508,7 @@ async function claimDaily() {
   try {
     const data = await api("/api/daily/claim", {
       method: "POST",
-      body: "{}"
+      body: JSON.stringify({})
     });
 
     if (data.balance !== undefined) {
@@ -643,7 +643,7 @@ async function disconnectWallet() {
 
     await api("/api/wallet/disconnect", {
       method: "POST",
-      body: "{}"
+      body: JSON.stringify({})
     });
 
     state.walletAddress = null;
@@ -688,6 +688,190 @@ function getWithdrawFeedback() {
   }
 
   return box;
+}
+
+/*
+ * Show the user's cancellable requests inside Withdraw SNP.
+ * Requires GET /api/withdrawals/cancellable on the backend.
+ */
+async function loadCancellableWithdrawals() {
+  const card = document.querySelector(".withdraw-card");
+  if (!card || cancellableWithdrawalsLoading) return;
+
+  let container = $("cancellableWithdrawals");
+
+  if (!container) {
+    container = document.createElement("div");
+    container.id = "cancellableWithdrawals";
+    container.style.cssText =
+      "margin-top:14px;display:flex;flex-direction:column;gap:10px";
+    card.appendChild(container);
+  }
+
+  cancellableWithdrawalsLoading = true;
+  container.replaceChildren();
+
+  const loading = document.createElement("small");
+  loading.textContent = "Loading pending withdrawals...";
+  loading.style.opacity = "0.7";
+  container.appendChild(loading);
+
+  try {
+    const data = await apiWithTimeout(
+      "/api/withdrawals/cancellable",
+      {},
+      12000
+    );
+
+    const withdrawals = Array.isArray(data.withdrawals)
+      ? data.withdrawals
+      : [];
+
+    container.replaceChildren();
+
+    if (!withdrawals.length) {
+      const note = document.createElement("small");
+      note.textContent = "No pending withdrawals to cancel.";
+      note.style.opacity = "0.65";
+      container.appendChild(note);
+      return;
+    }
+
+    const heading = document.createElement("strong");
+    heading.textContent = "Pending withdrawals";
+    container.appendChild(heading);
+
+    withdrawals.forEach(withdrawal => {
+      const id = String(withdrawal.withdrawal_id || "");
+      if (!id) return;
+
+      const row = document.createElement("div");
+      row.style.cssText = [
+        "display:flex",
+        "align-items:center",
+        "justify-content:space-between",
+        "gap:10px",
+        "padding:10px",
+        "border-radius:10px",
+        "background:rgba(255,255,255,.05)"
+      ].join(";");
+
+      const info = document.createElement("div");
+      info.style.cssText = "min-width:0;overflow-wrap:anywhere";
+
+      const amount = document.createElement("strong");
+      amount.textContent =
+        `${formatNumber(withdrawal.amount)} SNP`;
+
+      const status = document.createElement("small");
+      status.textContent = "Awaiting TON fee payment";
+      status.style.cssText =
+        "display:block;opacity:.7;margin-top:4px";
+
+      const requestId = document.createElement("small");
+      requestId.textContent = `ID: ${id}`;
+      requestId.style.cssText =
+        "display:block;opacity:.5;margin-top:3px";
+
+      info.append(amount, status, requestId);
+
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent = "CANCEL";
+      button.style.cssText = [
+        "flex-shrink:0",
+        "padding:9px 12px",
+        "border:1px solid rgba(255,255,255,.25)",
+        "border-radius:8px",
+        "background:transparent",
+        "color:#fff",
+        "font-weight:700"
+      ].join(";");
+
+      button.addEventListener("click", async () => {
+        const confirmed = window.confirm(
+          "Cancel this withdrawal? This is only possible before the TON fee payment is confirmed."
+        );
+
+        if (!confirmed) return;
+
+        button.disabled = true;
+        button.textContent = "CANCELLING...";
+
+        try {
+          const result = await apiWithTimeout(
+            "/api/withdraw/cancel",
+            {
+              method: "POST",
+              body: JSON.stringify({ withdrawal_id: id })
+            },
+            20000
+          );
+
+          if (result.balance !== undefined) {
+            state.balance = Number(result.balance);
+            renderUser();
+            saveFastCache();
+          } else {
+            await refreshUserAfterWithdrawal();
+          }
+
+          if (currentWithdrawalId === id) {
+            currentWithdrawalId = null;
+          }
+
+          showWithdrawFeedback(
+            "Withdrawal cancelled. Your reserved SNP has been returned."
+          );
+
+          toast("Withdrawal cancelled; SNP refunded");
+
+          await Promise.allSettled([
+            refreshUserAfterWithdrawal(),
+            loadHistory()
+          ]);
+
+          await loadCancellableWithdrawals();
+        } catch (error) {
+          console.error("Cancel pending withdrawal:", error);
+
+          toast(error.message || "Could not cancel withdrawal");
+
+          button.disabled = false;
+          button.textContent = "CANCEL";
+
+          if (error.status === 400) {
+            await loadCancellableWithdrawals();
+          }
+        }
+      });
+
+      row.append(info, button);
+      container.appendChild(row);
+    });
+
+    if (!container.querySelector(".history-row") &&
+        !container.querySelector("strong")) {
+      const note = document.createElement("small");
+      note.textContent = "No cancellable requests found.";
+      note.style.opacity = "0.65";
+      container.appendChild(note);
+    }
+  } catch (error) {
+    console.error("loadCancellableWithdrawals:", error);
+
+    container.replaceChildren();
+
+    const note = document.createElement("small");
+    note.textContent =
+      error.status === 404
+        ? "The cancellable-withdrawals endpoint is missing from the backend."
+        : "Could not load pending withdrawals. Reopen Wallet to retry.";
+    note.style.cssText = "opacity:.7;overflow-wrap:anywhere";
+    container.appendChild(note);
+  } finally {
+    cancellableWithdrawalsLoading = false;
+  }
 }
 
 function showWithdrawFeedback(message, withdrawalId = null) {
@@ -809,7 +993,10 @@ async function handleWithdraw() {
       await refreshUserAfterWithdrawal();
     }
 
-    await loadHistory();
+    await Promise.allSettled([
+      loadHistory(),
+      loadCancellableWithdrawals()
+    ]);
 
     showWithdrawFeedback(
       "Withdrawal request created. The 0.1 TON fee must be sent from your connected wallet. Your SNP remains reserved until the request is cancelled or completed.",
@@ -852,8 +1039,6 @@ async function handleWithdraw() {
       return;
     }
 
-    // TON Connect returning successfully means the wallet accepted the
-    // transaction request; the backend must still confirm it on-chain.
     if (!paymentResult) {
       showWithdrawFeedback(
         "The wallet did not return a payment result. Verify the request before attempting another payment.",
@@ -949,7 +1134,11 @@ async function verifyWithdrawal(withdrawalId) {
     }
 
     await refreshUserAfterWithdrawal();
-    await loadHistory();
+
+    await Promise.allSettled([
+      loadHistory(),
+      loadCancellableWithdrawals()
+    ]);
 
     if (status === "paid") {
       toast("SNP withdrawal confirmed");
@@ -1005,7 +1194,11 @@ async function cancelWithdrawal(withdrawalId) {
     );
 
     await refreshUserAfterWithdrawal();
-    await loadHistory();
+
+    await Promise.allSettled([
+      loadHistory(),
+      loadCancellableWithdrawals()
+    ]);
 
     toast("Withdrawal cancelled; SNP refunded");
 
@@ -1027,7 +1220,7 @@ async function refreshUserAfterWithdrawal() {
       "/api/user",
       {
         method: "POST",
-        body: JSON.stringify({}),
+        body: JSON.stringify({})
       },
       12000
     );
@@ -1282,7 +1475,7 @@ async function spinNow() {
   try {
     const data = await api("/api/spin/claim", {
       method: "POST",
-      body: "{}"
+      body: JSON.stringify({})
     });
 
     if (data.user) applyUser(data.user);
@@ -1746,6 +1939,7 @@ function showPage(page) {
   if (page === "wallet") {
     void loadWallet();
     void loadHistory();
+    void loadCancellableWithdrawals();
   }
 }
 
@@ -1783,7 +1977,6 @@ function setupEvents() {
   $("connectWalletButton")?.addEventListener("click", connectWallet);
   $("disconnectWallet")?.addEventListener("click", disconnectWallet);
 
-  // WITHDRAW BUTTON: this was missing from the previous app.js.
   $("withdrawButton")?.addEventListener("click", handleWithdraw);
 
   $("copyReferral")?.addEventListener("click", copyReferral);
