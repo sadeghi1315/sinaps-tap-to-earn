@@ -3407,3 +3407,24 @@ background: #247dff;
 color: white;
 font-weight: 800;
 }
+/* Withdrawal information */
+.withdraw-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 1px solid rgba(100, 140, 255, 0.2);
+  border-radius: 10px;
+  background: rgba(75, 105, 255, 0.07);
+  color: rgba(220, 228, 255, 0.72);
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.withdraw-info-icon {
+  flex-shrink: 0;
+  color: #8fa8ff;
+  font-size: 13px;
+  font-weight: 800;
+}
