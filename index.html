@@ -11,7 +11,7 @@
 
   <title>SINAPS — Tap to Earn</title>
 
-  <link rel="stylesheet" href="style.css?v=128">
+  <link rel="stylesheet" href="style.css?v=127">
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
@@ -947,18 +947,10 @@
 
     <label for="adPlatform">Platform</label>
     <select id="adPlatform">
-      <option value="telegram_channel">Telegram channel</option>
-      <option value="telegram_group">Telegram group</option>
-      <option value="telegram_bot">Telegram bot</option>
+      <option value="telegram">Telegram</option>
       <option value="website">Website</option>
-      <option value="youtube">YouTube</option>
-      <option value="instagram">Instagram</option>
-      <option value="x">X / Twitter</option>
-      <option value="other">Other</option>
+      <option value="social">Social media</option>
     </select>
-
-    <label for="adTelegramChat">Telegram channel/group username or chat ID (required for channel/group)</label>
-    <input id="adTelegramChat" type="text" placeholder="@your_channel_or_group">
 
     <label for="adUrl">Destination link</label>
     <input id="adUrl" type="url"
@@ -1391,18 +1383,23 @@
     </div>
 
 
-    <div class="snp-live-market-card">
+    <section class="snp-live-market" aria-label="SNP live price chart">
       <div class="snp-live-market-head">
-        <div><strong>SNP / TON</strong><small>Live market price</small></div>
-        <strong id="snpLivePrice">Loading price…</strong>
+        <div>
+          <span class="snp-market-eyebrow">SINAPS MARKET</span>
+          <h3>SNP Live Price</h3>
+        </div>
+        <a id="snpMarketLink" href="https://dexscreener.com/ton" target="_blank" rel="noopener noreferrer">Open market ↗</a>
       </div>
-      <div id="snpLiveChange" class="snp-live-change">Waiting for market data</div>
-      <svg id="snpPriceChart" class="snp-price-chart" viewBox="0 0 320 110" role="img" aria-label="SNP live price line chart">
-        <path d="M0 90 H320 M0 55 H320 M0 20 H320" class="snp-chart-grid"/>
-        <text x="160" y="58" text-anchor="middle" class="snp-chart-placeholder">Loading chart…</text>
-      </svg>
-      <small id="snpPriceUpdated">Price data supplied by DexScreener when a market pair is available.</small>
-    </div>
+      <div class="snp-market-price-row">
+        <strong id="snpLivePrice">Loading price…</strong>
+        <span id="snpPriceChange">Checking live market</span>
+      </div>
+      <div id="snpChartFrameWrap" class="snp-chart-frame-wrap">
+        <div class="snp-chart-loading">Loading live SNP chart…</div>
+      </div>
+      <p id="snpChartStatus" class="snp-chart-status">Looking for a liquid SNP trading pair.</p>
+    </section>
 
     <div class="snp-actions">
 
@@ -1705,7 +1702,7 @@
      APP JS
      ========================================================= -->
 
-<script src="app.js?v=134"></script>
+<script src="app.js?v=133"></script>
 
 
 <!-- =========================================================

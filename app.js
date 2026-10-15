@@ -1253,27 +1253,40 @@ async function loadTasks() {
 
       const completed = Boolean(task.completed);
 
+      const safeName = String(task.name || task.title || "Task");
       row.innerHTML = `
-        <div class="task-icon">${task.icon || "🎯"}</div>
+        <div class="task-icon">${task.icon || (task.type === "ad_task" ? "📢" : "🎯")}</div>
         <div class="task-info">
-          <strong>${task.name}</strong>
+          <strong></strong>
           <small>+${formatNumber(task.reward)} SNP</small>
         </div>
-        <button class="task-button" ${completed ? "disabled" : ""} data-task-id="${task.id}" data-url="${task.url || "#"}" data-type="${task.type || ""}">
-          ${completed ? "DONE" : "VERIFY"}
+        <button class="task-button" ${completed ? "disabled" : ""} data-task-id="${String(task.id).replace(/"/g, "&quot;")}" data-url="${String(task.url || "#").replace(/"/g, "&quot;")}" data-type="${String(task.type || "").replace(/"/g, "&quot;")}" data-opened="false">
+          ${completed ? "DONE" : (task.type === "ad_task" ? "OPEN" : "VERIFY")}
         </button>
       `;
-
+      row.querySelector(".task-info strong").textContent = safeName;
       container.appendChild(row);
     });
 
     container.querySelectorAll(".task-button:not(:disabled)").forEach(button => {
       button.addEventListener("click", () => {
-        claimTask(
-          button.dataset.taskId,
-          button.dataset.url,
-          button.dataset.type
-        );
+        const taskId = button.dataset.taskId || "";
+        const url = button.dataset.url || "#";
+        const type = button.dataset.type || "";
+        if (type === "ad_task" && button.dataset.opened !== "true") {
+          try {
+            const parsed = new URL(url);
+            if (!["https:", "http:"].includes(parsed.protocol)) throw new Error("Invalid URL");
+            if (tg?.openLink) tg.openLink(parsed.href);
+            else window.open(parsed.href, "_blank", "noopener,noreferrer");
+            button.dataset.opened = "true";
+            button.textContent = "VERIFY +100 SNP";
+          } catch (_) {
+            toast("Invalid advertising link");
+          }
+          return;
+        }
+        claimTask(taskId, url, type);
       });
     });
   } catch (e) {
@@ -1477,24 +1490,6 @@ async function spinNow() {
       method: "POST",
       body: JSON.stringify({})
     });
-
-    const wheel = $("spinWheel");
-    if (wheel) {
-      const prize = Number(data.reward) > 0 ? Number(data.reward) : 0;
-      const labels = Array.from(wheel.querySelectorAll(".spin-wheel-label"));
-      let targetIndex = prize === 0 ? 7 : labels.findIndex(label =>
-        Number(label.querySelector("b")?.textContent || 0) === prize
-      );
-      if (targetIndex < 0) targetIndex = 0;
-      const current = Number(wheel.dataset.rotation || 0);
-      const normalized = ((current % 360) + 360) % 360;
-      const targetAngle = (360 - targetIndex * 40) % 360;
-      const extra = 5 * 360 + ((targetAngle - normalized + 360) % 360);
-      wheel.style.transition = "transform 4.2s cubic-bezier(.12,.72,.12,1)";
-      wheel.style.transform = `rotate(${current + extra}deg)`;
-      wheel.dataset.rotation = String(current + extra);
-      await new Promise(resolve => setTimeout(resolve, 4300));
-    }
 
     if (data.user) applyUser(data.user);
 
@@ -1712,25 +1707,25 @@ function createAdCard(ad, isMine = false) {
       : "Awaiting payment verification";
     card.appendChild(payment);
 
-    if (ad.status === "pending_payment" && Number(ad.payment_verified) !== 1) {
+    if (String(ad.status) === "pending_payment" && Number(ad.payment_verified) !== 1) {
       const actions = document.createElement("div");
       actions.className = "ad-card-actions";
+      actions.style.cssText = "display:flex;gap:8px;flex-wrap:wrap;margin-top:12px";
+
       const pay = document.createElement("button");
       pay.type = "button";
       pay.className = "ads-primary-button";
       pay.textContent = "PAY WITH TON";
-      pay.addEventListener("click", () => void payAd(ad));
-      const verify = document.createElement("button");
-      verify.type = "button";
-      verify.className = "ads-primary-button";
-      verify.textContent = "VERIFY PAYMENT";
-      verify.addEventListener("click", () => void verifyAdPayment(ad.id));
+      pay.addEventListener("click", () => { void payForAd(ad.id); });
+      actions.appendChild(pay);
+
       const cancel = document.createElement("button");
       cancel.type = "button";
-      cancel.className = "ads-cancel-button";
+      cancel.className = "ads-primary-button";
       cancel.textContent = "CANCEL AD";
-      cancel.addEventListener("click", () => void cancelAd(ad.id));
-      actions.append(pay, verify, cancel);
+      cancel.style.cssText = "background:transparent;border:1px solid rgba(255,255,255,.25);color:#fff";
+      cancel.addEventListener("click", () => { void cancelAd(ad.id, cancel); });
+      actions.appendChild(cancel);
       card.appendChild(actions);
     }
   } else {
@@ -1758,19 +1753,6 @@ function createAdCard(ad, isMine = false) {
         } else {
           window.open(parsed.href, "_blank", "noopener,noreferrer");
         }
-        setTimeout(async () => {
-          if (!confirm("After completing the task, tap OK to verify it and record your progress.")) return;
-          try {
-            const result = await apiWithTimeout("/api/ads/complete", {
-              method: "POST",
-              body: JSON.stringify({ ad_id: Number(ad.id) })
-            }, 15000);
-            toast(result.message || "Task completed.");
-            await Promise.allSettled([loadAvailableAds(), loadTasks()]);
-          } catch (error) {
-            toast(error.message || "Task could not be verified. For Telegram channel/group tasks, join first.");
-          }
-        }, 500);
       } catch (_) {
         toast("Invalid advertising link");
       }
@@ -1825,7 +1807,9 @@ async function loadMyAds() {
 
   try {
     const data = await apiWithTimeout("/api/ads/my", {}, 12000);
-    const ads = Array.isArray(data.ads) ? data.ads : [];
+    const ads = (Array.isArray(data.ads) ? data.ads : []).filter(ad =>
+      !["cancelled", "canceled"].includes(String(ad.status || "").toLowerCase())
+    );
 
     container.replaceChildren();
 
@@ -1855,7 +1839,7 @@ async function createAd() {
 
   const title = $("adTitle")?.value.trim() || "";
   const description = $("adDescription")?.value.trim() || "";
-  const platformInput = $("adPlatform")?.value || "telegram_channel";
+  const platformInput = $("adPlatform")?.value || "telegram";
   const targetUrl = $("adUrl")?.value.trim() || "";
   const clicks = Number($("adClicks")?.value);
 
@@ -1866,13 +1850,6 @@ async function createAd() {
 
   if (description.length > 1000) {
     toast("Description is too long");
-    return;
-  }
-
-  if (["telegram_channel", "telegram_group"].includes(platformInput) &&
-      !$("adTelegramChat")?.value.trim()) {
-    toast("Enter the Telegram channel/group username or chat ID");
-    $("adTelegramChat")?.focus();
     return;
   }
 
@@ -1903,7 +1880,8 @@ async function createAd() {
     return;
   }
 
-  const platform = platformInput;
+  const platform =
+    platformInput === "social" ? "other" : platformInput;
 
   if (button) {
     button.disabled = true;
@@ -1920,8 +1898,7 @@ async function createAd() {
           description,
           platform,
           target_url: parsedUrl.href,
-          target_clicks: clicks,
-          target_chat: $("adTelegramChat")?.value.trim() || ""
+          target_clicks: clicks
         })
       },
       15000
@@ -1931,6 +1908,7 @@ async function createAd() {
       throw new Error(data.error || "Could not create ad");
     }
 
+    toast("Ad created — awaiting payment verification");
     closeCreateAd();
 
     if ($("adTitle")) $("adTitle").value = "";
@@ -1941,15 +1919,6 @@ async function createAd() {
     updateAdCost();
     await loadMyAds();
     switchAdsTab("mine");
-    if (data.ad?.id) {
-      await payAd({
-        id: Number(data.ad.id),
-        price_gram: Number(data.ad.price_gram || clicks * AD_PRICE_PER_CLICK),
-        status: "pending_payment"
-      });
-    } else {
-      toast("Ad created. Open My Ads to continue payment.");
-    }
   } catch (error) {
     console.error("createAd:", error);
     toast(error.message || "Could not create advertisement");
@@ -1961,124 +1930,97 @@ async function createAd() {
   }
 }
 
-async function payAd(ad) {
-  if (!ad?.id) return;
+async function payForAd(adId) {
   if (!tonUI || typeof tonUI.sendTransaction !== "function") {
     toast("TON Connect is not ready. Reopen the app and connect your wallet.");
     return;
   }
   if (!getActiveWalletAddress()) {
-    toast("Connect your TON wallet before paying.");
-    showPage("wallet");
-    return;
-  }
-  const destination = "UQDMsJu14wu-EHSjaRpufQdPb73pKVRkQvHNezgA2zF69sJX";
-  const amountNano = BigInt(Math.round(Number(ad.price_gram || 0) * 1e9));
-  if (amountNano <= 0n) {
-    toast("Invalid ad payment amount.");
+    toast("Connect your TON wallet first");
     return;
   }
   try {
-    toast("Confirm the advertisement payment in your TON wallet.");
+    const details = await apiWithTimeout("/api/ads/payment-details", {
+      method: "POST",
+      body: JSON.stringify({ ad_id: Number(adId) })
+    }, 12000);
+    if (!details.ok || !details.treasury_wallet || !details.amount_nano) {
+      throw new Error(details.error || "Payment details unavailable");
+    }
     await tonUI.sendTransaction({
       validUntil: Math.floor(Date.now() / 1000) + 300,
-      messages: [{
-        address: destination,
-        amount: amountNano.toString(),
-        payload: undefined
-      }]
+      messages: [{ address: details.treasury_wallet, amount: String(details.amount_nano) }]
     });
-    toast("Payment sent. Checking the TON blockchain...");
-    await apiWithTimeout("/api/ads/verify-payment", {
+    toast("TON payment sent. Verifying on blockchain...");
+    const verified = await apiWithTimeout("/api/ads/verify-payment", {
       method: "POST",
-      body: JSON.stringify({ ad_id: Number(ad.id) })
+      body: JSON.stringify({ ad_id: Number(adId) })
     }, 20000);
-    toast("Payment verified. Your ad is now active.");
-    await Promise.allSettled([loadMyAds(), loadAvailableAds()]);
+    if (!verified.ok) throw new Error(verified.error || "Payment is not verified yet");
+    toast("Payment verified. Your ad task is now live.");
+    await Promise.allSettled([loadMyAds(), loadAvailableAds(), loadTasks()]);
   } catch (error) {
-    console.error("payAd:", error);
-    toast(error.message || "Payment may still be confirming. Open My Ads and tap Verify Payment; do not pay twice.");
+    console.error("payForAd:", error);
+    toast(error.message || "Payment was not completed. You can retry from My Ads.");
     await loadMyAds();
   }
 }
 
-async function verifyAdPayment(adId) {
-  try {
-    const result = await apiWithTimeout("/api/ads/verify-payment", {
-      method: "POST",
-      body: JSON.stringify({ ad_id: Number(adId) })
-    }, 20000);
-    toast(result.message || "Payment verified.");
-    await Promise.allSettled([loadMyAds(), loadAvailableAds()]);
-  } catch (error) {
-    toast(error.message || "Payment not found yet. Wait for TON confirmation and tap Verify Payment.");
-  }
-}
-
-async function cancelAd(adId) {
-  if (!adId || !confirm("Cancel this unpaid advertisement?")) return;
+async function cancelAd(adId, button) {
+  if (!confirm("Cancel this unpaid advertisement? It will be removed from My Ads.")) return;
+  if (button) { button.disabled = true; button.textContent = "CANCELLING..."; }
   try {
     await apiWithTimeout("/api/ads/cancel", {
       method: "POST",
       body: JSON.stringify({ ad_id: Number(adId) })
     }, 12000);
-    toast("Advertisement cancelled.");
+    toast("Advertisement cancelled");
     await loadMyAds();
   } catch (error) {
-    toast(error.message || "Could not cancel this advertisement.");
+    toast(error.message || "Could not cancel advertisement");
+    if (button) { button.disabled = false; button.textContent = "CANCEL AD"; }
   }
 }
 
-const SNP_PRICE_CONTRACT = "EQAmLlerUViNn9PwFVRlR_AjDvhd5pkmeLNOu5bNDpvXV0ls";
-async function loadSnpLivePrice() {
-  const priceNode = $("snpLivePrice");
-  const changeNode = $("snpLiveChange");
-  const chart = $("snpPriceChart");
-  const updated = $("snpPriceUpdated");
-  if (!priceNode || !chart) return;
+async function loadSnpMarketChart() {
+  const priceEl = $("snpLivePrice");
+  const changeEl = $("snpPriceChange");
+  const frameWrap = $("snpChartFrameWrap");
+  const statusEl = $("snpChartStatus");
+  const marketLink = $("snpMarketLink");
+  if (!frameWrap || frameWrap.dataset.loaded === "true") return;
+  frameWrap.dataset.loaded = "true";
   try {
-    const response = await fetch(`https://api.dexscreener.com/token-pairs/v1/ton/${SNP_PRICE_CONTRACT}`, { cache: "no-store" });
-    if (!response.ok) throw new Error("Market data unavailable");
-    const pairs = await response.json();
-    const pair = Array.isArray(pairs)
-      ? pairs.filter(p => p?.priceUsd && Number(p.liquidity?.usd || 0) > 0)
-          .sort((a,b) => Number(b.liquidity?.usd || 0) - Number(a.liquidity?.usd || 0))[0]
-      : null;
-    if (!pair) throw new Error("No liquid SNP market pair found");
-    const price = Number(pair.priceUsd);
-    if (!Number.isFinite(price) || price <= 0) throw new Error("Invalid market price");
-    priceNode.textContent = `$${price < 0.01 ? price.toPrecision(5) : price.toLocaleString("en-US", { maximumFractionDigits: 6 })}`;
-    const change = Number(pair.priceChange?.h24 || 0);
-    changeNode.textContent = `${change >= 0 ? "+" : ""}${change.toFixed(2)}% (24h) · ${pair.dexId || "DEX"}`;
-    changeNode.classList.toggle("negative", change < 0);
-    changeNode.classList.toggle("positive", change >= 0);
-    const key = "sinaps_snp_price_samples";
-    let samples = [];
-    try { samples = JSON.parse(localStorage.getItem(key) || "[]"); } catch (_) {}
-    samples = Array.isArray(samples) ? samples.filter(v => Number.isFinite(Number(v.price))) : [];
-    samples.push({ time: Date.now(), price });
-    samples = samples.slice(-36);
-    try { localStorage.setItem(key, JSON.stringify(samples)); } catch (_) {}
-    const vals = samples.map(v => Number(v.price));
-    const min = Math.min(...vals), max = Math.max(...vals);
-    const span = max - min || Math.max(max * 0.01, 1e-9);
-    const points = vals.map((v,i) => `${samples.length < 2 ? 160 : 8 + i * (304 / (vals.length - 1))},${98 - ((v-min)/span)*82}`).join(" ");
-    chart.innerHTML = `<path d="M0 90 H320 M0 55 H320 M0 20 H320" class="snp-chart-grid"></path><polyline points="${points}" class="snp-chart-line"></polyline><circle cx="${samples.length < 2 ? 160 : 312}" cy="${98 - ((price-min)/span)*82}" r="3" class="snp-chart-dot"></circle>`;
-    if (updated) updated.textContent = `Updated ${new Date().toLocaleTimeString()} · ${samples.length} recent price samples · DexScreener`;
-  } catch (error) {
-    console.warn("SNP live price:", error);
-    if (!priceNode.textContent || priceNode.textContent === "Loading price…") priceNode.textContent = "Unavailable";
-    if (changeNode) changeNode.textContent = "No live market pair/data is available right now.";
-    if (updated) updated.textContent = "The chart builds from live samples when this page is open.";
-    try {
-      const samples = JSON.parse(localStorage.getItem("sinaps_snp_price_samples") || "[]");
-      if (samples.length) {
-        const vals = samples.map(v => Number(v.price));
-        const min = Math.min(...vals), max = Math.max(...vals), span = max-min || 1;
-        const points = vals.map((v,i) => `${samples.length < 2 ? 160 : 8+i*(304/(vals.length-1))},${98-((v-min)/span)*82}`).join(" ");
-        chart.innerHTML = `<path d="M0 90 H320 M0 55 H320 M0 20 H320" class="snp-chart-grid"></path><polyline points="${points}" class="snp-chart-line"></polyline>`;
+    const data = await apiWithTimeout("/api/snp/market", {}, 12000);
+    if (data.available && data.pair_address) {
+      if (priceEl) priceEl.textContent = data.price_usd ? `$${Number(data.price_usd).toPrecision(6)}` : `${data.price_native || "—"} TON`;
+      if (changeEl) {
+        const change = Number(data.change_24h || 0);
+        changeEl.textContent = `${change >= 0 ? "+" : ""}${change.toFixed(2)}% (24h)`;
+        changeEl.style.color = change >= 0 ? "#48e6a5" : "#ff6b7a";
       }
-    } catch (_) {}
+      const pairUrl = `https://dexscreener.com/ton/${encodeURIComponent(data.pair_address)}?embed=1&theme=dark&trades=0&info=0`;
+      const iframe = document.createElement("iframe");
+      iframe.src = pairUrl;
+      iframe.title = "SINAPS SNP live price chart";
+      iframe.loading = "lazy";
+      iframe.referrerPolicy = "no-referrer";
+      iframe.allow = "clipboard-read; clipboard-write";
+      iframe.style.cssText = "display:block;width:100%;height:360px;border:0;border-radius:14px;background:#070b18";
+      frameWrap.replaceChildren(iframe);
+      if (marketLink) marketLink.href = data.pair_url || `https://dexscreener.com/ton/${encodeURIComponent(data.pair_address)}`;
+      if (statusEl) statusEl.textContent = "Live market data · DexScreener";
+    } else {
+      if (priceEl) priceEl.textContent = "No live price";
+      if (changeEl) changeEl.textContent = "No active liquidity pair found";
+      if (statusEl) statusEl.textContent = "SNP needs a supported DEX trading pair with liquidity before a live chart can display.";
+      frameWrap.innerHTML = '<div class="snp-chart-empty"><strong>No live chart data yet</strong><span>DexScreener has not returned an active TON trading pair for the configured SNP contract.</span></div>';
+      if (marketLink) marketLink.href = "https://dexscreener.com/ton";
+    }
+  } catch (error) {
+    console.error("loadSnpMarketChart:", error);
+    frameWrap.dataset.loaded = "false";
+    if (statusEl) statusEl.textContent = "Live price service unavailable. Try again shortly.";
   }
 }
 
@@ -2116,13 +2058,13 @@ function showPage(page) {
     void loadBoosts();
   }
 
+  if (page === "game") {
+    void loadSnpMarketChart();
+  }
+
   if (page === "tasks") {
     void loadTasks();
     void loadAds();
-  }
-
-  if (page === "game") {
-    void loadSnpLivePrice();
   }
 
   if (page === "friends") {
@@ -2183,7 +2125,8 @@ function setupEvents() {
   });
 
   $("chartButton")?.addEventListener("click", () => {
-    window.open("https://geckoterminal.com", "_blank", "noopener,noreferrer");
+    const marketUrl = $("snpMarketLink")?.href;
+    window.open(marketUrl || "https://dexscreener.com/ton", "_blank", "noopener,noreferrer");
   });
 
   $("buySnpButton")?.addEventListener("click", () => {
@@ -2191,10 +2134,6 @@ function setupEvents() {
   });
 
   setupAdsEvents();
-  void loadSnpLivePrice();
-  setInterval(() => {
-    if (state.currentPage === "game") void loadSnpLivePrice();
-  }, 60000);
 }
 
 /* =========================================================
