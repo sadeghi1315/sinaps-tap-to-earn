@@ -1740,40 +1740,10 @@ function createAdCard(ad, isMine = false) {
       card.appendChild(actions);
     }
   } else {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "ads-primary-button";
-    button.textContent = "CLAIM";
-
-    button.addEventListener("click", () => {
-      const rawUrl = String(ad.target_url || "");
-
-      try {
-        const parsed = new URL(rawUrl);
-
-        if (
-          !["https:", "http:"].includes(parsed.protocol) ||
-          parsed.username ||
-          parsed.password
-        ) {
-          throw new Error("Invalid URL");
-        }
-
-        if (tg?.openLink) {
-          tg.openLink(parsed.href);
-        } else {
-          window.open(parsed.href, "_blank", "noopener,noreferrer");
-        }
-        void api("/api/ads/click", {
-          method: "POST",
-          body: JSON.stringify({ task_id: `ad:${Number(ad.id)}` })
-        }).then(() => loadAvailableAds()).catch(error => console.warn("Ad click tracking:", error));
-      } catch (_) {
-        toast("Invalid advertising link");
-      }
-    });
-
-    card.appendChild(button);
+    const note = document.createElement("p");
+    note.className = "ad-status";
+    note.textContent = "Ad information only — complete this task from the main Tasks list.";
+    card.appendChild(note);
   }
 
   return card;
@@ -1849,6 +1819,63 @@ async function loadAds() {
   ]);
 }
 
+let adAdminVerifiedFor = "";
+
+function isTelegramAdPlatform() {
+  const value = $("adPlatform")?.value || "channel";
+  return value === "channel" || value === "group" || value === "telegram";
+}
+
+function setAdAdminStatus(message, state = "") {
+  const el = $("adAdminCheckStatus");
+  if (!el) return;
+  el.textContent = message;
+  el.classList.toggle("is-valid", state === "valid");
+  el.classList.toggle("is-invalid", state === "invalid");
+}
+
+async function checkAdBotAdmin(showToast = true) {
+  const platform = $("adPlatform")?.value || "channel";
+  const url = $("adUrl")?.value.trim() || "";
+  if (!isTelegramAdPlatform()) {
+    adAdminVerifiedFor = "";
+    setAdAdminStatus("Not required for websites or social media.", "valid");
+    return true;
+  }
+  if (!url) {
+    adAdminVerifiedFor = "";
+    setAdAdminStatus("Enter the public Telegram channel/group link first.", "invalid");
+    if (showToast) toast("Enter the Telegram channel/group link first");
+    return false;
+  }
+  const key = `${platform}|${url}`;
+  setAdAdminStatus("Checking whether SINAPS bot is an administrator…");
+  const checkButton = $("checkAdAdminButton");
+  if (checkButton) { checkButton.disabled = true; checkButton.textContent = "CHECKING…"; }
+  try {
+    const result = await apiWithTimeout("/api/ads/check-telegram-admin", {
+      method: "POST",
+      body: JSON.stringify({ platform, target_url: url })
+    }, 15000);
+    if (!result.ok || !result.is_admin) {
+      adAdminVerifiedFor = "";
+      setAdAdminStatus(result.error || "SINAPS bot is not an administrator yet. Add it as admin and check again.", "invalid");
+      if (showToast) toast(result.error || "Add SINAPS bot as administrator first");
+      return false;
+    }
+    adAdminVerifiedFor = key;
+    setAdAdminStatus("✓ SINAPS bot is an administrator. You can continue to payment.", "valid");
+    return true;
+  } catch (error) {
+    adAdminVerifiedFor = "";
+    setAdAdminStatus(error.message || "Could not verify bot admin status. Check the public link and try again.", "invalid");
+    if (showToast) toast(error.message || "Could not verify bot admin status");
+    return false;
+  } finally {
+    if (checkButton) { checkButton.disabled = false; checkButton.textContent = "CHECK BOT ADMIN STATUS"; }
+  }
+}
+
 async function createAd() {
   const button = $("createAdButton");
 
@@ -1897,6 +1924,14 @@ async function createAd() {
 
   const platform =
     platformInput === "social" ? "other" : platformInput;
+
+  if (isTelegramAdPlatform()) {
+    const key = `${platformInput}|${targetUrl}`;
+    if (adAdminVerifiedFor !== key) {
+      const adminOk = await checkAdBotAdmin(true);
+      if (!adminOk) return;
+    }
+  }
 
   if (button) {
     button.disabled = true;
@@ -2043,6 +2078,16 @@ function setupAdsEvents() {
   $("openCreateAdButton")?.addEventListener("click", openCreateAd);
   $("cancelCreateAdButton")?.addEventListener("click", closeCreateAd);
   $("createAdButton")?.addEventListener("click", createAd);
+  $("checkAdAdminButton")?.addEventListener("click", () => { void checkAdBotAdmin(true); });
+  $("adPlatform")?.addEventListener("change", () => {
+    adAdminVerifiedFor = "";
+    if (isTelegramAdPlatform()) setAdAdminStatus("Add SINAPS bot as an administrator, then tap CHECK BOT ADMIN STATUS.");
+    else setAdAdminStatus("Not required for websites or social media.", "valid");
+  });
+  $("adUrl")?.addEventListener("input", () => {
+    adAdminVerifiedFor = "";
+    if (isTelegramAdPlatform()) setAdAdminStatus("Link changed. Verify bot admin status again.");
+  });
   $("adClicks")?.addEventListener("input", updateAdCost);
 
   document.querySelectorAll("[data-ads-tab]").forEach(button => {

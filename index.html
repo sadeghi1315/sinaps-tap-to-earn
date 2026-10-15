@@ -947,7 +947,8 @@
 
     <label for="adPlatform">Platform</label>
     <select id="adPlatform">
-      <option value="telegram">Telegram</option>
+      <option value="channel">Telegram Channel</option>
+      <option value="group">Telegram Group</option>
       <option value="website">Website</option>
       <option value="social">Social media</option>
     </select>
@@ -955,6 +956,10 @@
     <label for="adUrl">Destination link</label>
     <input id="adUrl" type="url"
       placeholder="https://t.me/your_channel">
+    <div id="adAdminCheckStatus" class="ad-admin-check" role="status" aria-live="polite">
+      ⚠️ Add SINAPS bot as an administrator, then verify it here.
+    </div>
+    <button id="checkAdAdminButton" type="button" class="ads-cancel-button">CHECK BOT ADMIN STATUS</button>
 
     <label for="adClicks">Target clicks</label>
     <input id="adClicks" type="number" min="100" max="100000"

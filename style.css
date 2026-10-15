@@ -3432,3 +3432,25 @@ font-weight: 800;
 
 /* SNP live market chart */
 .snp-live-market{margin:18px 0 22px;padding:16px;border:1px solid rgba(116,157,255,.22);border-radius:20px;background:linear-gradient(145deg,rgba(12,20,43,.96),rgba(4,7,19,.98));box-shadow:0 14px 40px rgba(0,0,0,.2);overflow:hidden}.snp-live-market-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.snp-market-eyebrow{font-size:10px;letter-spacing:2px;color:#76cfff;font-weight:800}.snp-live-market-head h3{margin:4px 0 0;font-size:19px;color:#f5f8ff}.snp-live-market-head a{font-size:11px;color:#8edaff;text-decoration:none;white-space:nowrap}.snp-market-price-row{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin:14px 0}.snp-market-price-row strong{font-size:25px;letter-spacing:-.5px;color:#fff}.snp-market-price-row span{font-size:12px;color:#9daec9}.snp-chart-frame-wrap{min-height:210px;border-radius:14px;overflow:hidden;background:#070b18}.snp-chart-loading,.snp-chart-empty{min-height:210px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;padding:24px;text-align:center;color:#9eacc8;font-size:12px}.snp-chart-empty strong{color:#fff;font-size:15px}.snp-chart-empty span{max-width:320px;line-height:1.6}.snp-chart-status{margin:10px 2px 0;color:#8292b0;font-size:10px;line-height:1.5}
+
+
+.ad-admin-check {
+  margin-top: 9px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255,190,70,.35);
+  border-radius: 10px;
+  color: #ffd27a;
+  background: rgba(255,190,70,.07);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.ad-admin-check.is-valid {
+  color: #62efad;
+  border-color: rgba(65,230,145,.45);
+  background: rgba(65,230,145,.08);
+}
+.ad-admin-check.is-invalid {
+  color: #ff9c9c;
+  border-color: rgba(255,100,100,.4);
+  background: rgba(255,100,100,.07);
+}
