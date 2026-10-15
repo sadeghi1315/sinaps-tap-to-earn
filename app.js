@@ -1478,6 +1478,24 @@ async function spinNow() {
       body: JSON.stringify({})
     });
 
+    const wheel = $("spinWheel");
+    if (wheel) {
+      const prize = Number(data.reward) > 0 ? Number(data.reward) : 0;
+      const labels = Array.from(wheel.querySelectorAll(".spin-wheel-label"));
+      let targetIndex = prize === 0 ? 7 : labels.findIndex(label =>
+        Number(label.querySelector("b")?.textContent || 0) === prize
+      );
+      if (targetIndex < 0) targetIndex = 0;
+      const current = Number(wheel.dataset.rotation || 0);
+      const normalized = ((current % 360) + 360) % 360;
+      const targetAngle = (360 - targetIndex * 40) % 360;
+      const extra = 5 * 360 + ((targetAngle - normalized + 360) % 360);
+      wheel.style.transition = "transform 4.2s cubic-bezier(.12,.72,.12,1)";
+      wheel.style.transform = `rotate(${current + extra}deg)`;
+      wheel.dataset.rotation = String(current + extra);
+      await new Promise(resolve => setTimeout(resolve, 4300));
+    }
+
     if (data.user) applyUser(data.user);
 
     if ($("spinStatus")) {
@@ -1693,6 +1711,28 @@ function createAdCard(ad, isMine = false) {
       ? "Payment verified"
       : "Awaiting payment verification";
     card.appendChild(payment);
+
+    if (ad.status === "pending_payment" && Number(ad.payment_verified) !== 1) {
+      const actions = document.createElement("div");
+      actions.className = "ad-card-actions";
+      const pay = document.createElement("button");
+      pay.type = "button";
+      pay.className = "ads-primary-button";
+      pay.textContent = "PAY WITH TON";
+      pay.addEventListener("click", () => void payAd(ad));
+      const verify = document.createElement("button");
+      verify.type = "button";
+      verify.className = "ads-primary-button";
+      verify.textContent = "VERIFY PAYMENT";
+      verify.addEventListener("click", () => void verifyAdPayment(ad.id));
+      const cancel = document.createElement("button");
+      cancel.type = "button";
+      cancel.className = "ads-cancel-button";
+      cancel.textContent = "CANCEL AD";
+      cancel.addEventListener("click", () => void cancelAd(ad.id));
+      actions.append(pay, verify, cancel);
+      card.appendChild(actions);
+    }
   } else {
     const button = document.createElement("button");
     button.type = "button";
@@ -1718,6 +1758,19 @@ function createAdCard(ad, isMine = false) {
         } else {
           window.open(parsed.href, "_blank", "noopener,noreferrer");
         }
+        setTimeout(async () => {
+          if (!confirm("After completing the task, tap OK to verify it and record your progress.")) return;
+          try {
+            const result = await apiWithTimeout("/api/ads/complete", {
+              method: "POST",
+              body: JSON.stringify({ ad_id: Number(ad.id) })
+            }, 15000);
+            toast(result.message || "Task completed.");
+            await Promise.allSettled([loadAvailableAds(), loadTasks()]);
+          } catch (error) {
+            toast(error.message || "Task could not be verified. For Telegram channel/group tasks, join first.");
+          }
+        }, 500);
       } catch (_) {
         toast("Invalid advertising link");
       }
@@ -1802,7 +1855,7 @@ async function createAd() {
 
   const title = $("adTitle")?.value.trim() || "";
   const description = $("adDescription")?.value.trim() || "";
-  const platformInput = $("adPlatform")?.value || "telegram";
+  const platformInput = $("adPlatform")?.value || "telegram_channel";
   const targetUrl = $("adUrl")?.value.trim() || "";
   const clicks = Number($("adClicks")?.value);
 
@@ -1813,6 +1866,13 @@ async function createAd() {
 
   if (description.length > 1000) {
     toast("Description is too long");
+    return;
+  }
+
+  if (["telegram_channel", "telegram_group"].includes(platformInput) &&
+      !$("adTelegramChat")?.value.trim()) {
+    toast("Enter the Telegram channel/group username or chat ID");
+    $("adTelegramChat")?.focus();
     return;
   }
 
@@ -1843,8 +1903,7 @@ async function createAd() {
     return;
   }
 
-  const platform =
-    platformInput === "social" ? "other" : platformInput;
+  const platform = platformInput;
 
   if (button) {
     button.disabled = true;
@@ -1861,7 +1920,8 @@ async function createAd() {
           description,
           platform,
           target_url: parsedUrl.href,
-          target_clicks: clicks
+          target_clicks: clicks,
+          target_chat: $("adTelegramChat")?.value.trim() || ""
         })
       },
       15000
@@ -1871,7 +1931,6 @@ async function createAd() {
       throw new Error(data.error || "Could not create ad");
     }
 
-    toast("Ad created — awaiting payment verification");
     closeCreateAd();
 
     if ($("adTitle")) $("adTitle").value = "";
@@ -1882,6 +1941,15 @@ async function createAd() {
     updateAdCost();
     await loadMyAds();
     switchAdsTab("mine");
+    if (data.ad?.id) {
+      await payAd({
+        id: Number(data.ad.id),
+        price_gram: Number(data.ad.price_gram || clicks * AD_PRICE_PER_CLICK),
+        status: "pending_payment"
+      });
+    } else {
+      toast("Ad created. Open My Ads to continue payment.");
+    }
   } catch (error) {
     console.error("createAd:", error);
     toast(error.message || "Could not create advertisement");
@@ -1890,6 +1958,127 @@ async function createAd() {
       button.disabled = false;
       button.textContent = "CONTINUE";
     }
+  }
+}
+
+async function payAd(ad) {
+  if (!ad?.id) return;
+  if (!tonUI || typeof tonUI.sendTransaction !== "function") {
+    toast("TON Connect is not ready. Reopen the app and connect your wallet.");
+    return;
+  }
+  if (!getActiveWalletAddress()) {
+    toast("Connect your TON wallet before paying.");
+    showPage("wallet");
+    return;
+  }
+  const destination = "UQDMsJu14wu-EHSjaRpufQdPb73pKVRkQvHNezgA2zF69sJX";
+  const amountNano = BigInt(Math.round(Number(ad.price_gram || 0) * 1e9));
+  if (amountNano <= 0n) {
+    toast("Invalid ad payment amount.");
+    return;
+  }
+  try {
+    toast("Confirm the advertisement payment in your TON wallet.");
+    await tonUI.sendTransaction({
+      validUntil: Math.floor(Date.now() / 1000) + 300,
+      messages: [{
+        address: destination,
+        amount: amountNano.toString(),
+        payload: undefined
+      }]
+    });
+    toast("Payment sent. Checking the TON blockchain...");
+    await apiWithTimeout("/api/ads/verify-payment", {
+      method: "POST",
+      body: JSON.stringify({ ad_id: Number(ad.id) })
+    }, 20000);
+    toast("Payment verified. Your ad is now active.");
+    await Promise.allSettled([loadMyAds(), loadAvailableAds()]);
+  } catch (error) {
+    console.error("payAd:", error);
+    toast(error.message || "Payment may still be confirming. Open My Ads and tap Verify Payment; do not pay twice.");
+    await loadMyAds();
+  }
+}
+
+async function verifyAdPayment(adId) {
+  try {
+    const result = await apiWithTimeout("/api/ads/verify-payment", {
+      method: "POST",
+      body: JSON.stringify({ ad_id: Number(adId) })
+    }, 20000);
+    toast(result.message || "Payment verified.");
+    await Promise.allSettled([loadMyAds(), loadAvailableAds()]);
+  } catch (error) {
+    toast(error.message || "Payment not found yet. Wait for TON confirmation and tap Verify Payment.");
+  }
+}
+
+async function cancelAd(adId) {
+  if (!adId || !confirm("Cancel this unpaid advertisement?")) return;
+  try {
+    await apiWithTimeout("/api/ads/cancel", {
+      method: "POST",
+      body: JSON.stringify({ ad_id: Number(adId) })
+    }, 12000);
+    toast("Advertisement cancelled.");
+    await loadMyAds();
+  } catch (error) {
+    toast(error.message || "Could not cancel this advertisement.");
+  }
+}
+
+const SNP_PRICE_CONTRACT = "EQAmLlerUViNn9PwFVRlR_AjDvhd5pkmeLNOu5bNDpvXV0ls";
+async function loadSnpLivePrice() {
+  const priceNode = $("snpLivePrice");
+  const changeNode = $("snpLiveChange");
+  const chart = $("snpPriceChart");
+  const updated = $("snpPriceUpdated");
+  if (!priceNode || !chart) return;
+  try {
+    const response = await fetch(`https://api.dexscreener.com/token-pairs/v1/ton/${SNP_PRICE_CONTRACT}`, { cache: "no-store" });
+    if (!response.ok) throw new Error("Market data unavailable");
+    const pairs = await response.json();
+    const pair = Array.isArray(pairs)
+      ? pairs.filter(p => p?.priceUsd && Number(p.liquidity?.usd || 0) > 0)
+          .sort((a,b) => Number(b.liquidity?.usd || 0) - Number(a.liquidity?.usd || 0))[0]
+      : null;
+    if (!pair) throw new Error("No liquid SNP market pair found");
+    const price = Number(pair.priceUsd);
+    if (!Number.isFinite(price) || price <= 0) throw new Error("Invalid market price");
+    priceNode.textContent = `$${price < 0.01 ? price.toPrecision(5) : price.toLocaleString("en-US", { maximumFractionDigits: 6 })}`;
+    const change = Number(pair.priceChange?.h24 || 0);
+    changeNode.textContent = `${change >= 0 ? "+" : ""}${change.toFixed(2)}% (24h) · ${pair.dexId || "DEX"}`;
+    changeNode.classList.toggle("negative", change < 0);
+    changeNode.classList.toggle("positive", change >= 0);
+    const key = "sinaps_snp_price_samples";
+    let samples = [];
+    try { samples = JSON.parse(localStorage.getItem(key) || "[]"); } catch (_) {}
+    samples = Array.isArray(samples) ? samples.filter(v => Number.isFinite(Number(v.price))) : [];
+    samples.push({ time: Date.now(), price });
+    samples = samples.slice(-36);
+    try { localStorage.setItem(key, JSON.stringify(samples)); } catch (_) {}
+    const vals = samples.map(v => Number(v.price));
+    const min = Math.min(...vals), max = Math.max(...vals);
+    const span = max - min || Math.max(max * 0.01, 1e-9);
+    const points = vals.map((v,i) => `${samples.length < 2 ? 160 : 8 + i * (304 / (vals.length - 1))},${98 - ((v-min)/span)*82}`).join(" ");
+    chart.innerHTML = `<path d="M0 90 H320 M0 55 H320 M0 20 H320" class="snp-chart-grid"></path><polyline points="${points}" class="snp-chart-line"></polyline><circle cx="${samples.length < 2 ? 160 : 312}" cy="${98 - ((price-min)/span)*82}" r="3" class="snp-chart-dot"></circle>`;
+    if (updated) updated.textContent = `Updated ${new Date().toLocaleTimeString()} · ${samples.length} recent price samples · DexScreener`;
+  } catch (error) {
+    console.warn("SNP live price:", error);
+    if (!priceNode.textContent || priceNode.textContent === "Loading price…") priceNode.textContent = "Unavailable";
+    if (changeNode) changeNode.textContent = "No live market pair/data is available right now.";
+    if (updated) updated.textContent = "The chart builds from live samples when this page is open.";
+    try {
+      const samples = JSON.parse(localStorage.getItem("sinaps_snp_price_samples") || "[]");
+      if (samples.length) {
+        const vals = samples.map(v => Number(v.price));
+        const min = Math.min(...vals), max = Math.max(...vals), span = max-min || 1;
+        const points = vals.map((v,i) => `${samples.length < 2 ? 160 : 8+i*(304/(vals.length-1))},${98-((v-min)/span)*82}`).join(" ");
+        chart.innerHTML = `<path d="M0 90 H320 M0 55 H320 M0 20 H320" class="snp-chart-grid"></path><polyline points="${points}" class="snp-chart-line"></polyline>`;
+      }
+    } catch (_) {}
   }
 }
 
@@ -1930,6 +2119,10 @@ function showPage(page) {
   if (page === "tasks") {
     void loadTasks();
     void loadAds();
+  }
+
+  if (page === "game") {
+    void loadSnpLivePrice();
   }
 
   if (page === "friends") {
@@ -1998,6 +2191,10 @@ function setupEvents() {
   });
 
   setupAdsEvents();
+  void loadSnpLivePrice();
+  setInterval(() => {
+    if (state.currentPage === "game") void loadSnpLivePrice();
+  }, 60000);
 }
 
 /* =========================================================

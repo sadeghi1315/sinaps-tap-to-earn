@@ -3428,3 +3428,22 @@ font-weight: 800;
   font-size: 13px;
   font-weight: 800;
 }
+
+
+/* SINAPS ad payment actions and live SNP market chart */
+.ad-card-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.ad-card-actions button{flex:1;min-width:110px}
+.snp-live-market-card{margin:16px 0 20px;padding:16px;border:1px solid rgba(133,112,255,.28);border-radius:20px;background:linear-gradient(145deg,rgba(18,20,48,.96),rgba(4,8,24,.98));box-shadow:0 12px 35px rgba(0,0,0,.22)}
+.snp-live-market-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.snp-live-market-head>div{display:flex;flex-direction:column;gap:4px}
+.snp-live-market-head strong{font-size:17px}
+.snp-live-market-head small,.snp-live-market-card>small{color:#a8accb;font-size:10px}
+.snp-live-market-head>strong{color:#6df0c0;font-variant-numeric:tabular-nums}
+.snp-live-change{font-size:11px;margin-top:6px;color:#b8c0e8}
+.snp-live-change.positive{color:#6df0c0}
+.snp-live-change.negative{color:#ff7c9d}
+.snp-price-chart{width:100%;height:125px;display:block;margin:8px 0 2px;overflow:visible}
+.snp-chart-grid{stroke:rgba(168,172,220,.14);stroke-width:1;fill:none}
+.snp-chart-line{fill:none;stroke:#71e8ff;stroke-width:2.8;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 4px rgba(113,232,255,.45))}
+.snp-chart-dot{fill:#8affd0;stroke:#fff;stroke-width:1}
+.snp-chart-placeholder{fill:#9da4c9;font-size:10px}
