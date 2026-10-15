@@ -1839,7 +1839,11 @@ async function checkAdBotAdmin(showToast = true) {
   const url = $("adUrl")?.value.trim() || "";
   if (!isTelegramAdPlatform()) {
     adAdminVerifiedFor = "";
-    setAdAdminStatus("Not required for websites or social media.", "valid");
+    if (platform === "bot") {
+      setAdAdminStatus("Telegram Bot selected. Admin verification is not required; automatic completion verification for third-party bots is not supported.", "valid");
+    } else {
+      setAdAdminStatus("Not required for websites or social media.", "valid");
+    }
     return true;
   }
   if (!url) {
@@ -2082,11 +2086,13 @@ function setupAdsEvents() {
   $("adPlatform")?.addEventListener("change", () => {
     adAdminVerifiedFor = "";
     if (isTelegramAdPlatform()) setAdAdminStatus("Add SINAPS bot as an administrator, then tap CHECK BOT ADMIN STATUS.");
+    else if (($("adPlatform")?.value || "") === "bot") setAdAdminStatus("Telegram Bot selected. Admin verification is not required; automatic completion verification for third-party bots is not supported.", "valid");
     else setAdAdminStatus("Not required for websites or social media.", "valid");
   });
   $("adUrl")?.addEventListener("input", () => {
     adAdminVerifiedFor = "";
     if (isTelegramAdPlatform()) setAdAdminStatus("Link changed. Verify bot admin status again.");
+    else if (($("adPlatform")?.value || "") === "bot") setAdAdminStatus("Bot link changed. Admin verification is not required.", "valid");
   });
   $("adClicks")?.addEventListener("input", updateAdCost);
 
