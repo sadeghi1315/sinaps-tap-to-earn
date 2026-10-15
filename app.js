@@ -1279,6 +1279,11 @@ async function loadTasks() {
             if (!["https:", "http:"].includes(parsed.protocol)) throw new Error("Invalid URL");
             if (tg?.openLink) tg.openLink(parsed.href);
             else window.open(parsed.href, "_blank", "noopener,noreferrer");
+            // Count one unique link open per user; completion/reward is verified separately.
+            void api("/api/ads/click", {
+              method: "POST",
+              body: JSON.stringify({ task_id: taskId })
+            }).then(() => loadAvailableAds()).catch(error => console.warn("Ad click tracking:", error));
             button.dataset.opened = "true";
             button.textContent = "VERIFY +100 SNP";
           } catch (_) {
@@ -1685,8 +1690,14 @@ function createAdCard(ad, isMine = false) {
 
   const progress = document.createElement("p");
   progress.textContent =
-    `Valid clicks: ${formatNumber(clicks)} / ${formatNumber(target)}`;
+    `Completed: ${formatNumber(clicks)} / ${formatNumber(target)}`;
   card.appendChild(progress);
+
+  if (!isMine) {
+    const rawClicks = document.createElement("p");
+    rawClicks.textContent = `Link clicks: ${formatNumber(ad.click_count || 0)}`;
+    card.appendChild(rawClicks);
+  }
 
   if (isMine) {
     const status = document.createElement("p");
@@ -1732,7 +1743,7 @@ function createAdCard(ad, isMine = false) {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "ads-primary-button";
-    button.textContent = "OPEN LINK";
+    button.textContent = "CLAIM";
 
     button.addEventListener("click", () => {
       const rawUrl = String(ad.target_url || "");
@@ -1753,6 +1764,10 @@ function createAdCard(ad, isMine = false) {
         } else {
           window.open(parsed.href, "_blank", "noopener,noreferrer");
         }
+        void api("/api/ads/click", {
+          method: "POST",
+          body: JSON.stringify({ task_id: `ad:${Number(ad.id)}` })
+        }).then(() => loadAvailableAds()).catch(error => console.warn("Ad click tracking:", error));
       } catch (_) {
         toast("Invalid advertising link");
       }
