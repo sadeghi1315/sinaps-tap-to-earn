@@ -56,7 +56,7 @@ let currentWithdrawalId = null;
 let cancellableWithdrawalsLoading = false;
 
 const $ = id => document.getElementById(id);
-const formatNumber = value => Number(value || 0).toLocaleString("en-US");
+const formatNumber = value => Number(value || 0).toLocaleString("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 const telegramUser = () => tg?.initDataUnsafe?.user || null;
 
 const authHeaders = () => ({
@@ -1510,6 +1510,18 @@ async function spinNow() {
 
     if (data.user) applyUser(data.user);
 
+    const wheel = document.querySelector(".spin-wheel");
+    if (wheel) {
+      const prizeIndex = Math.max(0, Number(data.prize_index || 0));
+      const targetAngle = 360 * 6 + (360 - (prizeIndex * 40));
+      wheel.style.transition = "none";
+      wheel.style.transform = "rotate(0deg)";
+      void wheel.offsetWidth;
+      wheel.style.transition = "transform 4.2s cubic-bezier(.12,.72,.12,1)";
+      wheel.style.transform = `rotate(${targetAngle}deg)`;
+      await new Promise(resolve => setTimeout(resolve, 4300));
+    }
+
     if ($("spinStatus")) {
       $("spinStatus").textContent =
         Number(data.reward) > 0
@@ -2203,6 +2215,15 @@ function setupEvents() {
   $("disconnectWallet")?.addEventListener("click", disconnectWallet);
 
   $("withdrawButton")?.addEventListener("click", handleWithdraw);
+  const withdrawAmountInput = $("withdrawAmount");
+  const feeEstimate = $("withdrawFeeEstimate");
+  const updateWithdrawFee = () => {
+    const amount = Math.max(0, Number(withdrawAmountInput?.value || 0));
+    const fee = amount / 10000 * 0.1;
+    if (feeEstimate) feeEstimate.textContent = `You will receive ${formatNumber(amount)} SNP. Fee: ${fee.toFixed(6).replace(/0+$/, "").replace(/\.$/, "") || "0"} TON.`;
+  };
+  withdrawAmountInput?.addEventListener("input", updateWithdrawFee);
+  updateWithdrawFee();
 
   $("copyReferral")?.addEventListener("click", copyReferral);
   $("copyReferralLarge")?.addEventListener("click", copyReferral);

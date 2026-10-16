@@ -3454,3 +3454,7 @@ font-weight: 800;
   border-color: rgba(255,100,100,.4);
   background: rgba(255,100,100,.07);
 }
+
+/* SINAPS update: referral copy uses white text for contrast */
+.referral-hero-card,.referral-hero-card *,.referral-page,.referral-page * { color:#fff; }
+.coin-symbol img{width:100%;height:100%;object-fit:contain;display:block}
