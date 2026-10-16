@@ -1280,12 +1280,24 @@ async function loadTasks() {
             if (tg?.openLink) tg.openLink(parsed.href);
             else window.open(parsed.href, "_blank", "noopener,noreferrer");
             // Count one unique link open per user; completion/reward is verified separately.
+            button.disabled = true;
+            button.textContent = "CLAIMING…";
             void api("/api/ads/click", {
               method: "POST",
               body: JSON.stringify({ task_id: taskId })
-            }).then(() => loadAvailableAds()).catch(error => console.warn("Ad click tracking:", error));
+            }).then(async data => {
+              if (data.balance !== undefined) state.balance = Number(data.balance);
+              renderUser();
+              if (Number(data.reward || 0) > 0) toast(`+${formatNumber(data.reward)} SNP`);
+              else toast(data.message || "Reward already claimed");
+              await Promise.all([loadTasks(), loadAvailableAds()]);
+            }).catch(error => {
+              button.disabled = false;
+              button.dataset.opened = "false";
+              button.textContent = "OPEN";
+              toast(error.message || "Could not claim ad reward");
+            });
             button.dataset.opened = "true";
-            button.textContent = "VERIFY +100 SNP";
           } catch (_) {
             toast("Invalid advertising link");
           }
