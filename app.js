@@ -999,7 +999,7 @@ async function handleWithdraw() {
     ]);
 
     showWithdrawFeedback(
-      "Withdrawal request created. The 0.1 TON fee must be sent from your connected wallet. Your SNP remains reserved until the request is cancelled or completed.",
+      `Withdrawal request created. The ${Number(created.fee_ton ?? (Number(created.fee_nano) / 1e9)).toFixed(3)} TON fee must be sent from your connected wallet. You must keep at least 50,000 SNP in your connected wallet. Your SNP remains reserved until the request is cancelled or completed.`,
       withdrawalId
     );
 
@@ -1105,7 +1105,7 @@ async function verifyWithdrawal(withdrawalId) {
 
     const messages = {
       payment_pending:
-        "Waiting for confirmation of the 0.1 TON fee. If you have just paid, wait a little and verify again.",
+        `Waiting for confirmation of the ${Number(withdrawal.fee_ton ?? (Number(withdrawal.fee_nano || 0) / 1e9)).toFixed(3)} TON fee. If you have just paid, wait a little and verify again.`,
       fee_submitted:
         "Fee payment detected. Your SNP payout is being prepared.",
       fee_paid_pending_payout:
