@@ -2086,7 +2086,19 @@ async function loadSnpMarketChart() {
   } catch (error) {
     console.error("loadSnpMarketChart:", error);
     frameWrap.dataset.loaded = "false";
-    if (statusEl) statusEl.textContent = "Live price service unavailable. Try again shortly.";
+    if (priceEl) priceEl.textContent = "Price unavailable";
+    if (changeEl) changeEl.textContent = "Market data connection failed";
+    if (statusEl) statusEl.textContent = "Could not reach the SNP price service. Check the backend /api/snp/market route and try again.";
+    frameWrap.innerHTML = '<div class="snp-chart-empty"><strong>Could not load SNP chart</strong><span>The price service did not respond. Check your connection and try again.</span><button type="button" id="retrySnpChartButton" class="snp-action chart-action" style="margin-top:12px">Retry chart</button></div>';
+    const retryButton = $("retrySnpChartButton");
+    retryButton?.addEventListener("click", () => {
+      frameWrap.dataset.loaded = "false";
+      if (priceEl) priceEl.textContent = "Loading price…";
+      if (changeEl) changeEl.textContent = "Checking live market";
+      frameWrap.innerHTML = '<div class="snp-chart-loading">Loading live SNP chart…</div>';
+      if (statusEl) statusEl.textContent = "Looking for a liquid SNP trading pair.";
+      void loadSnpMarketChart();
+    });
   }
 }
 
