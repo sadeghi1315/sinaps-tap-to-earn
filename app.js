@@ -17,7 +17,7 @@ const state = {
   balance: 0,
   energy: 1000,
   maxEnergy: 1000,
-  tapPower: 1,
+  tapPower: 0.1,
   rechargeMultiplier: 1,
   tapBoostLevel: 1,
   energyBoostLevel: 1,
@@ -159,7 +159,7 @@ function loadFastCache() {
     state.balance = Number(cached.balance || 0);
     state.energy = Number(cached.energy || 0);
     state.maxEnergy = Number(cached.maxEnergy || 1000);
-    state.tapPower = Number(cached.tapPower || 0.1);
+    state.tapPower = Number((Math.min(10, Math.max(1, Number(cached.tapBoostLevel || 1))) * 0.1).toFixed(1));
     state.rechargeMultiplier = Number(cached.rechargeMultiplier || 1);
     state.tapBoostLevel = Number(cached.tapBoostLevel || 1);
     state.energyBoostLevel = Number(cached.energyBoostLevel || 1);
@@ -175,7 +175,7 @@ function applyUser(user) {
   state.balance = Number(user.balance || 0);
   state.energy = Number(user.energy || 0);
   state.maxEnergy = Number(user.max_energy || 1000);
-  state.tapPower = Number(user.tap_power || 0.1);
+  state.tapPower = Number((Math.min(10, Math.max(1, Number(user.tap_boost_level || 1))) * 0.1).toFixed(1));
   state.rechargeMultiplier = Number(user.recharge_multiplier || 1);
   state.tapBoostLevel = Number(user.tap_boost_level || 1);
   state.energyBoostLevel = Number(user.energy_boost_level || 1);
