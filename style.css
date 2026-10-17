@@ -3458,3 +3458,8 @@ font-weight: 800;
 /* SINAPS update: referral copy uses white text for contrast */
 .referral-hero-card,.referral-hero-card *,.referral-page,.referral-page * { color:#fff; }
 .coin-symbol img{width:100%;height:100%;object-fit:contain;display:block}
+
+/* SINAPS coin image consistency */
+.boost-balance-coin img{width:38px;height:38px;object-fit:contain;display:block}
+.ref-stat-icon img{width:30px;height:30px;object-fit:contain;display:block}
+.referral-reward-icon img{width:46px;height:46px;object-fit:contain;display:block}
