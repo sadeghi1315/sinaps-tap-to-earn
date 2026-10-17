@@ -17,7 +17,7 @@ const state = {
   balance: 0,
   energy: 1000,
   maxEnergy: 1000,
-  tapPower: 0.1,
+  tapPower: 1,
   rechargeMultiplier: 1,
   tapBoostLevel: 1,
   energyBoostLevel: 1,
@@ -159,7 +159,7 @@ function loadFastCache() {
     state.balance = Number(cached.balance || 0);
     state.energy = Number(cached.energy || 0);
     state.maxEnergy = Number(cached.maxEnergy || 1000);
-    state.tapPower = Number((Math.min(10, Math.max(1, Number(cached.tapBoostLevel || 1))) * 0.1).toFixed(1));
+    state.tapPower = Number(cached.tapPower || 1);
     state.rechargeMultiplier = Number(cached.rechargeMultiplier || 1);
     state.tapBoostLevel = Number(cached.tapBoostLevel || 1);
     state.energyBoostLevel = Number(cached.energyBoostLevel || 1);
@@ -175,7 +175,7 @@ function applyUser(user) {
   state.balance = Number(user.balance || 0);
   state.energy = Number(user.energy || 0);
   state.maxEnergy = Number(user.max_energy || 1000);
-  state.tapPower = Number((Math.min(10, Math.max(1, Number(user.tap_boost_level || 1))) * 0.1).toFixed(1));
+  state.tapPower = Number(user.tap_power || 1);
   state.rechargeMultiplier = Number(user.recharge_multiplier || 1);
   state.tapBoostLevel = Number(user.tap_boost_level || 1);
   state.energyBoostLevel = Number(user.energy_boost_level || 1);
@@ -1273,33 +1273,25 @@ async function loadTasks() {
         const taskId = button.dataset.taskId || "";
         const url = button.dataset.url || "#";
         const type = button.dataset.type || "";
-        if (type === "ad_task" && button.dataset.opened !== "true") {
+        // First tap opens the task's real destination. A second tap verifies it.
+        // This prevents the old behaviour where VERIFY ran before the user could open the link.
+        if (button.dataset.opened !== "true" && url && url !== "#" &&
+            (type === "telegram" || type === "external" || type === "ad_task")) {
           try {
             const parsed = new URL(url);
             if (!["https:", "http:"].includes(parsed.protocol)) throw new Error("Invalid URL");
-            if (tg?.openLink) tg.openLink(parsed.href);
-            else window.open(parsed.href, "_blank", "noopener,noreferrer");
-            // Count one unique link open per user; completion/reward is verified separately.
-            button.disabled = true;
-            button.textContent = "CLAIMING…";
-            void api("/api/ads/click", {
-              method: "POST",
-              body: JSON.stringify({ task_id: taskId })
-            }).then(async data => {
-              if (data.balance !== undefined) state.balance = Number(data.balance);
-              renderUser();
-              if (Number(data.reward || 0) > 0) toast(`+${formatNumber(data.reward)} SNP`);
-              else toast(data.message || "Reward already claimed");
-              await Promise.all([loadTasks(), loadAvailableAds()]);
-            }).catch(error => {
-              button.disabled = false;
-              button.dataset.opened = "false";
-              button.textContent = "OPEN";
-              toast(error.message || "Could not claim ad reward");
-            });
+            if (parsed.hostname.toLowerCase().endsWith("t.me") && tg?.openTelegramLink) {
+              tg.openTelegramLink(parsed.href);
+            } else if (tg?.openLink) {
+              tg.openLink(parsed.href);
+            } else {
+              window.open(parsed.href, "_blank", "noopener,noreferrer");
+            }
             button.dataset.opened = "true";
+            button.textContent = "VERIFY";
+            toast("Link opened. Complete the task, return here, then tap VERIFY.");
           } catch (_) {
-            toast("Invalid advertising link");
+            toast("Could not open this task link. Please check the task URL.");
           }
           return;
         }
@@ -1660,21 +1652,12 @@ function updateAdCost() {
 }
 
 function switchAdsTab(tab) {
-  const available = $("activeAdsList");
   const mine = $("myAdsList");
-
   document.querySelectorAll("[data-ads-tab]").forEach(button => {
-    button.classList.toggle("active", button.dataset.adsTab === tab);
+    button.classList.toggle("active", button.dataset.adsTab === "mine");
   });
-
-  if (available) available.hidden = tab !== "available";
-  if (mine) mine.hidden = tab !== "mine";
-
-  if (tab === "available") {
-    void loadAvailableAds();
-  } else if (tab === "mine") {
-    void loadMyAds();
-  }
+  if (mine) mine.hidden = false;
+  void loadMyAds();
 }
 
 function setAdsMessage(container, message) {
@@ -1774,8 +1757,8 @@ function createAdCard(ad, isMine = false) {
 }
 
 async function loadAvailableAds() {
-  const container = $("activeAdsList");
-  if (!container || adsLoading) return;
+  // Available Ads marketplace intentionally removed: ads are private to their creator.
+  return;
 
   adsLoading = true;
   setAdsMessage(container, "Loading advertising tasks...");
@@ -1837,10 +1820,7 @@ async function loadMyAds() {
 }
 
 async function loadAds() {
-  await Promise.allSettled([
-    loadAvailableAds(),
-    loadMyAds()
-  ]);
+  await loadMyAds();
 }
 
 let adAdminVerifiedFor = "";
@@ -2036,7 +2016,7 @@ async function payForAd(adId) {
     }, 20000);
     if (!verified.ok) throw new Error(verified.error || "Payment is not verified yet");
     toast("Payment verified. Your ad task is now live.");
-    await Promise.allSettled([loadMyAds(), loadAvailableAds(), loadTasks()]);
+    await Promise.allSettled([loadMyAds(), loadTasks()]);
   } catch (error) {
     console.error("payForAd:", error);
     toast(error.message || "Payment was not completed. You can retry from My Ads.");
