@@ -1260,7 +1260,7 @@ async function loadTasks() {
           <strong></strong>
           <small>+${formatNumber(task.reward)} SNP</small>
         </div>
-        <button class="task-button" ${completed ? "disabled" : ""} data-task-id="${String(task.id).replace(/"/g, "&quot;")}" data-url="${String(task.url || "#").replace(/"/g, "&quot;")}" data-type="${String(task.type || "").replace(/"/g, "&quot;")}" data-opened="false">
+        <button class="task-button" ${completed ? "disabled" : ""} data-task-id="${String(task.id).replace(/"/g, "&quot;")}" data-url="${String(task.url || "#").replace(/"/g, "&quot;")}" data-type="${String(task.type || "").replace(/"/g, "&quot;")}" data-platform="${String(task.platform || "").replace(/"/g, "&quot;")}" data-opened="false">
           ${completed ? "DONE" : (task.type === "ad_task" ? "OPEN" : "VERIFY")}
         </button>
       `;
@@ -1273,6 +1273,7 @@ async function loadTasks() {
         const taskId = button.dataset.taskId || "";
         const url = button.dataset.url || "#";
         const type = button.dataset.type || "";
+        const platform = String(button.dataset.platform || "").toLowerCase();
         // First tap opens the task's real destination. A second tap verifies it.
         // This prevents the old behaviour where VERIFY ran before the user could open the link.
         if (button.dataset.opened !== "true" && url && url !== "#" &&
@@ -1295,7 +1296,7 @@ async function loadTasks() {
           }
           return;
         }
-        claimTask(taskId, url, type);
+        claimTask(taskId, url, type, platform);
       });
     });
   } catch (e) {
@@ -1304,9 +1305,16 @@ async function loadTasks() {
   }
 }
 
-async function claimTask(taskId, url, type) {
+async function claimTask(taskId, url, type, platform = "") {
   try {
-    const data = await api("/api/tasks/claim", {
+    // Channel/group ads require real Telegram membership verification. Bot, website,
+    // and other ad links use the dedicated ad-click endpoint instead of the
+    // channel-membership endpoint (which cannot verify bot deep links).
+    const isMembershipAd = type === "ad_task" && ["channel", "group"].includes(String(platform).toLowerCase());
+    const endpoint = type === "ad_task" && !isMembershipAd
+      ? "/api/ads/click"
+      : "/api/tasks/claim";
+    const data = await api(endpoint, {
       method: "POST",
       body: JSON.stringify({
         task_id: taskId,
