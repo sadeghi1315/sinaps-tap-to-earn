@@ -1237,6 +1237,14 @@ async function refreshUserAfterWithdrawal() {
    TASKS
 ========================================================= */
 
+function formatAdCooldown(seconds) {
+  const s = Math.max(0, Number(seconds) || 0);
+  const hours = Math.floor(s / 3600);
+  const minutes = Math.floor((s % 3600) / 60);
+  const secs = s % 60;
+  return hours > 0 ? `${hours}h ${String(minutes).padStart(2, "0")}m` : `${minutes}m ${String(secs).padStart(2, "0")}s`;
+}
+
 async function loadTasks() {
   const container = $("tasksList");
   if (!container) return;
@@ -1252,7 +1260,8 @@ async function loadTasks() {
       row.className = "task-row";
 
       const completed = Boolean(task.completed);
-
+      const isAdTask = task.type === "ad_task";
+      const cooldownSeconds = Math.max(0, Number(task.cooldown_seconds || 0));
       const safeName = String(task.name || task.title || "Task");
       row.innerHTML = `
         <div class="task-icon">${task.icon || (task.type === "ad_task" ? "📢" : "🎯")}</div>
@@ -1260,12 +1269,28 @@ async function loadTasks() {
           <strong></strong>
           <small>+${formatNumber(task.reward)} SNP</small>
         </div>
-        <button class="task-button" ${completed ? "disabled" : ""} data-task-id="${String(task.id).replace(/"/g, "&quot;")}" data-url="${String(task.url || "#").replace(/"/g, "&quot;")}" data-type="${String(task.type || "").replace(/"/g, "&quot;")}" data-platform="${String(task.platform || "").replace(/"/g, "&quot;")}" data-opened="false">
-          ${completed ? "DONE" : (task.type === "ad_task" ? "OPEN" : "VERIFY")}
+        <button class="task-button" ${(completed && !isAdTask) || cooldownSeconds > 0 ? "disabled" : ""} data-task-id="${String(task.id).replace(/"/g, "&quot;")}" data-url="${String(task.url || "#").replace(/"/g, "&quot;")}" data-type="${String(task.type || "").replace(/"/g, "&quot;")}" data-platform="${String(task.platform || "").replace(/"/g, "&quot;")}" data-cooldown="${cooldownSeconds}" data-opened="false">
+          ${cooldownSeconds > 0 ? "◷ " + formatAdCooldown(cooldownSeconds) : (completed ? "DONE" : ((isAdTask || task.type === "external") ? "OPEN" : "VERIFY"))}
         </button>
       `;
       row.querySelector(".task-info strong").textContent = safeName;
       container.appendChild(row);
+    });
+
+    // Live countdown for recurring main tasks and advertising tasks on their 24-hour cooldown.
+    container.querySelectorAll('.task-button[data-cooldown]').forEach(button => {
+      let remaining = Math.max(0, Number(button.dataset.cooldown || 0));
+      if (remaining <= 0) return;
+      const timer = setInterval(() => {
+        remaining -= 1;
+        button.dataset.cooldown = String(Math.max(0, remaining));
+        if (remaining <= 0) {
+          clearInterval(timer);
+          loadTasks();
+          return;
+        }
+        button.textContent = "◷ " + formatAdCooldown(remaining);
+      }, 1000);
     });
 
     container.querySelectorAll(".task-button:not(:disabled)").forEach(button => {
@@ -1290,7 +1315,7 @@ async function loadTasks() {
             }
             button.dataset.opened = "true";
             button.textContent = "VERIFY";
-            toast("Link opened. Complete the task, return here, then tap VERIFY.");
+            toast("Link opened. Return here and tap VERIFY to claim your reward.");
           } catch (_) {
             toast("Could not open this task link. Please check the task URL.");
           }
@@ -2236,11 +2261,77 @@ function setupEvents() {
 }
 
 /* =========================================================
+   FIRST-OPEN TELEGRAM MEMBERSHIP GATE
+========================================================= */
+function onboardingKey() {
+  const id = String(telegramUser()?.id || currentTelegramId || "");
+  return id ? `sinaps_${id}_join_gate_verified` : "";
+}
+
+function ensureJoinGate() {
+  if ($("sinapsJoinGate")) return;
+  const gate = document.createElement("div");
+  gate.id = "sinapsJoinGate";
+  gate.className = "sinaps-join-gate";
+  gate.innerHTML = `
+    <div class="sinaps-join-card">
+      <div class="sinaps-join-logo">S</div>
+      <h2>Welcome to SINAPS</h2>
+      <p>Join our official Telegram communities, then verify to enter the Mini App.</p>
+      <a class="sinaps-join-link" data-join="channel" href="https://t.me/SINAPS_COIN" target="_blank" rel="noopener noreferrer"><span>📢</span><span><strong>Main Channel</strong><small>@SINAPS_COIN</small></span><b class="join-check">○</b></a>
+      <a class="sinaps-join-link" data-join="withdrawals" href="https://t.me/SINAPS_Withdrawals" target="_blank" rel="noopener noreferrer"><span>💸</span><span><strong>Withdrawals Channel</strong><small>@SINAPS_Withdrawals</small></span><b class="join-check">○</b></a>
+      <a class="sinaps-join-link" data-join="group" href="https://t.me/SINAPS_Group" target="_blank" rel="noopener noreferrer"><span>👥</span><span><strong>Community Group</strong><small>@SINAPS_Group</small></span><b class="join-check">○</b></a>
+      <div id="joinGateMessage" class="join-gate-message">Join all three destinations, then tap Verify.</div>
+      <button id="joinGateVerify" type="button">VERIFY MEMBERSHIP</button>
+    </div>`;
+  document.body.appendChild(gate);
+  gate.querySelectorAll("a[data-join]").forEach(link => link.addEventListener("click", () => {
+    const url = link.href;
+    try { if (tg?.openTelegramLink) { tg.openTelegramLink(url); } } catch (_) {}
+  }));
+  $("joinGateVerify").addEventListener("click", async () => {
+    const button = $("joinGateVerify");
+    const message = $("joinGateMessage");
+    button.disabled = true;
+    button.textContent = "CHECKING MEMBERSHIP…";
+    message.textContent = "Checking your Telegram memberships…";
+    try {
+      const data = await api("/api/onboarding/verify", { method: "POST", body: JSON.stringify({}) });
+      const memberships = data.memberships || [];
+      memberships.forEach(item => {
+        const link = gate.querySelector(`[data-join="${item.id}"]`);
+        if (!link) return;
+        const check = link.querySelector(".join-check");
+        check.textContent = item.joined ? "✓" : "○";
+        check.classList.toggle("is-joined", Boolean(item.joined));
+      });
+      if (data.verified) {
+        const key = onboardingKey();
+        if (key) { try { localStorage.setItem(key, "1"); } catch (_) {} }
+        message.textContent = "All memberships verified. Welcome to SINAPS!";
+        message.classList.add("is-success");
+        setTimeout(() => gate.remove(), 500);
+      } else {
+        message.textContent = "Please join every channel and the group, then verify again.";
+      }
+    } catch (error) {
+      message.textContent = error.message || "Verification failed. Please try again.";
+    } finally {
+      button.disabled = false;
+      button.textContent = "VERIFY MEMBERSHIP";
+    }
+  });
+  const key = onboardingKey();
+  try { if (key && localStorage.getItem(key) === "1") gate.remove(); } catch (_) {}
+}
+
+/* =========================================================
    INITIALIZATION
 ========================================================= */
 
 async function init() {
   setupEvents();
+  ensureJoinGate();
   loadFastCache();
   renderUser();
   renderWallet();
