@@ -2085,7 +2085,7 @@ async function loadSnpMarketChart(force = false) {
   if (!force && lastLoaded && Date.now() - lastLoaded < 6 * 60 * 60 * 1000) return;
   frameWrap.dataset.loading = "true";
   try {
-    const data = await apiWithTimeout("/api/snp/market", {}, 12000);
+    const data = await apiWithTimeout(`/api/snp/market${force ? "?force=1" : ""}`, {}, 20000);
     frameWrap.dataset.loadedAt = String(Date.now());
     frameWrap.dataset.loading = "false";
     if (data.available && Number(data.price_usd) > 0) {
