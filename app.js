@@ -1261,7 +1261,7 @@ async function loadTasks() {
 
       const completed = Boolean(task.completed);
       const isAdTask = task.type === "ad_task";
-      const cooldownSeconds = Math.max(0, Number(task.cooldown_seconds || 0));
+      const cooldownSeconds = isAdTask ? 0 : Math.max(0, Number(task.cooldown_seconds || 0));
       const safeName = String(task.name || task.title || "Task");
       row.innerHTML = `
         <div class="task-icon">${task.icon || (task.type === "ad_task" ? "📢" : "🎯")}</div>
@@ -1269,7 +1269,7 @@ async function loadTasks() {
           <strong></strong>
           <small>+${formatNumber(task.reward)} SNP</small>
         </div>
-        <button class="task-button" ${(completed && !isAdTask) || cooldownSeconds > 0 ? "disabled" : ""} data-task-id="${String(task.id).replace(/"/g, "&quot;")}" data-url="${String(task.url || "#").replace(/"/g, "&quot;")}" data-type="${String(task.type || "").replace(/"/g, "&quot;")}" data-platform="${String(task.platform || "").replace(/"/g, "&quot;")}" data-cooldown="${cooldownSeconds}" data-opened="false">
+        <button class="task-button" ${completed || cooldownSeconds > 0 ? "disabled" : ""} data-task-id="${String(task.id).replace(/"/g, "&quot;")}" data-url="${String(task.url || "#").replace(/"/g, "&quot;")}" data-type="${String(task.type || "").replace(/"/g, "&quot;")}" data-platform="${String(task.platform || "").replace(/"/g, "&quot;")}" data-cooldown="${cooldownSeconds}" data-opened="false">
           ${cooldownSeconds > 0 ? "◷ " + formatAdCooldown(cooldownSeconds) : (completed ? "DONE" : ((isAdTask || task.type === "external") ? "OPEN" : "VERIFY"))}
         </button>
       `;
@@ -2073,57 +2073,61 @@ async function cancelAd(adId, button) {
   }
 }
 
-async function loadSnpMarketChart() {
+async function loadSnpMarketChart(force = false) {
   const priceEl = $("snpLivePrice");
   const changeEl = $("snpPriceChange");
   const frameWrap = $("snpChartFrameWrap");
   const statusEl = $("snpChartStatus");
   const marketLink = $("snpMarketLink");
-  if (!frameWrap || frameWrap.dataset.loaded === "true") return;
-  frameWrap.dataset.loaded = "true";
+  if (!frameWrap || (frameWrap.dataset.loading === "true")) return;
+  const lastLoaded = Number(frameWrap.dataset.loadedAt || 0);
+  // Refresh the display no more than once every six hours unless the user retries.
+  if (!force && lastLoaded && Date.now() - lastLoaded < 6 * 60 * 60 * 1000) return;
+  frameWrap.dataset.loading = "true";
   try {
     const data = await apiWithTimeout("/api/snp/market", {}, 12000);
-    if (data.available && data.pair_address) {
-      if (priceEl) priceEl.textContent = data.price_usd ? `$${Number(data.price_usd).toPrecision(6)}` : `${data.price_native || "—"} TON`;
+    frameWrap.dataset.loadedAt = String(Date.now());
+    frameWrap.dataset.loading = "false";
+    if (data.available && Number(data.price_usd) > 0) {
+      const price = Number(data.price_usd);
+      if (priceEl) priceEl.textContent = `$${price.toPrecision(6)}`;
       if (changeEl) {
         const change = Number(data.change_24h || 0);
         changeEl.textContent = `${change >= 0 ? "+" : ""}${change.toFixed(2)}% (24h)`;
         changeEl.style.color = change >= 0 ? "#48e6a5" : "#ff6b7a";
       }
-      const pairUrl = `https://dexscreener.com/ton/${encodeURIComponent(data.pair_address)}?embed=1&theme=dark&trades=0&info=0`;
-      const iframe = document.createElement("iframe");
-      iframe.src = pairUrl;
-      iframe.title = "SINAPS SNP live price chart";
-      iframe.loading = "lazy";
-      iframe.referrerPolicy = "no-referrer";
-      iframe.allow = "clipboard-read; clipboard-write";
-      iframe.style.cssText = "display:block;width:100%;height:360px;border:0;border-radius:14px;background:#070b18";
-      frameWrap.replaceChildren(iframe);
-      if (marketLink) marketLink.href = "https://dexscreener.com/ton/eqamlleruvinn9pwfvrlr_ajdvhd5pkmelnou5bndpvxv0ls";
-      if (statusEl) statusEl.textContent = "Live market data · DexScreener";
+      const history = (Array.isArray(data.history) ? data.history : []).filter(p => Number(p.price_usd) > 0);
+      const values = history.map(p => Number(p.price_usd));
+      if (!values.length) values.push(price);
+      if (values.length === 1) values.push(price);
+      const min = Math.min(...values), max = Math.max(...values);
+      const spread = max - min || Math.max(Math.abs(max) * 0.02, 0.00000001);
+      const width = 640, height = 260, padX = 24, padY = 24;
+      const points = values.map((v, i) => {
+        const x = padX + (values.length < 2 ? 0 : i * (width - 2 * padX) / (values.length - 1));
+        const y = height - padY - ((v - (min - spread * 0.1)) / (spread * 1.2)) * (height - 2 * padY);
+        return `${x.toFixed(1)},${y.toFixed(1)}`;
+      });
+      const latestStamp = data.captured_at ? new Date(data.captured_at) : null;
+      const stampText = latestStamp && !Number.isNaN(latestStamp.getTime()) ? latestStamp.toLocaleString() : "time unavailable";
+      frameWrap.innerHTML = `<div class="snp-approx-chart"><svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Approximate SNP price trend from six-hour snapshots"><defs><linearGradient id="snpChartFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#48e6a5" stop-opacity=".28"/><stop offset="100%" stop-color="#48e6a5" stop-opacity="0"/></linearGradient></defs><line x1="24" y1="70" x2="616" y2="70" stroke="#253047"/><line x1="24" y1="130" x2="616" y2="130" stroke="#253047"/><line x1="24" y1="190" x2="616" y2="190" stroke="#253047"/><polygon points="${points.join(" ")} 616,236 24,236" fill="url(#snpChartFill)"/><polyline points="${points.join(" ")}" fill="none" stroke="#48e6a5" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>${points.length ? `<circle cx="${points[points.length-1].split(",")[0]}" cy="${points[points.length-1].split(",")[1]}" r="5" fill="#48e6a5"/>` : ""}</svg><div class="snp-chart-caption"><span>${history.length} saved snapshots</span><span>Updated: ${stampText}</span></div></div>`;
+      if (marketLink) marketLink.href = data.pair_url || "https://dexscreener.com/ton";
+      if (statusEl) statusEl.textContent = history.length > 1 ? "Approximate price trend · refreshed every 6 hours" : "Approximate price · chart history starts building now; a new point is saved every 6 hours";
     } else {
-      if (priceEl) priceEl.textContent = "No live price";
-      if (changeEl) changeEl.textContent = "No active liquidity pair found";
-      if (statusEl) statusEl.textContent = "SNP needs a supported DEX trading pair with liquidity before a live chart can display.";
-      frameWrap.innerHTML = '<div class="snp-chart-empty"><strong>No live chart data yet</strong><span>DexScreener has not returned an active TON trading pair for the configured SNP contract.</span></div>';
-      if (marketLink) marketLink.href = "https://dexscreener.com/ton/eqamlleruvinn9pwfvrlr_ajdvhd5pkmelnou5bndpvxv0ls";
+      if (priceEl) priceEl.textContent = "Price unavailable";
+      if (changeEl) changeEl.textContent = "No verified market price";
+      if (statusEl) statusEl.textContent = "No verified SNP trading price was returned. The chart will appear when a supported liquid trading pair is available.";
+      frameWrap.innerHTML = '<div class="snp-chart-empty"><strong>Market price not available yet</strong><span>To avoid showing a made-up price, SINAPS displays only prices returned by a supported market pair. It checks again every 6 hours.</span><button type="button" id="retrySnpChartButton" class="snp-action chart-action" style="margin-top:12px">Check again</button></div>';
+      $("retrySnpChartButton")?.addEventListener("click", () => { frameWrap.dataset.loadedAt = "0"; void loadSnpMarketChart(true); });
     }
   } catch (error) {
     console.error("loadSnpMarketChart:", error);
-    frameWrap.dataset.loaded = "false";
+    frameWrap.dataset.loading = "false";
     if (priceEl) priceEl.textContent = "Price unavailable";
-    if (changeEl) changeEl.textContent = "Market data connection failed";
-    if (statusEl) statusEl.textContent = "Could not reach the SNP price service. Check the backend /api/snp/market route and try again.";
-    frameWrap.innerHTML = '<div class="snp-chart-empty"><strong>Could not load SNP chart</strong><span>The price service did not respond. Check your connection and try again.</span><button type="button" id="retrySnpChartButton" class="snp-action chart-action" style="margin-top:12px">Retry chart</button></div>';
-    const retryButton = $("retrySnpChartButton");
-    retryButton?.addEventListener("click", () => {
-      frameWrap.dataset.loaded = "false";
-      if (priceEl) priceEl.textContent = "Loading price…";
-      if (changeEl) changeEl.textContent = "Checking live market";
-      frameWrap.innerHTML = '<div class="snp-chart-loading">Loading live SNP chart…</div>';
-      if (statusEl) statusEl.textContent = "Looking for a liquid SNP trading pair.";
-      void loadSnpMarketChart();
-    });
+    if (changeEl) changeEl.textContent = "Using last saved price when available";
+    if (statusEl) statusEl.textContent = "Market refresh failed. The backend keeps the last saved snapshot when available.";
+    frameWrap.innerHTML = '<div class="snp-chart-empty"><strong>Could not refresh market data</strong><span>Please try again later. The backend refresh interval is 6 hours.</span><button type="button" id="retrySnpChartButton" class="snp-action chart-action" style="margin-top:12px">Retry</button></div>';
+    $("retrySnpChartButton")?.addEventListener("click", () => { frameWrap.dataset.loadedAt = "0"; void loadSnpMarketChart(true); });
   }
 }
 
