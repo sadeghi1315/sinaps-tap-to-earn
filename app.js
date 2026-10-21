@@ -1999,7 +1999,7 @@ async function createAd() {
       throw new Error(data.error || "Could not create ad");
     }
 
-    toast("Ad created — awaiting payment verification");
+    const createdAdId = Number(data.ad?.id || 0);
     closeCreateAd();
 
     if ($("adTitle")) $("adTitle").value = "";
@@ -2010,6 +2010,15 @@ async function createAd() {
     updateAdCost();
     await loadMyAds();
     switchAdsTab("mine");
+
+    if (!createdAdId) {
+      toast("Ad created, but its ID was not returned. Open My Ads and use PAY WITH TON.");
+      return;
+    }
+
+    // Start TonConnect payment immediately after ad creation. If the user
+    // cancels the wallet prompt, the unpaid ad remains available in My Ads.
+    await payForAd(createdAdId);
   } catch (error) {
     console.error("createAd:", error);
     toast(error.message || "Could not create advertisement");
@@ -2038,16 +2047,41 @@ async function payForAd(adId) {
     if (!details.ok || !details.treasury_wallet || !details.amount_nano) {
       throw new Error(details.error || "Payment details unavailable");
     }
-    await tonUI.sendTransaction({
+    const paymentResult = await tonUI.sendTransaction({
       validUntil: Math.floor(Date.now() / 1000) + 300,
       messages: [{ address: details.treasury_wallet, amount: String(details.amount_nano) }]
     });
-    toast("TON payment sent. Verifying on blockchain...");
-    const verified = await apiWithTimeout("/api/ads/verify-payment", {
-      method: "POST",
-      body: JSON.stringify({ ad_id: Number(adId) })
-    }, 20000);
-    if (!verified.ok) throw new Error(verified.error || "Payment is not verified yet");
+    if (!paymentResult) {
+      throw new Error("Wallet did not return a transaction result. Check My Ads before retrying.");
+    }
+
+    toast("Wallet transaction submitted. Checking blockchain confirmation...");
+    let verified = null;
+    let lastVerifyError = "";
+    for (let attempt = 0; attempt < 4; attempt++) {
+      if (attempt > 0) await new Promise(resolve => setTimeout(resolve, 3000));
+      try {
+        const result = await apiWithTimeout("/api/ads/verify-payment", {
+          method: "POST",
+          body: JSON.stringify({ ad_id: Number(adId) })
+        }, 20000);
+        if (result.ok) {
+          verified = result;
+          break;
+        }
+        lastVerifyError = result.error || "Payment is not confirmed on-chain yet";
+      } catch (verifyError) {
+        lastVerifyError = verifyError.message || "Could not verify payment yet";
+      }
+    }
+
+    if (!verified) {
+      toast("Payment was submitted, but blockchain confirmation is still pending. Wait and retry from My Ads; do not pay again yet.");
+      console.warn("Ad payment verification pending:", lastVerifyError);
+      await loadMyAds();
+      return;
+    }
+
     toast("Payment verified. Your ad task is now live.");
     await Promise.allSettled([loadMyAds(), loadTasks()]);
   } catch (error) {
